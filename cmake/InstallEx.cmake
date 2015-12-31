@@ -1,0 +1,11 @@
+# Installs files, except cmake list, to target directory
+function(installex from to)
+	file(GLOB ifiles ${from})
+	foreach(ifile ${ifiles})
+		if(IS_DIRECTORY ${ifile})
+			install(DIRECTORY ${ifile} DESTINATION ${to})
+		elseif(NOT(${ifile} MATCHES "CMakeLists.txt$"))
+			install(FILES ${ifile} DESTINATION ${to})
+		endif()
+	endforeach()
+endfunction()
