@@ -29,3 +29,75 @@ Permission is granted to anyone to use this software for any purpose, including 
 #else
 	#define DLL_EXPORT EXTERN_C
 #endif
+
+/// FLuaG script handle type
+typedef void* fluag_h;
+
+/// Supported color formats
+enum {FLUAG_RGB = 0, FLUAG_BGR, FLUAG_RGBA, FLUAG_BGRA};
+
+/// Maximal length for output warning
+#define FLUAG_WARNING_LENGTH 256
+
+/**
+Create FLuaG script handle.
+
+@return Script handle or zero
+*/
+DLL_EXPORT fluag_h fluag_create(void);
+
+/**
+Load file into FLuaG script.
+
+@param F Script handle
+@param filename Path to file for loading
+@param warning Warning string storage, can be zero
+@return 1 if success, 0 if error (see warning)
+*/
+DLL_EXPORT int fluag_load_file(fluag_h F, const char* filename, char* warning);
+
+/**
+Set video informations into FLuaG script.
+
+@param F Script handle
+@param format Color format
+@param width Video width
+@param height Video height
+@param fps Video frames-per-second
+@param frames Video frames number
+*/
+DLL_EXPORT void fluag_set_video(fluag_h F, char format, unsigned short width, unsigned short height, double fps, unsigned long frames);
+
+/**
+Set userdata into FLuaG script.
+
+@param F Script handle
+@param userdata Userdata string
+*/
+DLL_EXPORT void fluag_set_userdata(fluag_h F, const char* userdata);
+
+/**
+Send frame into FLuaG script.
+
+@param F Script handle
+@param image_data Pixels data of image
+@param stride Image row size in bytes (pixels + padding)
+@param ms Image/frame time in milliseconds
+@param warning Warning string storage, can be zero
+@return 1 if success, 0 if error (see warning)
+*/
+DLL_EXPORT int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, unsigned long ms, char* warning);
+
+/**
+Destroy FLuaG script handle.
+
+@param F Script handle
+*/
+DLL_EXPORT void fluag_destroy(fluag_h F);
+
+/**
+Get FLuaG version.
+
+@return Version string
+*/
+DLL_EXPORT const char* fluag_get_version(void);

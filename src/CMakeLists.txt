@@ -15,6 +15,10 @@ else()
 endif()
 option(BUILD_STD_STATIC "Link standard libraries statically?" ${BUILD_STD_STATIC_VALUE})
 option(BUILD_TESTS "Build tests?" OFF)
+set(DEPEND_LUA_INC "" CACHE PATH "Lua headers directory path")
+set(DEPEND_LUA_LIB "lua" CACHE FILEPATH "Lua library path")
+set(DEPEND_GLFW_INC "" CACHE PATH "GLFW headers directory path")
+set(DEPEND_GLFW_LIB "glfw3" CACHE FILEPATH "GLFW library path")
 if(CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
@@ -78,7 +82,8 @@ configure_file(
 # Plan dynamic library compilation
 file(GLOB LIBRARY_SOURCES *.cpp *.c *.hpp *.h *.rc)
 add_library(fluag SHARED ${LIBRARY_SOURCES})
-target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLFW_INC})
+target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLFW_LIB})
 
 # Setup library installation
 install(TARGETS fluag	# Runtime
