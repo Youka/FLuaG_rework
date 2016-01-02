@@ -53,8 +53,13 @@ namespace FLuaG{
 			// Lua state
 			using lua_ptr = std::unique_ptr<lua_State, void(*)(lua_State*)>;
 			lua_ptr L = lua_ptr(luaL_newstate(), [](lua_State* L){lua_close(L);});
-			// Size of image data to ProcessFrame function
-			unsigned long image_size = 0;
+			// Video informations required by ProcessFrame function
+			unsigned short image_height = 0;
+			unsigned image_rowsize = 0;
+			// Userdata required by LoadFile function
+			std::string userdata;
+			// Image data to Lua object
+			void lua_pushimage(unsigned char* image_data, unsigned stride);
 		public:
 			// Ctor
 			Script();
@@ -67,9 +72,9 @@ namespace FLuaG{
 			Script(Script&& other);
 			Script& operator=(Script&& other);
 			// Setters
-			void LoadFile(const std::string& filename) throw(exception);
 			void SetVideo(const VideoHeader header);
 			void SetUserdata(const std::string& userdata);
+			void LoadFile(const std::string& filename) throw(exception);
 			// Processing
 			void ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception);
 	};
