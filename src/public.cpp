@@ -37,18 +37,9 @@ int fluag_load_file(fluag_h F, const char* filename, char* warning){
 	return 1;
 }
 
-void fluag_set_video(fluag_h F, char format, unsigned short width, unsigned short height, double fps, unsigned long frames){
-	if(F){
-		FLuaG::VideoHeader::ColorType color_type;
-		switch(format){
-			case FLUAG_RGB: color_type = FLuaG::VideoHeader::ColorType::RGB; break;
-			case FLUAG_BGR: color_type = FLuaG::VideoHeader::ColorType::BGR; break;
-			case FLUAG_RGBA: color_type = FLuaG::VideoHeader::ColorType::RGBA; break;
-			case FLUAG_BGRA: color_type = FLuaG::VideoHeader::ColorType::BGRA; break;
-			default: return;
-		}
-		reinterpret_cast<FLuaG::Script*>(F)->SetVideo({color_type, width, height, fps, frames});
-	}
+void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames){
+	if(F)
+		reinterpret_cast<FLuaG::Script*>(F)->SetVideo({width, height, has_alpha, fps, frames});
 }
 
 void fluag_set_userdata(fluag_h F, const char* userdata){

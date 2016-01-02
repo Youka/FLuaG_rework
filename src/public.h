@@ -33,9 +33,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 /// FLuaG script handle type
 typedef void* fluag_h;
 
-/// Supported color formats
-enum {FLUAG_RGB = 0, FLUAG_BGR, FLUAG_RGBA, FLUAG_BGRA};
-
 /// Maximal length for output warning
 #define FLUAG_WARNING_LENGTH 256
 
@@ -60,13 +57,13 @@ DLL_EXPORT int fluag_load_file(fluag_h F, const char* filename, char* warning);
 Set video informations into FLuaG script.
 
 @param F Script handle
-@param format Color format
 @param width Video width
 @param height Video height
+@param has_alpha Video has alpha channel?
 @param fps Video frames-per-second
 @param frames Video frames number
 */
-DLL_EXPORT void fluag_set_video(fluag_h F, char format, unsigned short width, unsigned short height, double fps, unsigned long frames);
+DLL_EXPORT void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames);
 
 /**
 Set userdata into FLuaG script.

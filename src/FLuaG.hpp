@@ -32,15 +32,10 @@ namespace FLuaG{
 
 	// Video header informations storage
 	struct VideoHeader{
-		// Limited set of supported color types
-		enum class ColorType : char{
-			RGB,
-			BGR,
-			RGBA,
-			BGRA
-		}color_type;
 		// Frame dimension expected as positive and in realistic range
 		unsigned short width, height;
+		// Color type RGB with alpha?
+		bool has_alpha;
 		// Frames-per-second on constant frame durations
 		double fps;
 		// Number of available frames

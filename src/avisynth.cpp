@@ -71,9 +71,9 @@ namespace AVS{
 		try{
 			std::unique_ptr<FLuaG::Script> F(new FLuaG::Script());
 			F->SetVideo({
-				avs_is_rgb32(vinfo) ? FLuaG::VideoHeader::ColorType::BGRA : FLuaG::VideoHeader::ColorType::BGR,
 				static_cast<unsigned short>(vinfo->width),
 				static_cast<unsigned short>(vinfo->height),
+				avs_is_rgb32(vinfo),
 				static_cast<double>(vinfo->fps_numerator) / vinfo->fps_denominator,
 				static_cast<unsigned long>(vinfo->num_frames)
 			});

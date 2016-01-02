@@ -15,8 +15,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "FLuaG.hpp"
 #include <vector>
 
-#define LSTATE this->L.get()
-
 // Unique name for Lua metatable
 #define LUA_IMAGE_DATA "FLuaG image data"
 
@@ -28,49 +26,50 @@ struct ImageData{
 };
 
 // Metatable methods
-static int image_size(lua_State* L){
+static int image_data_size(lua_State* L){
 	ImageData* udata = reinterpret_cast<ImageData*>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	lua_pushinteger(L, udata->height * udata->rowsize);
 	return 1;
 }
 
-static int image_get_data(lua_State* L){
-	// Get arguments
-	ImageData* udata = reinterpret_cast<ImageData*>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
-	// Copy data
-	unsigned long image_size = udata->height * udata->rowsize;
-	if(udata->rowsize == udata->stride)
-		lua_pushlstring(L, reinterpret_cast<char*>(udata->data), image_size);
-	else{
-		std::vector<unsigned char> sbuf;
-		sbuf.reserve(image_size);
-		const unsigned char* const data_end = udata->data + udata->height * udata->stride;
-		for(const unsigned char* data = udata->data; data != data_end; data += udata->stride)
-			sbuf.insert(sbuf.end(), data, data + udata->rowsize);
-		lua_pushlstring(L, reinterpret_cast<char*>(sbuf.data()), image_size);
-	}
-	return 1;
-}
-
-static int image_set_data(lua_State* L){
+static int image_data_access(lua_State* L){
 	// Get arguments
 	ImageData* udata = reinterpret_cast<ImageData*>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	size_t data_len;
-	const unsigned char* data = reinterpret_cast<const unsigned char*>(luaL_checklstring(L, 2, &data_len));
-	// Check arguments
-	if(data_len != udata->height * udata->rowsize)
-		return luaL_error(L, "Data size isn't equal to expected image size!");
-	// Copy data
-	if(udata->rowsize == udata->stride)
-		std::copy(data, data + data_len, udata->data);
-	else{
-		unsigned char* image_data = udata->data;
-		const unsigned short padding = udata->stride - udata->rowsize;
-		for(const unsigned char* const data_end = data + data_len; data != data_end; data += udata->rowsize)
-			image_data = std::copy(data, data + udata->rowsize, image_data) + padding;
+	const unsigned char* data = reinterpret_cast<const unsigned char*>(luaL_optlstring(L, 2, nullptr, &data_len));
+	// Choose operation
+	unsigned long image_size = udata->height * udata->rowsize;
+	if(data){
+		// Check argument
+		if(data_len != image_size)
+			return luaL_error(L, "Data size isn't equal to expected image size!");
+		// Copy data
+		if(udata->rowsize == udata->stride)
+			std::copy(data, data + data_len, udata->data);
+		else{
+			unsigned char* image_data = udata->data;
+			const unsigned short padding = udata->stride - udata->rowsize;
+			for(const unsigned char* const data_end = data + data_len; data != data_end; data += udata->rowsize)
+				image_data = std::copy(data, data + udata->rowsize, image_data) + padding;
+		}
+		return 0;
+	}else{
+		// Copy data
+		if(udata->rowsize == udata->stride)
+			lua_pushlstring(L, reinterpret_cast<char*>(udata->data), image_size);
+		else{
+			std::vector<unsigned char> sbuf;
+			sbuf.reserve(image_size);
+			const unsigned char* const data_end = udata->data + udata->height * udata->stride;
+			for(const unsigned char* data = udata->data; data != data_end; data += udata->stride)
+				sbuf.insert(sbuf.end(), data, data + udata->rowsize);
+			lua_pushlstring(L, reinterpret_cast<char*>(sbuf.data()), image_size);
+		}
+		return 1;
 	}
-	return 0;
 }
+
+#define LSTATE this->L.get()
 
 namespace FLuaG{
 	void Script::lua_pushimage(unsigned char* image_data, unsigned stride){
@@ -83,9 +82,8 @@ namespace FLuaG{
 		// Fetch/create Lua image data metatable
 		if(luaL_newmetatable(LSTATE, LUA_IMAGE_DATA)){
 			lua_pushvalue(LSTATE, -1); lua_setfield(LSTATE, -2, "__index");
-			lua_pushcfunction(LSTATE, image_size); lua_setfield(LSTATE, -2, "__len");
-			lua_pushcfunction(LSTATE, image_get_data); lua_setfield(LSTATE, -2, "GetData");
-			lua_pushcfunction(LSTATE, image_set_data); lua_setfield(LSTATE, -2, "SetData");
+			lua_pushcfunction(LSTATE, image_data_size); lua_setfield(LSTATE, -2, "__len");
+			lua_pushcfunction(LSTATE, image_data_access); lua_setfield(LSTATE, -2, "__call");
 
 			// TODO: further frame methods
 

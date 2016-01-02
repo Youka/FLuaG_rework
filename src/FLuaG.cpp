@@ -63,26 +63,16 @@ namespace FLuaG{
 		// Create table for video informations
 		lua_createtable(LSTATE, 0, 5);
 		// Fill table with VideoHeader content
-		switch(header.color_type){
-			case VideoHeader::ColorType::RGB: lua_pushstring(LSTATE, "rgb"); break;
-			case VideoHeader::ColorType::BGR: lua_pushstring(LSTATE, "bgr"); break;
-			case VideoHeader::ColorType::RGBA: lua_pushstring(LSTATE, "rgba"); break;
-			case VideoHeader::ColorType::BGRA: lua_pushstring(LSTATE, "bgra"); break;
-		}lua_setfield(LSTATE, -2, "color_type");
 		lua_pushinteger(LSTATE, header.width); lua_setfield(LSTATE, -2, "width");
 		lua_pushinteger(LSTATE, header.height); lua_setfield(LSTATE, -2, "height");
+		lua_pushboolean(LSTATE, header.has_alpha); lua_setfield(LSTATE, -2, "has_alpha");
 		lua_pushnumber(LSTATE, header.fps); lua_setfield(LSTATE, -2, "fps");
 		lua_pushinteger(LSTATE, header.frames); lua_setfield(LSTATE, -2, "frames");
 		// Set table to Lua environment/global space
 		lua_setglobal(LSTATE, "_VIDEO");
 		// Save video informations for ProcessFrame function call
 		this->image_height = header.height;
-		switch(header.color_type){
-			case VideoHeader::ColorType::RGB:
-			case VideoHeader::ColorType::BGR: this->image_rowsize = (header.width << 1) + header.width; break;
-			case VideoHeader::ColorType::RGBA:
-			case VideoHeader::ColorType::BGRA: this->image_rowsize = header.width << 2; break;
-		}
+		this->image_rowsize = header.has_alpha ? header.width << 2 : (header.width << 1) + header.width;
 	}
 
 	void Script::SetUserdata(const std::string& userdata){

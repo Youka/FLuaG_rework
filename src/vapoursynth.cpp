@@ -82,9 +82,9 @@ namespace VS{
 		// Set userdata/script to clip
 		try{
 			inst_data->F.SetVideo({
-				inst_data->vi->format->id == pfRGB24 ? FLuaG::VideoHeader::ColorType::BGR : FLuaG::VideoHeader::ColorType::BGRA,
 				static_cast<unsigned short>(inst_data->vi->width),
 				static_cast<unsigned short>(inst_data->vi->height),
+				inst_data->vi->format->id == pfCompatBGR32,
 				static_cast<double>(inst_data->vi->fpsNum) / inst_data->vi->fpsDen,
 				static_cast<unsigned long>(inst_data->vi->numFrames)
 			});
