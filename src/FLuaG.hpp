@@ -54,7 +54,7 @@ namespace FLuaG{
 			// Userdata required by LoadFile function
 			std::string userdata;
 			// Image data to Lua object
-			void lua_pushimage(unsigned char* image_data, unsigned stride);
+			void lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride);
 		public:
 			// Ctor
 			Script();

@@ -108,7 +108,8 @@ namespace FLuaG{
 			throw exception("'GetFrame' function is missing");
 		}
 		// Push arguments and call function
-		this->lua_pushimage(image_data, stride);
+		std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
+		this->lua_pushimage(image_data_shared, stride);
 		lua_pushinteger(LSTATE, ms);
 		if(lua_pcall(LSTATE, 2, 0, 0)){
 			const std::string err(lua_tostring(LSTATE, -1));
