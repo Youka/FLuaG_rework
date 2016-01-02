@@ -44,9 +44,18 @@ namespace FLuaG{
 	}
 
 	Script& Script::operator=(Script&& other){
+		// Save old Lua state for swapping
 		lua_State* old_L = this->L.release();
+		// Receive
 		this->L.reset(other.L.release());
+		this->image_rowsize = other.image_rowsize;
+		this->image_height = other.image_height;
+		this->userdata = std::move(other.userdata);
+		// (Send)
 		other.L.reset(old_L);
+		other.image_rowsize = other.image_height = 0;
+		other.userdata.clear();
+		// Return own reference
 		return *this;
 	}
 
@@ -81,9 +90,17 @@ namespace FLuaG{
 	}
 
 	void Script::LoadFile(const std::string& filename) throw(exception){
+		// Load file and push as function
+		if(luaL_loadfile(LSTATE, filename.c_str())){
+			const std::string err(lua_tostring(LSTATE, -1));
+			lua_pop(LSTATE, 1);
+			throw exception(std::move(err));
+		}
+		// Push userdata string as function/file input
 		if(!this->userdata.empty())
 			lua_pushstring(LSTATE, this->userdata.c_str());
-		if(luaL_loadfile(LSTATE, filename.c_str()) || lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+		// Call function/file
+		if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
 			const std::string err(lua_tostring(LSTATE, -1));
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
@@ -91,11 +108,16 @@ namespace FLuaG{
 	}
 
 	void Script::ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception){
+		// Check for valid stride
+		if(stride < this->image_rowsize)
+			throw exception("Image stride cannot be smaller than rowsize!");
+		// Look for function to call
 		lua_getglobal(LSTATE, "GetFrame");
 		if(!lua_isfunction(LSTATE, -1)){
 			lua_pop(LSTATE, 1);
 			throw exception("'GetFrame' function is missing");
 		}
+		// Push arguments and call function
 		this->lua_pushimage(image_data, stride);
 		lua_pushinteger(LSTATE, ms);
 		if(lua_pcall(LSTATE, 2, 0, 0)){
