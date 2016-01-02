@@ -15,7 +15,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 // Link Avisynth statically
 #define AVSC_NO_DECLSPEC
 #include <windows.h>
-#include <cstdlib>
 #include "interfaces/avisynth_c.h"
 
 #include <config.h>
@@ -42,6 +41,13 @@ namespace AVS{
 			reinterpret_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(avs_get_write_ptr(frame), avs_get_pitch(frame), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
 		}catch(FLuaG::exception e){
 			filter_info->error = avs_library->avs_save_string(filter_info->env, e.what(), -1);
+			// Because the AVS C API error handling is broken
+			int err_len = MultiByteToWideChar(CP_UTF8, 0x0, e.what(), -1, nullptr, 0);
+			if(err_len){
+				std::unique_ptr<wchar_t> err(new wchar_t[err_len]);
+				MultiByteToWideChar(CP_UTF8, 0x0, e.what(), -1, err.get(), err_len);
+				MessageBoxW(NULL, err.get(), L"FLuaG error", MB_OK | MB_ICONERROR);
+			}
 		}
 		// Pass frame further in processing chain
 		return frame;

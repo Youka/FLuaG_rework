@@ -86,6 +86,9 @@ namespace FLuaG{
 			lua_pushcfunction(LSTATE, image_size); lua_setfield(LSTATE, -2, "__len");
 			lua_pushcfunction(LSTATE, image_get_data); lua_setfield(LSTATE, -2, "GetData");
 			lua_pushcfunction(LSTATE, image_set_data); lua_setfield(LSTATE, -2, "SetData");
+
+			// TODO: further frame methods
+
 		}
 		// Bind metatable to userdata
 		lua_setmetatable(LSTATE, -2);

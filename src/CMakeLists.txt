@@ -81,6 +81,9 @@ configure_file(
 
 # Plan dynamic library compilation
 file(GLOB LIBRARY_SOURCES *.cpp *.c *.hpp *.h *.rc)
+if(NOT WIN32)
+	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/avisynth.cpp")
+endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLFW_INC})
 target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLFW_LIB})
