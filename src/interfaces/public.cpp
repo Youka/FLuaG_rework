@@ -13,7 +13,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "public.h"
-#include "FLuaG.hpp"
+#include "../main/FLuaG.hpp"
 #include <config.h>
 #include <cstring>
 

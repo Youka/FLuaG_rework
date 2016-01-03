@@ -89,6 +89,7 @@ namespace FLuaG{
 			lua_pushcfunction(LSTATE, image_data_delete); lua_setfield(LSTATE, -2, "__gc");
 			lua_pushcfunction(LSTATE, image_data_size); lua_setfield(LSTATE, -2, "__len");
 			lua_pushcfunction(LSTATE, image_data_access); lua_setfield(LSTATE, -2, "__call");
+			lua_pushvalue(LSTATE, -1); lua_setfield(LSTATE, -2, "__index");
 
 			// TODO: further frame methods
 

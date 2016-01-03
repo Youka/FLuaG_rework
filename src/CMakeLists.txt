@@ -80,9 +80,9 @@ configure_file(
 )
 
 # Plan dynamic library compilation
-file(GLOB LIBRARY_SOURCES *.cpp *.c *.hpp *.h *.rc)
+file(GLOB LIBRARY_SOURCES interfaces/*.cpp interfaces/*.h main/*.cpp main/*.hpp main/*.rc lualibs/*.cpp lualibs/*.h)
 if(NOT WIN32)
-	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/avisynth.cpp")
+	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp")
 endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLFW_INC})
@@ -96,7 +96,7 @@ install(TARGETS fluag	# Runtime
 )
 message(STATUS "Binaries installation path: ${CMAKE_INSTALL_PREFIX}/bin")
 message(STATUS "Library installation path: ${CMAKE_INSTALL_PREFIX}/lib")
-install(FILES public.h DESTINATION include RENAME fluag.h)	# Public header
+install(FILES interfaces/public.h DESTINATION include RENAME fluag.h)	# Public header
 message(STATUS "Headers installation path: ${CMAKE_INSTALL_PREFIX}/include")
 configure_file(	# Package config
 	${CMAKE_CURRENT_SOURCE_DIR}/fluag.pc.in

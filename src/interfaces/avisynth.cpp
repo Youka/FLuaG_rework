@@ -15,10 +15,10 @@ Permission is granted to anyone to use this software for any purpose, including 
 // Link Avisynth statically
 #define AVSC_NO_DECLSPEC
 #include <windows.h>
-#include "interfaces/avisynth_c.h"
+#include "frameservers/avisynth_c.h"
 
 #include <config.h>
-#include "FLuaG.hpp"
+#include "../main/FLuaG.hpp"
 #include <memory>
 
 namespace AVS{
