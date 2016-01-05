@@ -19,7 +19,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include <config.h>
 #include "../main/FLuaG.hpp"
-#include <memory>
 
 namespace AVS{
 	// Avisynth library handle (defined in plugin initialization)

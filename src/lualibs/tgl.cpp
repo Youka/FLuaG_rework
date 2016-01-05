@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: libs.h
+File: tgl.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -12,8 +12,12 @@ Permission is granted to anyone to use this software for any purpose, including 
     3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma once
+#include "libs.h"
 
-#include <lua.hpp>
+int luaopen_tgl(lua_State* L){
 
-int luaopen_tgl(lua_State* L);
+	// TODO
+
+	lua_pushstring(L, "TGL not implemented yet!");
+	return 1;
+}

@@ -14,6 +14,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include "FLuaG.hpp"
 #include "../lualibs/libs.h"
+#include <map>
 #ifdef _WIN32
 	#include <windows.h>
 #else
@@ -66,10 +67,21 @@ namespace FLuaG{
 			throw std::bad_alloc();
 		// Open Lua standard libraries
 		luaL_openlibs(LSTATE);
-		// Open Lua extension libraries
-
-		// TODO
-
+		// Preload Lua extension libraries
+		lua_getglobal(LSTATE, "package");
+		if(lua_istable(LSTATE, -1)){
+			lua_getfield(LSTATE, -1, "preload");
+			if(lua_istable(LSTATE, -1)){
+				static const std::map<const char*, int(*)(lua_State*)> libs{
+					{"tgl", luaopen_tgl}
+				};
+				for(auto it = libs.cbegin(); it != libs.cend(); ++it){
+					lua_pushcfunction(LSTATE, it->second); lua_setfield(LSTATE, -2, it->first);
+				}
+			}
+			lua_pop(LSTATE, -1);
+		}
+		lua_pop(LSTATE, -1);
 		// Extend Lua search paths
 		std::string path = get_this_dir();
 		if(!path.empty()){
