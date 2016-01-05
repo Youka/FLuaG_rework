@@ -13,6 +13,49 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "FLuaG.hpp"
+#include "../lualibs/libs.h"
+#ifdef _WIN32
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
+#endif
+
+#ifdef _WIN32	// Unix needs the following function exported for DL informations
+static
+#endif
+std::string get_this_dir(){
+	// Result buffer
+	std::string path;
+	// Get this DLL filename into the buffer
+#ifdef _WIN32
+	HMODULE module;
+	if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(get_this_dir), &module)){
+		DWORD filenamew_len;
+		wchar_t filenamew[MAX_PATH];
+		if((filenamew_len = GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))){
+			int path_len = WideCharToMultiByte(CP_UTF8, 0x0, filenamew, filenamew_len, nullptr, 0, nullptr, nullptr);
+			if(path_len){
+				path.resize(path_len);
+				WideCharToMultiByte(CP_UTF8, 0x0, filenamew, filenamew_len, const_cast<char*>(path.data()), path_len, nullptr, nullptr);
+			}
+		}
+	}
+#else
+	Dl_info dli;
+	if(dladdr(get_this_path, &dli))
+		path = dli.dli_fname;
+#endif
+	// Shorten filename to directory
+	if(!path.empty()){
+		std::string::size_type separator = path.find_last_of("\\/");
+		if(separator != std::wstring::npos)
+			path.resize(separator+1);
+		else
+			path.clear();
+	}
+	// Return directory or empty string on failure
+	return path;
+}
 
 #define LSTATE this->L.get()
 
@@ -23,11 +66,25 @@ namespace FLuaG{
 			throw std::bad_alloc();
 		// Open Lua standard libraries
 		luaL_openlibs(LSTATE);
+		// Open Lua extension libraries
 
-		// TODO: setup Lua libraries
+		// TODO
 
+		// Extend Lua search paths
+		std::string path = get_this_dir();
+		if(!path.empty()){
+			path.append("?.lua;");
+			lua_getglobal(LSTATE, "package");
+			if(lua_istable(LSTATE, -1)){
+				lua_getfield(LSTATE, -1, "path");
+				if(lua_isstring(LSTATE, -1))
+					path.append(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				lua_pushstring(LSTATE, path.c_str()); lua_setfield(LSTATE, -2, "path");
+			}
+			lua_pop(LSTATE, 1);
+		}
 	}
-
 
 	Script::Script(const std::string& filename) throw(exception) : Script(){
 		this->LoadFile(filename);
