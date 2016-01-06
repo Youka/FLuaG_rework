@@ -13,11 +13,15 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include <glfw3.h>
 
 int luaopen_tgl(lua_State* L){
+	// Initialize GLFW
+	if(!glfwInit())
+		return luaL_error(L, "Couldn't initialize GLFW!");
+	// Check GL for version 3.2+
 
 	// TODO
 
-	lua_pushstring(L, "TGL not implemented yet!");
-	return 1;
+	return luaL_error(L, "TGL not implemented yet!");
 }

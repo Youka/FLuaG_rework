@@ -34,6 +34,9 @@ message(STATUS "Compile warnings: ${COMPILE_WARNINGS}")
 
 # Add feature definitions
 set(COMPILE_DEFINITIONS -D_USE_MATH_DEFINES)
+if(WIN32)
+	set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} -DWIN_LEAN_AND_MEAN)
+endif()
 add_definitions(${COMPILE_DEFINITIONS})
 message(STATUS "Additional compile definitions: ${COMPILE_DEFINITIONS}")
 
@@ -108,7 +111,7 @@ message(STATUS "Package config installation path: ${CMAKE_INSTALL_PREFIX}/share/
 
 # Add functionality tests
 if(${BUILD_TESTS})
-
-	# TODO
-
+	# Build & run hello test
+	add_executable(hello_test_exe ${PROJECT_SOURCE_DIR}/tests/hello.c)
+	add_test(hello_test hello_test_exe "${CMAKE_SHARED_LIBRARY_PREFIX}fluag${CMAKE_SHARED_LIBRARY_SUFFIX}")
 endif()
