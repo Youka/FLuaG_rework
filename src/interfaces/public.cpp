@@ -37,6 +37,18 @@ int fluag_load_file(fluag_h F, const char* filename, char* warning){
 	return 1;
 }
 
+int fluag_load_script(fluag_h F, const char* script, char* warning){
+	if(F)
+		try{
+			reinterpret_cast<FLuaG::Script*>(F)->LoadScript(script);
+		}catch(FLuaG::exception e){
+			if(warning)
+				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
+			return 0;
+		}
+	return 1;
+}
+
 void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames){
 	if(F)
 		reinterpret_cast<FLuaG::Script*>(F)->SetVideo({width, height, has_alpha, fps, frames});

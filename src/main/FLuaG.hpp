@@ -70,6 +70,7 @@ namespace FLuaG{
 			void SetVideo(const VideoHeader header);
 			void SetUserdata(const std::string& userdata);
 			void LoadFile(const std::string& filename) throw(exception);
+			void LoadScript(const std::string& script) throw(exception);
 			// Processing
 			void ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception);
 	};

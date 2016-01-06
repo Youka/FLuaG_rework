@@ -166,6 +166,24 @@ namespace FLuaG{
 		}
 	}
 
+	void Script::LoadScript(const std::string& script) throw(exception){
+		// Load script and push as function
+		if(luaL_loadstring(LSTATE, script.c_str())){
+			const std::string err(lua_tostring(LSTATE, -1));
+			lua_pop(LSTATE, 1);
+			throw exception(std::move(err));
+		}
+		// Push userdata string as function/script input
+		if(!this->userdata.empty())
+			lua_pushstring(LSTATE, this->userdata.c_str());
+		// Call function/script
+		if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+			const std::string err(lua_tostring(LSTATE, -1));
+			lua_pop(LSTATE, 1);
+			throw exception(std::move(err));
+		}
+	}
+
 	void Script::ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception){
 		// Check for valid stride
 		if(stride < this->image_rowsize)

@@ -54,6 +54,16 @@ Load file into FLuaG script.
 DLL_EXPORT int fluag_load_file(fluag_h F, const char* filename, char* warning);
 
 /**
+Load script into FLuaG script.
+
+@param F Script handle
+@param script Script content as string
+@param warning Warning string storage, can be zero
+@return 1 if success, 0 if error (see warning)
+*/
+DLL_EXPORT int fluag_load_script(fluag_h F, const char* script, char* warning);
+
+/**
 Set video informations into FLuaG script.
 
 @param F Script handle
