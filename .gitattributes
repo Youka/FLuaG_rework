@@ -17,6 +17,7 @@ CMakeFiles.txt	diff=cmake
 *.h		diff=c
 *.c		diff=c
 *.rc		diff=c
+*.lua		diff=lua
 
 # Documentations
 *.md		text
