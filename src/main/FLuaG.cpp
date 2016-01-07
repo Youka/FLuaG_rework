@@ -73,7 +73,9 @@ namespace FLuaG{
 			lua_getfield(LSTATE, -1, "preload");
 			if(lua_istable(LSTATE, -1)){
 				static const std::map<const char*, int(*)(lua_State*)> libs{
-					{"tgl", luaopen_tgl}
+					{"tgl", luaopen_tgl},
+					{"font", luaopen_font},
+					{"png", luaopen_png}
 				};
 				for(auto it = libs.cbegin(); it != libs.cend(); ++it){
 					lua_pushcfunction(LSTATE, it->second); lua_setfield(LSTATE, -2, it->first);

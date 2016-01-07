@@ -16,7 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <vector>
 
 // Unique name for Lua metatable
-#define LUA_IMAGE_DATA "FLuaG_image"
+#define LUA_IMAGE_DATA "FLuaG_image_data"
 
 // Data container for Lua userdata
 struct ImageData{
