@@ -45,24 +45,40 @@ static int tgl_context_activate(lua_State* L){
 	// Initialize GLEW
 	if(glewInit() != GLEW_OK)
 		return luaL_error(L, "Couldn't initialize GLEW!");
+	// Clear all errors caused by GLFW & GLEW initializations
+	glGetError();
 	return 0;
 }
 
 // Shader metatable methods
+static int tgl_shader_free(lua_State* L){
+	glDeleteShader(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)));
+	return 0;
+}
+
 static int tgl_shader_create(lua_State* L){
+	// Get arguments
 	const char* shader_type = luaL_checkstring(L, 1),
 		*shader_source = luaL_checkstring(L, 2);
-	GLuint shader = glCreateShader(GL_VERTEX_SHADER);
-
-	// TODO
-
+	// Create shader
+	GLuint shader = glCreateShader(shader_type == std::string("vertex") ? GL_VERTEX_SHADER : (shader_type == std::string("fragment") ? GL_FRAGMENT_SHADER : 0x0));
+	if(glGetError() == GL_INVALID_ENUM)
+		return luaL_error(L, "Invalid shader type!");
+	if(shader == 0)
+		return luaL_error(L, "Couldn't generate shader!");
+	// Set shader source
+	glShaderSource(shader, 1, reinterpret_cast<char**>(const_cast<char*>(shader_source)), nullptr);
+	// Compile shader
+	glCompileShader(shader);
+	// Create userdata for GL shader
 	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = shader;
+	// Fetch/create Lua tgl shader metatable
 	if(luaL_newmetatable(L, LUA_TGL_SHADER)){
-
-		// TODO
-
+		lua_pushcfunction(L, tgl_shader_free); lua_setfield(L, -2, "__gc");
 	}
+	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
+	// Return the userdata to Lua
 	return 1;
 }
 
