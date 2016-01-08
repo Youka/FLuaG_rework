@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <mutex>
+#include <vector>
 
 // Unique names for Lua metatables
 #define LUA_TGL_CONTEXT "tgl_context"
@@ -67,9 +68,19 @@ static int tgl_shader_create(lua_State* L){
 	if(shader == 0)
 		return luaL_error(L, "Couldn't generate shader!");
 	// Set shader source
-	glShaderSource(shader, 1, reinterpret_cast<char**>(const_cast<char*>(shader_source)), nullptr);
+	glShaderSource(shader, 1, &shader_source, nullptr);
 	// Compile shader
 	glCompileShader(shader);
+	GLint shader_status;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_status);
+	if(shader_status == GL_FALSE){
+		GLint shader_info_length;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &shader_info_length);
+		std::string shader_info(shader_info_length, '\0');
+		glGetShaderInfoLog(shader, shader_info_length, &shader_info_length, const_cast<char*>(shader_info.data()));
+		glDeleteShader(shader);
+		return luaL_error(L, shader_info.c_str());
+	}
 	// Create userdata for GL shader
 	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = shader;
 	// Fetch/create Lua tgl shader metatable
@@ -80,6 +91,171 @@ static int tgl_shader_create(lua_State* L){
 	lua_setmetatable(L, -2);
 	// Return the userdata to Lua
 	return 1;
+}
+
+// Program metatable methods
+static int tgl_program_free(lua_State* L){
+	glDeleteProgram(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
+	return 0;
+}
+
+static int tgl_program_use(lua_State* L){
+	glUseProgram(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
+        if(glGetError() == GL_INVALID_OPERATION)
+		return luaL_error(L, "Can't use this program!");
+	return 0;
+}
+
+static int tgl_program_uniform(lua_State* L){
+	// Get main arguments
+	GLuint program = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
+	const char* location = luaL_checkstring(L, 2);
+	const std::string data_type = luaL_checkstring(L, 3);
+	// Get number of further arguments
+	const int argc = lua_gettop(L) - 3;
+	if(argc == 0)
+		return luaL_error(L, "Not enough arguments!");
+	// Get shader location
+	const GLint location_index = glGetUniformLocation(program, location);
+	if(location_index == -1)
+		return luaL_error(L, "Couldn't detect location!");
+	// Choose operation by data type
+	if(data_type == "f")
+		switch(argc){
+			case 1: glUniform1f(location_index, luaL_checknumber(L, 4)); break;
+			case 2: glUniform2f(location_index, luaL_checknumber(L, 4), luaL_checknumber(L, 5)); break;
+			case 3: glUniform3f(location_index, luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6)); break;
+			default: glUniform4f(location_index, luaL_checknumber(L, 4), luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7)); break;
+		}
+	else if(data_type == "i")
+		switch(argc){
+			case 1: glUniform1i(location_index, luaL_checkinteger(L, 4)); break;
+			case 2: glUniform2i(location_index, luaL_checkinteger(L, 4), luaL_checkinteger(L, 5)); break;
+			case 3: glUniform3i(location_index, luaL_checkinteger(L, 4), luaL_checkinteger(L, 5), luaL_checkinteger(L, 6)); break;
+			default: glUniform4i(location_index, luaL_checkinteger(L, 4), luaL_checkinteger(L, 5), luaL_checkinteger(L, 6), luaL_checkinteger(L, 7)); break;
+		}
+	else if(data_type == "1f" || data_type == "2f" || data_type == "3f" || data_type == "4f"){
+		std::vector<float> values(argc);
+		for(int i = 0; i < argc; ++i)
+			values[i] = luaL_checknumber(L, 4+i);
+		switch(data_type.front() - '0'){
+			case 1:
+				glUniform1fv(location_index, values.size(), values.data());
+				break;
+			case 2:
+				if(values.size() & 0x1)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform2fv(location_index, values.size() << 1, values.data());
+				break;
+			case 3:
+				if(values.size() % 3)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform3fv(location_index, values.size() / 3, values.data());
+				break;
+			case 4:
+				if(values.size() & 0x3)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform4fv(location_index, values.size() << 2, values.data());
+				break;
+		}
+	}else if(data_type == "1i" || data_type == "2i" || data_type == "3i" || data_type == "4i"){
+		std::vector<int> values(argc);
+		for(int i = 0; i < argc; ++i)
+			values[i] = luaL_checkinteger(L, 4+i);
+		switch(data_type.front() - '0'){
+			case 1:
+				glUniform1iv(location_index, values.size(), values.data());
+				break;
+			case 2:
+				if(values.size() & 0x1)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform2iv(location_index, values.size() << 1, values.data());
+				break;
+			case 3:
+				if(values.size() % 3)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform3iv(location_index, values.size() / 3, values.data());
+				break;
+			case 4:
+				if(values.size() & 0x3)
+					return luaL_error(L, "Number of arguments doesn't meet requirements!");
+				glUniform4iv(location_index, values.size() << 2, values.data());
+				break;
+		}
+	}else if(data_type == "mat"){
+		std::vector<float> values(argc);
+		for(int i = 0; i < argc; ++i)
+			values[i] = luaL_checknumber(L, 4+i);
+		switch(values.size()){
+			case 4:
+				glUniformMatrix2fv(location_index, 1, 0, values.data());
+				break;
+			case 9:
+				glUniformMatrix3fv(location_index, 1, 0, values.data());
+				break;
+			case 16:
+				glUniformMatrix4fv(location_index, 1, 0, values.data());
+				break;
+			default:
+				return luaL_error(L, "Number of arguments doesn't meet any requirements!");
+		}
+	}
+	// Check for error
+	if(glGetError() == GL_INVALID_OPERATION)
+		return luaL_error(L, "Setting uniform failed!");
+	return 0;
+}
+
+static int tgl_program_create(lua_State* L){
+	// Get arguments
+	GLuint vshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
+		fshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_SHADER));
+	// Check arguments
+	GLint vshader_type, fshader_type;
+	glGetShaderiv(vshader, GL_SHADER_TYPE, &vshader_type);
+	glGetShaderiv(fshader, GL_SHADER_TYPE, &fshader_type);
+	if(vshader_type != GL_VERTEX_SHADER || fshader_type != GL_FRAGMENT_SHADER)
+		return luaL_error(L, "Vertex & fragment shader expected!");
+	// Create program
+	GLuint program = glCreateProgram();
+	if(program == 0)
+		return luaL_error(L, "Couldn't generate program!");
+	// Attach shaders to program
+        glAttachShader(program, vshader);
+        glAttachShader(program, fshader);
+	// Link & complete program
+	glLinkProgram(program);
+	GLint program_status;
+	glGetProgramiv(program, GL_LINK_STATUS, &program_status);
+	if(program_status == GL_FALSE){
+		GLint program_info_length;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &program_info_length);
+		std::string program_info(program_info_length, '\0');
+		glGetProgramInfoLog(program, program_info_length, &program_info_length, const_cast<char*>(program_info.data()));
+		glDeleteProgram(program);
+		return luaL_error(L, program_info.c_str());
+	}
+	// Create userdata for GL program
+	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = program;
+	// Fetch/create Lua tgl program metatable
+	if(luaL_newmetatable(L, LUA_TGL_PROGRAM)){
+		lua_pushcfunction(L, tgl_program_free); lua_setfield(L, -2, "__gc");
+		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
+		lua_pushcfunction(L, tgl_program_use); lua_setfield(L, -2, "use");
+		lua_pushcfunction(L, tgl_program_uniform); lua_setfield(L, -2, "uniform");
+	}
+	// Bind metatable to userdata
+	lua_setmetatable(L, -2);
+	// Return the userdata to Lua
+	return 1;
+}
+
+// VAO metatable methods
+static int tgl_vao_create(lua_State* L){
+
+	// TODO
+
+	return 0;
 }
 
 int luaopen_tgl(lua_State* L){
@@ -110,6 +286,8 @@ int luaopen_tgl(lua_State* L){
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
 		lua_pushcfunction(L, tgl_context_activate); lua_setfield(L, -2, "activate");
 		lua_pushcfunction(L, tgl_shader_create); lua_setfield(L, -2, "createshader");
+		lua_pushcfunction(L, tgl_program_create); lua_setfield(L, -2, "createprogram");
+		lua_pushcfunction(L, tgl_vao_create); lua_setfield(L, -2, "createvao");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
