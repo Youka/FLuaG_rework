@@ -90,7 +90,7 @@ configure_file(
 )
 
 # Plan dynamic library compilation
-file(GLOB LIBRARY_SOURCES interfaces/*.cpp interfaces/*.h main/*.cpp main/*.hpp main/*.rc lualibs/*.cpp lualibs/*.h)
+file(GLOB_RECURSE LIBRARY_SOURCES *.cpp *.hpp *.c *.h *.rc)
 if(NOT WIN32)
 	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp")
 endif()
