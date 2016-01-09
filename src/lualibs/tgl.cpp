@@ -60,12 +60,12 @@ static int tgl_shader_free(lua_State* L){
 
 static int tgl_shader_create(lua_State* L){
 	// Get arguments
-	const char* shader_type = luaL_checkstring(L, 1),
-		*shader_source = luaL_checkstring(L, 2);
+	static const char* option_str[] = {"vertex", "fragment", nullptr};
+	static const GLenum option_enum[] = {GL_VERTEX_SHADER, GL_FRAGMENT_SHADER};
+	const GLenum shader_type = option_enum[luaL_checkoption(L, 1, nullptr, option_str)];
+	const char* shader_source = luaL_checkstring(L, 2);
 	// Create shader
-	GLuint shader = glCreateShader(shader_type == std::string("vertex") ? GL_VERTEX_SHADER : (shader_type == std::string("fragment") ? GL_FRAGMENT_SHADER : 0x0));
-	if(glGetError() == GL_INVALID_ENUM)
-		return luaL_error(L, "Invalid shader type!");
+	GLuint shader = glCreateShader(shader_type);
 	if(shader == 0)
 		return luaL_error(L, "Couldn't generate shader!");
 	// Set shader source
@@ -260,14 +260,31 @@ static int tgl_vao_free(lua_State* L){
 }
 
 static int tgl_vao_draw(lua_State* L){
+	// Get arguments
 	GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
-
-	// TODO: One VAO for all (position+color+normal+texcoord)
-
+	static const char* option_str[] = {"points", "line strip", "line loop", "lines", "triangle strip", "triangle fan", "triangles", nullptr};
+	static const GLenum option_enum[] = {GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES};
+	const GLenum mode = option_enum[luaL_checkoption(L, 2, nullptr, option_str)];
+	const int first = luaL_checkinteger(L, 3);
+	const GLsizei count = luaL_checkinteger(L, 4);
+	// Check arguments
+	if(first < 0 || count <= 0)
+		return luaL_error(L, "Invalid first or count!");
+	// Bind VAO for data access
+	glBindVertexArray(udata[1]);
+	// Draw (send vertex data to shader)
+	glDrawArrays(mode, first, count);
+	if(glGetError() == GL_INVALID_OPERATION)
+		return luaL_error(L, "Drawing operation was invalid!");
+	// Unbind VAO
+	glBindVertexArray(0);
 	return 0;
 }
 
 static int tgl_vao_create(lua_State* L){
+
+	// TODO: One VAO for all (position+color+normal+texcoord)
+
 	// Get arguments
 	int location_index = luaL_checkinteger(L, 1),
 		vertex_size = luaL_checkinteger(L, 2);
