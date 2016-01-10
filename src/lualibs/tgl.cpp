@@ -18,6 +18,12 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <GLFW/glfw3.h>
 #include <mutex>
 #include <vector>
+#include <algorithm>
+
+// Lua compatibility macros
+#if LUA_VERSION_NUM <= 501
+	#define lua_rawlen lua_objlen
+#endif
 
 // Unique names for Lua metatables
 #define LUA_TGL_CONTEXT "tgl_context"
@@ -282,32 +288,36 @@ static int tgl_vao_draw(lua_State* L){
 }
 
 static int tgl_vao_create(lua_State* L){
-
-	// TODO: One VAO for all (position+color+normal+texcoord)
-
-	// Get arguments
-	int location_index = luaL_checkinteger(L, 1),
-		vertex_size = luaL_checkinteger(L, 2);
-	luaL_checktype(L, 3, LUA_TTABLE);
 	// Check arguments
-	if(location_index < 0 || location_index >= GL_MAX_VERTEX_ATTRIBS)
-		return luaL_error(L, "Location must be positive and not exceed the maximum!");
-	if(vertex_size != 1 && vertex_size != 2 && vertex_size != 3 && vertex_size != 4)
-		return luaL_error(L, "Vertex size must be 1, 2, 3 or 4!");
-	// Convert Lua table to C++ vector
-#if LUA_VERSION_NUM > 501
-	size_t tlen = lua_rawlen(L, 3);
-#else
-	size_t tlen = lua_objlen(L, 3);
-#endif
-        std::vector<float> data(tlen);
-        for(size_t i = 1; i <= tlen; ++i){
-		lua_rawgeti(L, 3, i);
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	// Get properties
+	struct Property{
+		int location_index, vertex_size;
+	};
+	std::vector<Property> props(lua_rawlen(L, 1));
+	for(size_t prop_i = 1; prop_i <= props.size(); ++prop_i){
+		lua_rawgeti(L, 1, prop_i);
+		if(lua_istable(L, -1)){
+			lua_getfield(L, -1, "location");
+			lua_getfield(L, -2, "size");
+			if(!lua_isnumber(L, -2) || !lua_isnumber(L, -1))
+				return luaL_error(L, "Properties 'location' and 'size' have to be numbers!");
+			props[prop_i-1] = {lua_tointeger(L, -2), lua_tointeger(L, -1)};
+			lua_pop(L, 2);
+		}else
+			return luaL_error(L, "Properties have to be tables!");
+		lua_pop(L, 1);
+	}
+	// Convert data to vector
+	std::vector<float> data(lua_rawlen(L, 2));
+	for(size_t i = 1; i <= data.size(); ++i){
+		lua_rawgeti(L, 2, i);
 		if(!lua_isnumber(L, -1))
-			return luaL_error(L, "Table array part must contain numbers only!");
+			return luaL_error(L, "Data must contain numbers only!");
 		data[i-1] = lua_tonumber(L, -1);
 		lua_pop(L, 1);
-        }
+	}
         // Create VBO
         GLuint vbo;
         glGenBuffers(1, &vbo);
@@ -323,17 +333,27 @@ static int tgl_vao_create(lua_State* L){
 	glGenVertexArrays(1, &vao);
 	// Configure VAO
 	glBindVertexArray(vao);
-	glEnableVertexAttribArray(location_index);
-	if(glGetError() == GL_INVALID_VALUE){
-		glDeleteVertexArrays(1, &vao);
-		glDeleteBuffers(1, &vbo);
-		return luaL_error(L, "Invalid location!");
+	const GLsizei stride = std::accumulate(props.cbegin(), props.cend(), 0, [](const int accum, const Property& prop){return accum + prop.vertex_size;}) << 2;
+	GLint* offset = 0;
+	for(const auto& prop : props){
+		glEnableVertexAttribArray(prop.location_index);
+		if(glGetError() != GL_NO_ERROR){
+			glDeleteVertexArrays(1, &vao);
+			glDeleteBuffers(1, &vbo);
+                        return luaL_error(L, "Invalid location!");
+		}
+		glVertexAttribPointer(prop.location_index, prop.vertex_size, GL_FLOAT, GL_FALSE, stride, offset);
+		if(glGetError() == GL_INVALID_VALUE){
+			glDeleteVertexArrays(1, &vao);
+			glDeleteBuffers(1, &vbo);
+                        return luaL_error(L, "Invalid vertex size!");
+		}
+		offset += prop.vertex_size << 2;
+		glDisableVertexAttribArray(prop.location_index);
 	}
-	glVertexAttribPointer(location_index, vertex_size, GL_FLOAT, GL_FALSE, 0, nullptr);
 	// Clear VBO & VAO binding
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glDisableVertexAttribArray(location_index);
 	// Create userdata for VAO (+VBO)
 	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
 	udata[0] = vbo;
@@ -349,6 +369,10 @@ static int tgl_vao_create(lua_State* L){
 	// Return the userdata to Lua
 	return 1;
 }
+
+// Texture metatable methods
+
+// TODO
 
 int luaopen_tgl(lua_State* L){
 	// Thread-lock for safe GLFW usage
