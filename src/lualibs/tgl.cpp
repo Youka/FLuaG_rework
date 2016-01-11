@@ -71,7 +71,7 @@ static int tgl_shader_create(lua_State* L){
 	const GLenum shader_type = option_enum[luaL_checkoption(L, 1, nullptr, option_str)];
 	const char* shader_source = luaL_checkstring(L, 2);
 	// Create shader
-	GLuint shader = glCreateShader(shader_type);
+	const GLuint shader = glCreateShader(shader_type);
 	if(shader == 0)
 		return luaL_error(L, "Couldn't generate shader!");
 	// Set shader source
@@ -115,7 +115,7 @@ static int tgl_program_use(lua_State* L){
 
 static int tgl_program_uniform(lua_State* L){
 	// Get main arguments
-	GLuint program = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
+	const GLuint program = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
 	const char* location = luaL_checkstring(L, 2);
 	const std::string data_type = luaL_checkstring(L, 3);
 	// Get number of further arguments
@@ -215,7 +215,7 @@ static int tgl_program_uniform(lua_State* L){
 
 static int tgl_program_create(lua_State* L){
 	// Get arguments
-	GLuint vshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
+	const GLuint vshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
 		fshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_SHADER));
 	// Check arguments
 	GLint vshader_type, fshader_type;
@@ -224,7 +224,7 @@ static int tgl_program_create(lua_State* L){
 	if(vshader_type != GL_VERTEX_SHADER || fshader_type != GL_FRAGMENT_SHADER)
 		return luaL_error(L, "Vertex & fragment shader expected!");
 	// Create program
-	GLuint program = glCreateProgram();
+	const GLuint program = glCreateProgram();
 	if(program == 0)
 		return luaL_error(L, "Couldn't generate program!");
 	// Attach shaders to program
@@ -259,7 +259,7 @@ static int tgl_program_create(lua_State* L){
 
 // VAO metatable methods
 static int tgl_vao_free(lua_State* L){
-	GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
+	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	glDeleteVertexArrays(1, &udata[1]);
 	glDeleteBuffers(1, &udata[0]);
 	return 0;
@@ -267,7 +267,7 @@ static int tgl_vao_free(lua_State* L){
 
 static int tgl_vao_draw(lua_State* L){
 	// Get arguments
-	GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
+	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	static const char* option_str[] = {"points", "line strip", "line loop", "lines", "triangle strip", "triangle fan", "triangles", nullptr};
 	static const GLenum option_enum[] = {GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES};
 	const GLenum mode = option_enum[luaL_checkoption(L, 2, nullptr, option_str)];
@@ -371,8 +371,151 @@ static int tgl_vao_create(lua_State* L){
 }
 
 // Texture metatable methods
+static int tgl_texture_free(lua_State* L){
+	glDeleteTextures(1, reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
+	return 0;
+}
 
-// TODO
+static int tgl_texture_param(lua_State* L){
+	// Get arguments
+	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	const std::string param = luaL_checkstring(L, 2),
+		value = luaL_checkstring(L, 3);
+	// Bind texture for access
+	glBindTexture(GL_TEXTURE_2D, tex);
+	// Set texture parameters
+	if(param == "filter"){
+		if(value == "nearest"){
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}else if(value == "linear"){
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}else
+			return luaL_error(L, "Invalid filter value!");
+	}else if(param == "wrap"){
+		if(value == "clamp"){
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}else if(value == "repeat"){
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}else if(value == "mirror"){
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		}else
+			return luaL_error(L, "Invalid wrap value!");
+	}else
+		return luaL_error(L, "Invalid parameter!");
+	// Clear texture binding
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return 0;
+}
+
+static int tgl_texture_data(lua_State* L){
+	// Get arguments
+	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	if(!lua_isnoneornil(L, 2))
+		luaL_checktype(L, 2, LUA_TBOOLEAN);
+	const bool header_only = lua_toboolean(L, 2);
+	// Bind texture for access
+	glBindTexture(GL_TEXTURE_2D, tex);
+	// Get texture header
+	GLint width, height, format;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
+	// Get texture data
+	std::vector<unsigned char> data;
+	if(!header_only){
+		data.resize(width * height * (format == GL_RGB || format == GL_BGR ? 3 : 4));
+		glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data.data());
+	}
+	// Clear texture binding
+	glBindTexture(GL_TEXTURE_2D, 0);
+	// Send informations to Lua
+	lua_pushnumber(L, width);
+	lua_pushnumber(L, height);
+	switch(format){
+		case GL_RGB: lua_pushstring(L, "rgb"); break;
+		case GL_RGBA: lua_pushstring(L, "rgba"); break;
+		default: lua_pushnumber(L, format);
+	}
+	if(header_only)
+		return 3;
+	lua_pushlstring(L, reinterpret_cast<char*>(data.data()), data.size());
+	return 4;
+}
+
+static int tgl_texture_bind(lua_State* L){
+	// Set active texture
+	glActiveTexture(GL_TEXTURE0 + luaL_optinteger(L, 2, 0));
+	if(glGetError() == GL_INVALID_ENUM)
+		return luaL_error(L, "Invalid unit!");
+	// Bind texture
+	glBindTexture(GL_TEXTURE_2D, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
+	// Reset active texture
+	glActiveTexture(GL_TEXTURE0);
+	return 0;
+}
+
+static int tgl_texture_create(lua_State* L){
+	// Get arguments
+	const GLsizei width = luaL_checkinteger(L, 1),
+		height = luaL_checkinteger(L, 2);
+	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", nullptr};
+	static const GLenum option_enum[] = {GL_RGB, GL_BGR, GL_RGBA, GL_BGRA};
+	const GLenum format = option_enum[luaL_checkoption(L, 3, nullptr, option_str)];
+	size_t data_len;
+	const char* data = luaL_optlstring(L, 4, nullptr, &data_len);
+	// Check arguments
+	if(width <= 0 || height <= 0)
+		return luaL_error(L, "Negative dimensions not allowed!");
+	if(data && data_len != static_cast<size_t>(width * height * (format == GL_RGB || format == GL_BGR ? 3 : 4)))
+		return luaL_error(L, "Data size doesn't fit!");
+	// Create texture
+	GLuint tex;
+	glGenTextures(1, &tex);
+	// Fill texture
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format,  GL_UNSIGNED_BYTE, data);
+	if(glGetError() == GL_INVALID_VALUE){
+		glDeleteTextures(1, &tex);
+		return luaL_error(L, "Invalid texture value!");
+	}
+	glGenerateMipmap(GL_TEXTURE_2D);
+	// Set texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// Clear texture binding
+	glBindTexture(GL_TEXTURE_2D, 0);
+	// Create userdata for texture
+	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = tex;
+	// Fetch/create Lua tgl texture metatable
+	if(luaL_newmetatable(L, LUA_TGL_TEXTURE)){
+		lua_pushcfunction(L, tgl_texture_free); lua_setfield(L, -2, "__gc");
+		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
+		lua_pushcfunction(L, tgl_texture_param); lua_setfield(L, -2, "parameter");
+		lua_pushcfunction(L, tgl_texture_data); lua_setfield(L, -2, "data");
+		lua_pushcfunction(L, tgl_texture_bind); lua_setfield(L, -2, "bind");
+	}
+	// Bind metatable to userdata
+	lua_setmetatable(L, -2);
+	// Return the userdata to Lua
+	return 1;
+}
+
+// Framebuffer metatable methods
+static int tgl_fbo_create(lua_State* L){
+
+	// TODO
+
+	return 0;
+}
+
+// TODO: Framebuffer, clearing, depth, stencil, blend, raster, viewport
 
 int luaopen_tgl(lua_State* L){
 	// Thread-lock for safe GLFW usage
@@ -404,6 +547,8 @@ int luaopen_tgl(lua_State* L){
 		lua_pushcfunction(L, tgl_shader_create); lua_setfield(L, -2, "createshader");
 		lua_pushcfunction(L, tgl_program_create); lua_setfield(L, -2, "createprogram");
 		lua_pushcfunction(L, tgl_vao_create); lua_setfield(L, -2, "createvao");
+		lua_pushcfunction(L, tgl_texture_create); lua_setfield(L, -2, "createtexture");
+		lua_pushcfunction(L, tgl_fbo_create); lua_setfield(L, -2, "createfbo");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
