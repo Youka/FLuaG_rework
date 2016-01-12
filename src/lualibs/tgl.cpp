@@ -470,7 +470,7 @@ static int tgl_texture_create(lua_State* L){
 	const char* data = luaL_optlstring(L, 4, nullptr, &data_len);
 	// Check arguments
 	if(width <= 0 || height <= 0)
-		return luaL_error(L, "Negative dimensions not allowed!");
+		return luaL_error(L, "Invalid dimensions!");
 	if(data && data_len != static_cast<size_t>(width * height * (format == GL_RGB || format == GL_BGR ? 3 : 4)))
 		return luaL_error(L, "Data size doesn't fit!");
 	// Create texture
@@ -508,11 +508,87 @@ static int tgl_texture_create(lua_State* L){
 }
 
 // Framebuffer metatable methods
-static int tgl_fbo_create(lua_State* L){
+static int tgl_fbo_free(lua_State* L){
+	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
+	glDeleteFramebuffers(1, &udata[2]);
+	glDeleteRenderbuffers(2, &udata[0]);
+	return 0;
+}
+
+static int tgl_fbo_bind(lua_State *L){
+	glBindFramebuffer(GL_FRAMEBUFFER, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
+	return 0;
+}
+
+static int tgl_fbo_info(lua_State *L){
+	// Temporary bind renderbuffer and get data
+	glBindRenderbuffer(GL_RENDERBUFFER, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
+	GLint width, height, samples;
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
+	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, &samples);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	// Send collected data to Lua
+	lua_pushnumber(L, width);
+	lua_pushnumber(L, height);
+	lua_pushnumber(L, samples);
+	return 3;
+}
+
+static int tgl_fbo_to_texture(lua_State *L){
+	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
 
 	// TODO
 
 	return 0;
+}
+
+static int tgl_fbo_create(lua_State* L){
+	// Get arguments
+	const int width = luaL_checkinteger(L, 1),
+		height = luaL_checkinteger(L, 2),
+		samples = luaL_checkinteger(L, 3);
+	// Generate renderbuffers
+	GLuint rbo[2];
+	glGenRenderbuffers(2, rbo);
+	// Configure renderbuffers
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo[0]);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+	const GLenum err = glGetError();
+	if(err != GL_NO_ERROR){
+		glDeleteRenderbuffers(2, rbo);
+		return luaL_error(L, err == GL_INVALID_VALUE ? "Invalid dimensions!" : "Couldn't allocate memory for FBO buffers!");
+	}
+	// Generate framebuffer
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	// Bind renderbuffers to framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo[1]);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo[1]);
+	// Clear FBO & RBO bindings
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	// Create userdata for framebuffer
+	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) * 3));
+	udata[0] = rbo[0];
+	udata[1] = rbo[1];
+	udata[2] = fbo;
+	// Fetch/create Lua tgl fbo metatable
+	if(luaL_newmetatable(L, LUA_TGL_FBO)){
+		lua_pushcfunction(L, tgl_fbo_free); lua_setfield(L, -2, "__gc");
+		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
+		lua_pushcfunction(L, tgl_fbo_bind); lua_setfield(L, -2, "bind");
+		lua_pushcfunction(L, tgl_fbo_info); lua_setfield(L, -2, "info");
+		lua_pushcfunction(L, tgl_fbo_to_texture); lua_setfield(L, -2, "totexture");
+	}
+	// Bind metatable to userdata
+	lua_setmetatable(L, -2);
+	// Return the userdata to Lua
+	return 1;
 }
 
 // TODO: Framebuffer, clearing, depth, stencil, blend, raster, viewport
