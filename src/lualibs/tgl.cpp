@@ -415,9 +415,9 @@ static int tgl_texture_param(lua_State* L){
 static int tgl_texture_data(lua_State* L){
 	// Get arguments
 	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
-	if(!lua_isnoneornil(L, 2))
-		luaL_checktype(L, 2, LUA_TBOOLEAN);
-	const bool header_only = lua_toboolean(L, 2);
+	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", "none", nullptr};
+	static const GLenum option_enum[] = {GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, 0x0};
+	const GLenum request_format = option_enum[luaL_checkoption(L, 2, "none", option_str)];
 	// Bind texture for access
 	glBindTexture(GL_TEXTURE_2D, tex);
 	// Get texture header
@@ -427,9 +427,9 @@ static int tgl_texture_data(lua_State* L){
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
 	// Get texture data
 	std::vector<unsigned char> data;
-	if(!header_only){
-		data.resize(width * height * (format == GL_RGB || format == GL_BGR ? 3 : 4));
-		glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data.data());
+	if(request_format){
+		data.resize(width * height * (request_format == GL_RGB || request_format == GL_BGR ? 3 : 4));
+		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, data.data());
 	}
 	// Clear texture binding
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -439,9 +439,9 @@ static int tgl_texture_data(lua_State* L){
 	switch(format){
 		case GL_RGB: lua_pushstring(L, "rgb"); break;
 		case GL_RGBA: lua_pushstring(L, "rgba"); break;
-		default: lua_pushnumber(L, format);
+		default: lua_pushnumber(L, format);	// Should never happen
 	}
-	if(header_only)
+	if(data.empty())
 		return 3;
 	lua_pushlstring(L, reinterpret_cast<char*>(data.data()), data.size());
 	return 4;
@@ -536,7 +536,9 @@ static int tgl_fbo_info(lua_State *L){
 }
 
 static int tgl_fbo_to_texture(lua_State *L){
+	// Get argument
 	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
+	// Generate output texture
 
 	// TODO
 
@@ -547,7 +549,7 @@ static int tgl_fbo_create(lua_State* L){
 	// Get arguments
 	const int width = luaL_checkinteger(L, 1),
 		height = luaL_checkinteger(L, 2),
-		samples = luaL_checkinteger(L, 3);
+		samples = luaL_optinteger(L, 3, 0);
 	// Generate renderbuffers
 	GLuint rbo[2];
 	glGenRenderbuffers(2, rbo);
