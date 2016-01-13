@@ -337,7 +337,7 @@ static int tgl_vao_create(lua_State* L){
 	// Configure VAO
 	glBindVertexArray(vao);
 	const GLsizei stride = std::accumulate(props.cbegin(), props.cend(), 0, [](const int accum, const Property& prop){return accum + prop.vertex_size;}) << 2;
-	GLint* offset = 0;
+	GLbyte* offset = 0;
 	for(const auto& prop : props){
 		glEnableVertexAttribArray(prop.location_index);
 		if(glGetError() != GL_NO_ERROR){
