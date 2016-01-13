@@ -47,14 +47,19 @@ static int tgl_context_free(lua_State* L){
 }
 
 static int tgl_context_activate(lua_State* L){
+	// Get argument
+	const bool on = lua_isnoneornil(L, 2) ? true : (luaL_checktype(L, 2, LUA_TBOOLEAN), lua_toboolean(L, 2));
 	// Set current GL context to use
-	glfwMakeContextCurrent(*reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	// Initialize GLEW
-	glewExperimental = GL_TRUE;
-	if(glewInit() != GLEW_OK)
-		return luaL_error(L, "Couldn't initialize GLEW!");
-	// Clear all errors caused by GLFW & GLEW initializations
-	glGetError();
+	glfwMakeContextCurrent(on ? *reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)) : nullptr);
+	// Prepare GL when context is current
+	if(on){
+		// Initialize GLEW
+		glewExperimental = GL_TRUE;
+		if(glewInit() != GLEW_OK)
+			return luaL_error(L, "Couldn't initialize GLEW!");
+		// Clear all errors caused by GLFW & GLEW initializations
+		glGetError();
+	}
 	return 0;
 }
 
