@@ -239,7 +239,7 @@ static int tgl_program_create(lua_State* L){
 	glLinkProgram(program);
 	GLint program_status;
 	glGetProgramiv(program, GL_LINK_STATUS, &program_status);
-	if(program_status == GL_FALSE){
+	if(program_status == GL_FALSE || (glValidateProgram(program), glGetProgramiv(program, GL_VALIDATE_STATUS, &program_status), program_status) == GL_FALSE){
 		GLint program_info_length;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &program_info_length);
 		std::string program_info(program_info_length, '\0');
@@ -352,7 +352,6 @@ static int tgl_vao_create(lua_State* L){
                         return luaL_error(L, "Invalid vertex size!");
 		}
 		offset += prop.vertex_size << 2;
-		glDisableVertexAttribArray(prop.location_index);
 	}
 	// Create userdata for VAO (+VBO)
 	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
@@ -654,6 +653,13 @@ static int tgl_clear(lua_State* L){
 	return 0;
 }
 
+static int tgl_viewport(lua_State* L){
+	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
+        if(glGetError() == GL_INVALID_VALUE)
+		return luaL_error(L, "Invalid rectangle!");
+	return 0;
+}
+
 // TODO: depth, stencil, blend, raster, viewport
 
 int luaopen_tgl(lua_State* L){
@@ -689,6 +695,7 @@ int luaopen_tgl(lua_State* L){
 		lua_pushcfunction(L, tgl_texture_create); lua_setfield(L, -2, "createtexture");
 		lua_pushcfunction(L, tgl_fbo_create); lua_setfield(L, -2, "createfbo");
 		lua_pushcfunction(L, tgl_clear); lua_setfield(L, -2, "clear");
+		lua_pushcfunction(L, tgl_viewport); lua_setfield(L, -2, "viewport");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
