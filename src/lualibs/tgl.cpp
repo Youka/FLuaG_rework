@@ -378,12 +378,12 @@ static int tgl_texture_free(lua_State* L){
 static int tgl_texture_param(lua_State* L){
 	// Get arguments
 	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
-	const std::string param = luaL_checkstring(L, 2),
-		value = luaL_checkstring(L, 3);
+	const std::string param = luaL_checkstring(L, 2);
 	// Bind texture for access
 	glBindTexture(GL_TEXTURE_2D, tex);
 	// Set texture parameters
 	if(param == "filter"){
+		const std::string value = luaL_checkstring(L, 3);
 		if(value == "nearest"){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -393,6 +393,7 @@ static int tgl_texture_param(lua_State* L){
 		}else
 			return luaL_error(L, "Invalid filter value!");
 	}else if(param == "wrap"){
+		const std::string value = luaL_checkstring(L, 3);
 		if(value == "clamp"){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -404,6 +405,8 @@ static int tgl_texture_param(lua_State* L){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 		}else
 			return luaL_error(L, "Invalid wrap value!");
+	}else if(param == "mipmaps"){
+		glGenerateMipmap(GL_TEXTURE_2D);
 	}else
 		return luaL_error(L, "Invalid parameter!");
 	return 0;
@@ -478,7 +481,6 @@ static int tgl_texture_create(lua_State* L){
 		glDeleteTextures(1, &tex);
 		return luaL_error(L, "Invalid texture value!");
 	}
-	glGenerateMipmap(GL_TEXTURE_2D);
 	// Set texture parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -564,7 +566,6 @@ static int tgl_fbo_to_texture(lua_State *L){
 	// Delete no longer needed FBO
 	glDeleteFramebuffers(1, &fbo);
 	// Configure texture
-	glGenerateMipmap(GL_TEXTURE_2D);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -611,6 +612,13 @@ static int tgl_fbo_create(lua_State* L){
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo[1]);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo[1]);
+	// Check FBO completeness
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &fbo);
+		glDeleteRenderbuffers(2, rbo);
+		return luaL_error(L, "Framebuffer couldn't get completed!");
+	}
 	// Reset FBO to default
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// Create userdata for FBO
