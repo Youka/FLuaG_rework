@@ -428,6 +428,7 @@ static int tgl_texture_data(lua_State* L){
 	// Get texture data
 	std::vector<unsigned char> data;
 	if(request_format){
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		data.resize(width * height * (request_format == GL_RGB || request_format == GL_BGR ? 3 : 4));
 		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, data.data());
 	}
@@ -529,23 +530,15 @@ static int tgl_fbo_info(lua_State *L){
 	return 3;
 }
 
-static int tgl_fbo_to_texture(lua_State *L){
-	// Get argument
+static int tgl_fbo_blit(lua_State *L){
+	// Get arguments
 	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
+	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_TEXTURE));
 	// Get source FBO dimensions
 	glBindRenderbuffer(GL_RENDERBUFFER, udata[0]);
 	GLint width, height;
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
-	// Generate & prepare output texture
-	GLuint tex;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	if(glGetError() == GL_INVALID_VALUE){
-		glDeleteTextures(1, &tex);
-		return luaL_error(L, "Couldn't generate texture!");
-	}
 	// Generate & bind destination FBO
 	GLuint fbo;
 	glGenFramebuffers(1, &fbo);
@@ -558,31 +551,13 @@ static int tgl_fbo_to_texture(lua_State *L){
 	if(glGetError() == GL_INVALID_OPERATION){
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDeleteFramebuffers(1, &fbo);
-		glDeleteTextures(1, &tex);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
 	}
 	// Reset FBOs to default
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// Delete no longer needed FBO
 	glDeleteFramebuffers(1, &fbo);
-	// Configure texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	// Create userdata for texture
-	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = tex;
-	// Fetch/create Lua tgl texture metatable
-	if(luaL_newmetatable(L, LUA_TGL_TEXTURE)){
-		lua_pushcfunction(L, tgl_texture_free); lua_setfield(L, -2, "__gc");
-		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_texture_param); lua_setfield(L, -2, "parameter");
-		lua_pushcfunction(L, tgl_texture_data); lua_setfield(L, -2, "data");
-		lua_pushcfunction(L, tgl_texture_bind); lua_setfield(L, -2, "bind");
-	}
-	// Bind metatable to userdata
-	lua_setmetatable(L, -2);
-	// Return the userdata to Lua
+	// Return input texture
 	return 1;
 }
 
@@ -632,7 +607,7 @@ static int tgl_fbo_create(lua_State* L){
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
 		lua_pushcfunction(L, tgl_fbo_bind); lua_setfield(L, -2, "bind");
 		lua_pushcfunction(L, tgl_fbo_info); lua_setfield(L, -2, "info");
-		lua_pushcfunction(L, tgl_fbo_to_texture); lua_setfield(L, -2, "totexture");
+		lua_pushcfunction(L, tgl_fbo_blit); lua_setfield(L, -2, "blit");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -640,6 +615,7 @@ static int tgl_fbo_create(lua_State* L){
 	return 1;
 }
 
+// General functions
 static int tgl_clear(lua_State* L){
 	// Get main argument
 	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
