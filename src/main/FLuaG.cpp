@@ -110,6 +110,13 @@ namespace FLuaG{
 		this->SetUserdata(userdata);
 	}
 
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+	Script::~Script(){
+		this->Lrun_prom.set_value(-1);
+		this->Lrun.join();
+	}
+#endif
+
 	Script::Script(Script&& other) : Script(){
 		*this = std::move(other);
 	}
@@ -161,7 +168,15 @@ namespace FLuaG{
 		if(!this->userdata.empty())
 			lua_pushstring(LSTATE, this->userdata.c_str());
 		// Call function/file
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+		this->Lrun_prom.set_value(this->userdata.empty() ? 0 : 1);
+		const bool err = this->main_fut.get();
+		this->main_prom = std::promise<bool>();
+		this->main_fut = this->main_prom.get_future();
+		if(err){
+#else
 		if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+#endif
 			const std::string err(lua_tostring(LSTATE, -1));
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
@@ -179,7 +194,15 @@ namespace FLuaG{
 		if(!this->userdata.empty())
 			lua_pushstring(LSTATE, this->userdata.c_str());
 		// Call function/script
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+		this->Lrun_prom.set_value(this->userdata.empty() ? 0 : 1);
+		const bool err = this->main_fut.get();
+		this->main_prom = std::promise<bool>();
+		this->main_fut = this->main_prom.get_future();
+		if(err){
+#else
 		if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+#endif
 			const std::string err(lua_tostring(LSTATE, -1));
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
@@ -200,7 +223,15 @@ namespace FLuaG{
 		std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
 		this->lua_pushimage(image_data_shared, stride);
 		lua_pushinteger(LSTATE, ms);
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+		this->Lrun_prom.set_value(2);
+		const bool err = this->main_fut.get();
+		this->main_prom = std::promise<bool>();
+		this->main_fut = this->main_prom.get_future();
+		if(err){
+#else
 		if(lua_pcall(LSTATE, 2, 0, 0)){
+#endif
 			const std::string err(lua_tostring(LSTATE, -1));
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));

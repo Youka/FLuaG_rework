@@ -18,6 +18,10 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <string>
 #include <memory>
 #include <lua.hpp>
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+	#include <thread>
+	#include <future>
+#endif
 
 namespace FLuaG{
 	// Simple local exception
@@ -55,11 +59,30 @@ namespace FLuaG{
 			std::string userdata;
 			// Image data to Lua object
 			void lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride);
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+			std::promise<bool> main_prom;
+			std::future<bool> main_fut = main_prom.get_future();
+			std::promise<int> Lrun_prom;
+			std::future<int> Lrun_fut = Lrun_prom.get_future();
+			std::thread Lrun = std::thread([this](void){
+				int arg;
+				while((arg = this->Lrun_fut.get()) >= 0){
+					this->Lrun_prom = std::promise<int>();
+					this->Lrun_fut = this->Lrun_prom.get_future();
+					this->main_prom.set_value(lua_pcall(this->L.get(), arg, 0, 0));
+				}
+				this->L.reset();	// Garbage collection runs Lua too (__gc metamethods)
+			});
+#endif
 		public:
 			// Ctor
 			Script();
 			Script(const std::string& filename) throw(exception);
 			Script(const std::string& filename, const VideoHeader header, const std::string& userdata) throw(exception);
+			// Dtor
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+			~Script();
+#endif
 			// No copy
 			Script(const Script&) = delete;
 			Script& operator=(const Script&) = delete;
