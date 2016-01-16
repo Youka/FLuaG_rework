@@ -363,7 +363,10 @@ static int tgl_vao_create(lua_State* L){
 
 // Texture metatable methods
 static int tgl_texture_free(lua_State* L){
-	glDeleteTextures(1, reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
+	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	glDeleteTextures(1, &udata[0]);
+	if(udata[1])
+		glDeleteBuffers(1, &udata[1]);
 	return 0;
 }
 
@@ -406,25 +409,18 @@ static int tgl_texture_param(lua_State* L){
 
 static int tgl_texture_data(lua_State* L){
 	// Get arguments
-	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", "none", nullptr};
 	static const GLenum option_enum[] = {GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, 0x0};
 	const GLenum request_format = option_enum[luaL_checkoption(L, 2, "none", option_str)];
 	// Bind texture for access
-	glBindTexture(GL_TEXTURE_2D, tex);
+	glBindTexture(GL_TEXTURE_2D, udata[0]);
 	// Get texture header
 	GLint width, height, format;
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
-	// Get texture data
-	std::vector<unsigned char> data;
-	if(request_format){
-		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		data.resize(width * height * (request_format == GL_RGB || request_format == GL_BGR ? 3 : 4));
-		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, data.data());
-	}
-	// Send informations to Lua
+	// Push texture header to Lua
 	lua_pushnumber(L, width);
 	lua_pushnumber(L, height);
 	switch(format){
@@ -432,10 +428,45 @@ static int tgl_texture_data(lua_State* L){
 		case GL_RGBA: lua_pushstring(L, "rgba"); break;
 		default: lua_pushnumber(L, format);	// Should never happen
 	}
-	if(data.empty())
-		return 3;
-	lua_pushlstring(L, reinterpret_cast<char*>(data.data()), data.size());
-	return 4;
+	// Get+push optional texture data & return to Lua
+	if(request_format){
+		// Calculate data size
+		const size_t data_size = width * height * (request_format == GL_RGB || request_format == GL_BGR ? 3 : 4);
+		// Create/bind PBO
+		if(udata[1]){
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, udata[1]);
+			GLint buffer_size;
+			glGetBufferParameteriv(GL_PIXEL_PACK_BUFFER, GL_BUFFER_SIZE, &buffer_size);
+			if(static_cast<size_t>(buffer_size) < data_size){
+				glDeleteBuffers(1, &udata[1]);
+				udata[1] = 0;
+			}
+		}
+		if(!udata[1]){
+			GLuint pbo;
+			glGenBuffers(1, &pbo);
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+			glBufferData(GL_PIXEL_PACK_BUFFER, data_size, nullptr, GL_STREAM_READ);	// Reserve enough memory for all supported formats
+			if(glGetError() == GL_OUT_OF_MEMORY){
+				glDeleteBuffers(1, &pbo);
+				luaL_error(L, "Couldn't allocate memory for PBO!");
+			}
+			udata[1] = pbo;
+		}
+		// Read texture to PBO
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, nullptr);
+		// Copy/push PBO to Lua
+		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		if(glGetError() == GL_OUT_OF_MEMORY || !pbo_map)
+			luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
+		lua_pushlstring(L, reinterpret_cast<char*>(pbo_map), data_size);
+		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		// Return header + data to Lua
+		return 4;
+	}
+	// Return only the header to Lua
+	return 3;
 }
 
 static int tgl_texture_bind(lua_State* L){
@@ -445,8 +476,6 @@ static int tgl_texture_bind(lua_State* L){
 		return luaL_error(L, "Invalid unit!");
 	// Bind texture
 	glBindTexture(GL_TEXTURE_2D, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
-	// Reset active texture
-	glActiveTexture(GL_TEXTURE0);
 	return 0;
 }
 
@@ -480,7 +509,9 @@ static int tgl_texture_create(lua_State* L){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	// Create userdata for texture
-	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = tex;
+	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
+	udata[0] = tex;
+	udata[1] = 0;	// Reserved for PBO on data access
 	// Fetch/create Lua tgl texture metatable
 	if(luaL_newmetatable(L, LUA_TGL_TEXTURE)){
 		lua_pushcfunction(L, tgl_texture_free); lua_setfield(L, -2, "__gc");
