@@ -650,7 +650,7 @@ static int tgl_clear(lua_State* L){
 			glClearColor(luaL_optnumber(L, 2, 0), luaL_optnumber(L, 3, 0), luaL_optnumber(L, 4, 0), luaL_optnumber(L, 5, 0));
 			break;
 		case GL_DEPTH_BUFFER_BIT:
-			glClearDepth(luaL_optnumber(L, 2, 0));
+			glClearDepth(luaL_optnumber(L, 2, 1));
 			break;
 		case GL_STENCIL_BUFFER_BIT:
 			glClearStencil(luaL_optinteger(L, 2, 0));
@@ -667,7 +667,41 @@ static int tgl_viewport(lua_State* L){
 	return 0;
 }
 
-// TODO: depth, stencil, blend, raster, viewport (tests, funcs)
+static int tgl_size(lua_State* L){
+	static const char* option_str[] = {"points", "lines", nullptr};
+	static const GLenum option_enum[] = {GL_POINTS, GL_LINES};
+	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
+		case GL_POINTS:
+			glPointSize(luaL_checknumber(L, 2));
+			break;
+		case GL_LINES:
+			glLineWidth(luaL_checknumber(L, 2));
+			break;
+	}
+        if(glGetError() == GL_INVALID_VALUE)
+		return luaL_error(L, "Size have to be greater than zero!");
+	return 0;
+}
+
+static int tgl_mode(lua_State* L){
+	static const char* option_str[] = {"point", "line", "fill", nullptr};
+	static const GLenum option_enum[] = {GL_POINT, GL_LINE, GL_FILL};
+	glPolygonMode(GL_FRONT_AND_BACK, option_enum[luaL_checkoption(L, 1, nullptr, option_str)]);
+	return 0;
+}
+
+static int tgl_scissor(lua_State* L){
+	if(lua_gettop(L)){
+		glScissor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
+		if(glGetError() == GL_INVALID_VALUE)
+			return luaL_error(L, "Invalid rectangle!");
+		glEnable(GL_SCISSOR_TEST);
+	}else
+		glDisable(GL_SCISSOR_TEST);
+	return 0;
+}
+
+// TODO: depth, stencil, blend, logic, state informations (tests, funcs)
 
 int luaopen_tgl(lua_State* L){
 	// Initialize GLFW with general properties
@@ -701,6 +735,9 @@ int luaopen_tgl(lua_State* L){
 		lua_pushcfunction(L, tgl_fbo_create); lua_setfield(L, -2, "createfbo");
 		lua_pushcfunction(L, tgl_clear); lua_setfield(L, -2, "clear");
 		lua_pushcfunction(L, tgl_viewport); lua_setfield(L, -2, "viewport");
+		lua_pushcfunction(L, tgl_size); lua_setfield(L, -2, "size");
+		lua_pushcfunction(L, tgl_mode); lua_setfield(L, -2, "mode");
+		lua_pushcfunction(L, tgl_scissor); lua_setfield(L, -2, "scissor");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
