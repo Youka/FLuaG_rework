@@ -38,7 +38,7 @@ static unsigned context_count = 0;
 
 // Context metatable methods
 static int tgl_context_free(lua_State* L){
-	glfwDestroyWindow(*reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	if(!--context_count)
 		glfwTerminate();
 	return 0;
@@ -46,7 +46,7 @@ static int tgl_context_free(lua_State* L){
 
 static int tgl_context_activate(lua_State* L){
 	// Set current GL context to use
-	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr :  *reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr :  *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	// Further context preparations
 	if(glfwGetCurrentContext()){
 		// Initialize GLEW
@@ -61,7 +61,7 @@ static int tgl_context_activate(lua_State* L){
 
 // Shader metatable methods
 static int tgl_shader_free(lua_State* L){
-	glDeleteShader(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)));
+	glDeleteShader(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)));
 	return 0;
 }
 
@@ -90,7 +90,7 @@ static int tgl_shader_create(lua_State* L){
 		return luaL_error(L, shader_info.c_str());
 	}
 	// Create userdata for GL shader
-	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = shader;
+	*static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = shader;
 	// Fetch/create Lua tgl shader metatable
 	if(luaL_newmetatable(L, LUA_TGL_SHADER)){
 		lua_pushcfunction(L, tgl_shader_free); lua_setfield(L, -2, "__gc");
@@ -103,12 +103,12 @@ static int tgl_shader_create(lua_State* L){
 
 // Program metatable methods
 static int tgl_program_free(lua_State* L){
-	glDeleteProgram(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
+	glDeleteProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
 	return 0;
 }
 
 static int tgl_program_use(lua_State* L){
-	glUseProgram(*reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
+	glUseProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
         if(glGetError() == GL_INVALID_OPERATION)
 		return luaL_error(L, "Can't use this program!");
 	return 0;
@@ -116,7 +116,7 @@ static int tgl_program_use(lua_State* L){
 
 static int tgl_program_uniform(lua_State* L){
 	// Get main arguments
-	const GLuint program = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
+	const GLuint program = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
 	const char* location = luaL_checkstring(L, 2);
 	const std::string data_type = luaL_checkstring(L, 3);
 	// Get number of further arguments
@@ -216,8 +216,8 @@ static int tgl_program_uniform(lua_State* L){
 
 static int tgl_program_create(lua_State* L){
 	// Get arguments
-	const GLuint vshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
-		fshader = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_SHADER));
+	const GLuint vshader = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
+		fshader = *static_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_SHADER));
 	// Check arguments
 	GLint vshader_type, fshader_type;
 	glGetShaderiv(vshader, GL_SHADER_TYPE, &vshader_type);
@@ -244,7 +244,7 @@ static int tgl_program_create(lua_State* L){
 		return luaL_error(L, program_info.c_str());
 	}
 	// Create userdata for GL program
-	*reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = program;
+	*static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = program;
 	// Fetch/create Lua tgl program metatable
 	if(luaL_newmetatable(L, LUA_TGL_PROGRAM)){
 		lua_pushcfunction(L, tgl_program_free); lua_setfield(L, -2, "__gc");
@@ -260,7 +260,7 @@ static int tgl_program_create(lua_State* L){
 
 // VAO metatable methods
 static int tgl_vao_free(lua_State* L){
-	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
+	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	glDeleteVertexArrays(1, &udata[1]);
 	glDeleteBuffers(1, &udata[0]);
 	return 0;
@@ -268,7 +268,7 @@ static int tgl_vao_free(lua_State* L){
 
 static int tgl_vao_draw(lua_State* L){
 	// Get arguments
-	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
+	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	static const char* option_str[] = {"points", "line strip", "line loop", "lines", "triangle strip", "triangle fan", "triangles", nullptr};
 	static const GLenum option_enum[] = {GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES};
 	const GLenum mode = option_enum[luaL_checkoption(L, 2, nullptr, option_str)];
@@ -350,7 +350,7 @@ static int tgl_vao_create(lua_State* L){
 		offset += prop.vertex_size << 2;
 	}
 	// Create userdata for VAO (+VBO)
-	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
+	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
 	udata[0] = vbo;
 	udata[1] = vao;
 	// Fetch/create Lua tgl vao metatable
@@ -367,7 +367,7 @@ static int tgl_vao_create(lua_State* L){
 
 // Texture metatable methods
 static int tgl_texture_free(lua_State* L){
-	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	glDeleteTextures(1, &udata[0]);
 	if(udata[1])
 		glDeleteBuffers(1, &udata[1]);
@@ -376,7 +376,7 @@ static int tgl_texture_free(lua_State* L){
 
 static int tgl_texture_param(lua_State* L){
 	// Get arguments
-	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	const std::string param = luaL_checkstring(L, 2);
 	// Bind texture for access
 	glBindTexture(GL_TEXTURE_2D, tex);
@@ -413,7 +413,7 @@ static int tgl_texture_param(lua_State* L){
 
 static int tgl_texture_data(lua_State* L){
 	// Get arguments
-	GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
+	GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", "none", nullptr};
 	static const GLenum option_enum[] = {GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, 0x0};
 	const GLenum request_format = option_enum[luaL_checkoption(L, 2, "none", option_str)];
@@ -464,7 +464,7 @@ static int tgl_texture_data(lua_State* L){
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if(glGetError() == GL_OUT_OF_MEMORY || !pbo_map)
 			luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
-		lua_pushlstring(L, reinterpret_cast<char*>(pbo_map), data_size);
+		lua_pushlstring(L, static_cast<char*>(pbo_map), data_size);
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		// Return header + data to Lua
 		return 4;
@@ -479,7 +479,7 @@ static int tgl_texture_bind(lua_State* L){
 	if(glGetError() == GL_INVALID_ENUM)
 		return luaL_error(L, "Invalid unit!");
 	// Bind texture
-	glBindTexture(GL_TEXTURE_2D, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
+	glBindTexture(GL_TEXTURE_2D, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
 	return 0;
 }
 
@@ -513,7 +513,7 @@ static int tgl_texture_create(lua_State* L){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	// Create userdata for texture
-	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
+	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
 	udata[0] = tex;
 	udata[1] = 0;	// Reserved for PBO on data access
 	// Fetch/create Lua tgl texture metatable
@@ -532,20 +532,20 @@ static int tgl_texture_create(lua_State* L){
 
 // Framebuffer metatable methods
 static int tgl_fbo_free(lua_State* L){
-	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
+	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
 	glDeleteFramebuffers(1, &udata[2]);
 	glDeleteRenderbuffers(2, &udata[0]);
 	return 0;
 }
 
 static int tgl_fbo_bind(lua_State *L){
-	glBindFramebuffer(GL_FRAMEBUFFER, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
+	glBindFramebuffer(GL_FRAMEBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
 	return 0;
 }
 
 static int tgl_fbo_info(lua_State *L){
 	// Temporary bind RBO and get data
-	glBindRenderbuffer(GL_RENDERBUFFER, *reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
+	glBindRenderbuffer(GL_RENDERBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
 	GLint width, height, samples;
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
@@ -559,8 +559,8 @@ static int tgl_fbo_info(lua_State *L){
 
 static int tgl_fbo_blit(lua_State *L){
 	// Get arguments
-	const GLuint* udata = reinterpret_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
-	const GLuint tex = *reinterpret_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_TEXTURE));
+	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
+	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_TEXTURE));
 	// Get source FBO dimensions
 	glBindRenderbuffer(GL_RENDERBUFFER, udata[0]);
 	GLint width, height;
@@ -624,7 +624,7 @@ static int tgl_fbo_create(lua_State* L){
 	// Reset FBO to default
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// Create userdata for FBO
-	GLuint* udata = reinterpret_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) * 3));
+	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) * 3));
 	udata[0] = rbo[0];
 	udata[1] = rbo[1];
 	udata[2] = fbo;
@@ -746,9 +746,56 @@ static int tgl_depth(lua_State* L){
 
 static int tgl_stencil(lua_State* L){
 	if(lua_gettop(L)){
-
-		// TODO
-
+		// Check argument
+		luaL_checktype(L, 1, LUA_TTABLE);
+		// Set stencil function
+		lua_getfield(L, 1, "test_function");
+		lua_getfield(L, 1, "test_reference");
+		lua_getfield(L, 1, "test_mask");
+		if(!(lua_isnil(L, -3) && lua_isnil(L, -2) && lua_isnil(L, -1))){
+			static const char* option_str[] = {"never", "less", "less equal", "greater", "greater equal", "equal", "not equal", "always", nullptr};
+			static const GLenum option_enum[] = {GL_NEVER, GL_LESS, GL_LEQUAL, GL_GREATER, GL_GEQUAL, GL_EQUAL, GL_NOTEQUAL, GL_ALWAYS};
+			GLenum func;
+			GLint ref, mask;
+			if(lua_isnil(L, -3))
+				glGetIntegerv(GL_STENCIL_FUNC, reinterpret_cast<GLint*>(&func));
+			else
+				func = option_enum[luaL_checkoption(L, -3, nullptr, option_str)];
+			if(lua_isnil(L, -2))
+				glGetIntegerv(GL_STENCIL_REF, &ref);
+			else
+				ref = luaL_checkinteger(L, -2);
+			if(lua_isnil(L, -1))
+				glGetIntegerv(GL_STENCIL_VALUE_MASK, &mask);
+			else
+				mask = luaL_checkinteger(L, -1);
+			glStencilFunc(func, ref, mask);
+		}
+		lua_pop(L, 3);
+		// Set stencil operation
+		lua_getfield(L, 1, "stencil_fail");
+		lua_getfield(L, 1, "depth_fail");
+		lua_getfield(L, 1, "stencil_depth_pass");
+		if(!(lua_isnil(L, -3) && lua_isnil(L, -2) && lua_isnil(L, -1))){
+			static const char* op_option_str[] = {"keep", "zero", "replace", "increment", "increment wrap", "decrement", "decrement wrap", "invert", nullptr};
+			static const GLenum op_option_enum[] = {GL_KEEP, GL_ZERO, GL_REPLACE, GL_INCR, GL_INCR_WRAP, GL_DECR, GL_DECR_WRAP, GL_INVERT};
+			GLenum sfail, dfail, sdpass;
+			if(lua_isnil(L, -3))
+				glGetIntegerv(GL_STENCIL_FAIL, reinterpret_cast<GLint*>(&sfail));
+			else
+				sfail = op_option_enum[luaL_checkoption(L, -3, nullptr, op_option_str)];
+			if(lua_isnil(L, -2))
+				glGetIntegerv(GL_STENCIL_PASS_DEPTH_FAIL, reinterpret_cast<GLint*>(&dfail));
+			else
+				dfail = op_option_enum[luaL_checkoption(L, -2, nullptr, op_option_str)];
+			if(lua_isnil(L, -1))
+				glGetIntegerv(GL_STENCIL_PASS_DEPTH_PASS, reinterpret_cast<GLint*>(&sdpass));
+			else
+				sdpass = op_option_enum[luaL_checkoption(L, -1, nullptr, op_option_str)];
+			glStencilOp(sfail, dfail, sdpass);
+		}
+		lua_pop(L, 3);
+		// Enable stenciling
 		glEnable(GL_STENCIL_TEST);
 	}else
 		glDisable(GL_STENCIL_TEST);
@@ -811,7 +858,7 @@ int luaopen_tgl(lua_State* L){
 	if(!window)
 		return luaL_error(L, "Couldn't create GL context!");
 	// Create userdata for GL context
-	GLFWwindow** udata = reinterpret_cast<GLFWwindow**>(lua_newuserdata(L, sizeof(GLFWwindow*)));
+	GLFWwindow** udata = static_cast<GLFWwindow**>(lua_newuserdata(L, sizeof(GLFWwindow*)));
 	*udata = window;
 	// Fetch/create Lua tgl context metatable
 	if(luaL_newmetatable(L, LUA_TGL_CONTEXT)){

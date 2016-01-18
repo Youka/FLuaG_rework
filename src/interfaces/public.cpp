@@ -28,7 +28,7 @@ fluag_h fluag_create(void){
 int fluag_load_file(fluag_h F, const char* filename, char* warning){
 	if(F)
 		try{
-			reinterpret_cast<FLuaG::Script*>(F)->LoadFile(filename);
+			static_cast<FLuaG::Script*>(F)->LoadFile(filename);
 		}catch(FLuaG::exception e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
@@ -40,7 +40,7 @@ int fluag_load_file(fluag_h F, const char* filename, char* warning){
 int fluag_load_script(fluag_h F, const char* script, char* warning){
 	if(F)
 		try{
-			reinterpret_cast<FLuaG::Script*>(F)->LoadScript(script);
+			static_cast<FLuaG::Script*>(F)->LoadScript(script);
 		}catch(FLuaG::exception e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
@@ -51,18 +51,18 @@ int fluag_load_script(fluag_h F, const char* script, char* warning){
 
 void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames){
 	if(F)
-		reinterpret_cast<FLuaG::Script*>(F)->SetVideo({width, height, has_alpha, fps, frames});
+		static_cast<FLuaG::Script*>(F)->SetVideo({width, height, has_alpha, fps, frames});
 }
 
 void fluag_set_userdata(fluag_h F, const char* userdata){
 	if(F)
-		reinterpret_cast<FLuaG::Script*>(F)->SetUserdata(userdata);
+		static_cast<FLuaG::Script*>(F)->SetUserdata(userdata);
 }
 
 int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, unsigned long ms, char* warning){
 	if(F)
 		try{
-			reinterpret_cast<FLuaG::Script*>(F)->ProcessFrame(image_data, stride, ms);
+			static_cast<FLuaG::Script*>(F)->ProcessFrame(image_data, stride, ms);
 		}catch(FLuaG::exception e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
@@ -73,7 +73,7 @@ int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, u
 
 void fluag_destroy(fluag_h F){
 	if(F)
-		delete reinterpret_cast<FLuaG::Script*>(F);
+		delete static_cast<FLuaG::Script*>(F);
 }
 
 const char* fluag_get_version(void){

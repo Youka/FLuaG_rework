@@ -28,12 +28,12 @@ namespace VS{
 	// Filter initialization
 	void VS_CC init_filter(VSMap*, VSMap*, void** inst_data, VSNode* node, VSCore*, const VSAPI* vsapi){
 		// Set output clip informations
-		vsapi->setVideoInfo(reinterpret_cast<InstanceData*>(*inst_data)->vi, 1, node);
+		vsapi->setVideoInfo(static_cast<InstanceData*>(*inst_data)->vi, 1, node);
 	}
 
 	// Frame filtering
 	const VSFrameRef* VS_CC get_frame(int n, int activationReason, void** inst_data, void**, VSFrameContext* frame_ctx, VSCore* core, const VSAPI* vsapi){
-		InstanceData* data = reinterpret_cast<InstanceData*>(*inst_data);
+		InstanceData* data = static_cast<InstanceData*>(*inst_data);
 		// Frame creation
 		if(activationReason == arInitial)
 			// Request needed input frames
@@ -58,7 +58,7 @@ namespace VS{
 
 	// Filter destruction
 	void VS_CC free_filter(void* inst_data, VSCore*, const VSAPI*){
-		delete reinterpret_cast<InstanceData*>(inst_data);
+		delete static_cast<InstanceData*>(inst_data);
 	}
 
 	// Filter creation

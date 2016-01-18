@@ -27,19 +27,19 @@ struct ImageData{
 
 // Metatable methods
 static int image_data_delete(lua_State* L){
-	delete *reinterpret_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
+	delete *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	return 0;
 }
 
 static int image_data_size(lua_State* L){
-	ImageData* udata = *reinterpret_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
+	ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	lua_pushinteger(L, udata->height * udata->rowsize);
 	return 1;
 }
 
 static int image_data_access(lua_State* L){
 	// Get arguments
-	ImageData* udata = *reinterpret_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
+	ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	size_t data_len;
 	const unsigned char* data = reinterpret_cast<const unsigned char*>(luaL_optlstring(L, 2, nullptr, &data_len));
 	// Check data are still alive
@@ -82,7 +82,7 @@ static int image_data_access(lua_State* L){
 namespace FLuaG{
 	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride){
 		// Create & push image data as Lua userdata
-		ImageData** udata = reinterpret_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*)));
+		ImageData** udata = static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*)));
 		*udata = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable
 		if(luaL_newmetatable(LSTATE, LUA_IMAGE_DATA)){

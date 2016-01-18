@@ -26,7 +26,7 @@ namespace AVS{
 
 	// Filter finished
 	void AVSC_CC free_filter(AVS_FilterInfo* filter_info){
-		delete reinterpret_cast<FLuaG::Script*>(filter_info->user_data);
+		delete static_cast<FLuaG::Script*>(filter_info->user_data);
 	}
 
 	// Frame filtering
@@ -37,7 +37,7 @@ namespace AVS{
 		avs_library->avs_make_writable(filter_info->env, &frame);
 		// Render on frame
 		try{
-			reinterpret_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(avs_get_write_ptr(frame), avs_get_pitch(frame), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
+			static_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(avs_get_write_ptr(frame), avs_get_pitch(frame), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
 		}catch(FLuaG::exception e){
 			filter_info->error = avs_library->avs_save_string(filter_info->env, e.what(), -1);
 			// Because the AVS C API error handling is broken
