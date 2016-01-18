@@ -23,6 +23,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #if LUA_VERSION_NUM <= 501
 	#define lua_rawlen lua_objlen
 #endif
+#define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))
 
 // Unique names for Lua metatables
 #define LUA_TGL_CONTEXT "tgl_context"
@@ -45,13 +46,16 @@ static int tgl_context_free(lua_State* L){
 
 static int tgl_context_activate(lua_State* L){
 	// Set current GL context to use
-	glfwMakeContextCurrent(*reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	// Initialize GLEW
-	glewExperimental = GL_TRUE;
-	if(glewInit() != GLEW_OK)
-		return luaL_error(L, "Couldn't initialize GLEW!");
-	// Clear all errors caused by GLFW & GLEW initializations
-	glGetError();
+	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr :  *reinterpret_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	// Further context preparations
+	if(glfwGetCurrentContext()){
+		// Initialize GLEW
+		glewExperimental = GL_TRUE;
+		if(glewInit() != GLEW_OK)
+			return luaL_error(L, "Couldn't initialize GLEW!");
+		// Clear all errors caused by GLFW & GLEW initializations
+		glGetError();
+	}
 	return 0;
 }
 
@@ -701,7 +705,93 @@ static int tgl_scissor(lua_State* L){
 	return 0;
 }
 
-// TODO: depth, stencil, blend, logic, state informations (tests, funcs)
+static int tgl_logic(lua_State* L){
+	if(lua_gettop(L)){
+		static const char* option_str[] = {"clear", "set", "copy", "copy inverted", "noop", "invert", "and", "nand", "or", "nor", "xor", "equiv", "and reverse", "and inverted", "or reverse", "or inverted", nullptr};
+		static const GLenum option_enum[] = {GL_CLEAR, GL_SET, GL_COPY, GL_COPY_INVERTED, GL_NOOP, GL_INVERT, GL_AND, GL_NAND, GL_OR, GL_NOR, GL_XOR, GL_EQUIV, GL_AND_REVERSE, GL_AND_INVERTED, GL_OR_REVERSE, GL_OR_INVERTED};
+		glLogicOp(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]);
+		glEnable(GL_COLOR_LOGIC_OP);
+	}else
+		glDisable(GL_COLOR_LOGIC_OP);
+	return 0;
+}
+
+static int tgl_mask(lua_State* L){
+	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
+	static const GLenum option_enum[] = {GL_COLOR, GL_DEPTH, GL_STENCIL};
+	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
+		case GL_COLOR:
+			glColorMask(luaL_checkboolean(L, 2), luaL_checkboolean(L, 3), luaL_checkboolean(L, 4), luaL_checkboolean(L, 5));
+			break;
+		case GL_DEPTH:
+			glDepthMask(luaL_checkboolean(L, 2));
+			break;
+		case GL_STENCIL:
+			glStencilMask(luaL_checkinteger(L, 2));
+			break;
+	}
+	return 0;
+}
+
+static int tgl_depth(lua_State* L){
+	if(lua_gettop(L)){
+		static const char* option_str[] = {"never", "less", "equal", "less equal", "greater", "not equal", "greater equal", "always", nullptr};
+		static const GLenum option_enum[] = {GL_NEVER, GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_NOTEQUAL, GL_GEQUAL, GL_ALWAYS};
+		glDepthFunc(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]);
+		glEnable(GL_DEPTH_TEST);
+	}else
+		glDisable(GL_DEPTH_TEST);
+	return 0;
+}
+
+static int tgl_stencil(lua_State* L){
+	if(lua_gettop(L)){
+
+		// TODO
+
+		glEnable(GL_STENCIL_TEST);
+	}else
+		glDisable(GL_STENCIL_TEST);
+	return 0;
+}
+
+static int tgl_blend(lua_State* L){
+	if(lua_gettop(L)){
+
+		// TODO
+
+		glEnable(GL_BLEND);
+	}else
+		glDisable(GL_BLEND);
+	return 0;
+}
+
+static int tgl_info(lua_State* L){
+	static const char* option_str[] = {"version", "extensions", nullptr};
+	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS};
+	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
+		case GL_VERSION:
+                        lua_createtable(L, 0, 4);
+			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_VENDOR))); lua_setfield(L, -2, "vendor");
+			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_RENDERER))); lua_setfield(L, -2, "renderer");
+			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_VERSION))); lua_setfield(L, -2, "version");
+			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION))); lua_setfield(L, -2, "shading_language_version");
+			break;
+		case GL_EXTENSIONS:{
+				GLint extensions_n;
+				glGetIntegerv(GL_NUM_EXTENSIONS, &extensions_n);
+				lua_createtable(L, extensions_n, 0);
+                                for(GLint i = 0; i < extensions_n; ++i){
+					lua_pushstring(L, reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))); lua_rawseti(L, -2, i);
+                                }
+			}
+			break;
+
+		// TODO
+
+	}
+	return 1;
+}
 
 int luaopen_tgl(lua_State* L){
 	// Initialize GLFW with general properties
@@ -738,6 +828,12 @@ int luaopen_tgl(lua_State* L){
 		lua_pushcfunction(L, tgl_size); lua_setfield(L, -2, "size");
 		lua_pushcfunction(L, tgl_mode); lua_setfield(L, -2, "mode");
 		lua_pushcfunction(L, tgl_scissor); lua_setfield(L, -2, "scissor");
+		lua_pushcfunction(L, tgl_logic); lua_setfield(L, -2, "logic");
+		lua_pushcfunction(L, tgl_mask); lua_setfield(L, -2, "mask");
+		lua_pushcfunction(L, tgl_depth); lua_setfield(L, -2, "depth");
+		lua_pushcfunction(L, tgl_stencil); lua_setfield(L, -2, "stencil");
+		lua_pushcfunction(L, tgl_blend); lua_setfield(L, -2, "blend");
+		lua_pushcfunction(L, tgl_info); lua_setfield(L, -2, "info");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
