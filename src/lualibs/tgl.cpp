@@ -804,9 +804,76 @@ static int tgl_stencil(lua_State* L){
 
 static int tgl_blend(lua_State* L){
 	if(lua_gettop(L)){
-
-		// TODO
-
+		// Check argument
+		luaL_checktype(L, 1, LUA_TTABLE);
+		// Set blend color
+		lua_getfield(L, 1, "constant_red");
+		lua_getfield(L, 1, "constant_green");
+		lua_getfield(L, 1, "constant_blue");
+		lua_getfield(L, 1, "constant_alpha");
+		if(!(lua_isnil(L, -4) && lua_isnil(L, -3) && lua_isnil(L, -2) && lua_isnil(L, -1))){
+			GLclampf color[4];
+			glGetFloatv(GL_BLEND_COLOR, color);
+			if(!lua_isnil(L, -4))
+				color[0] = luaL_checknumber(L, -4);
+			if(!lua_isnil(L, -3))
+				color[1] = luaL_checknumber(L, -3);
+			if(!lua_isnil(L, -2))
+				color[2] = luaL_checknumber(L, -2);
+			if(!lua_isnil(L, -1))
+				color[3] = luaL_checknumber(L, -1);
+			glBlendColor(color[0], color[1], color[2], color[3]);
+		}
+		lua_pop(L, 4);
+		// Set blend equation
+		lua_getfield(L, 1, "rgb_equation");
+		lua_getfield(L, 1, "alpha_equation");
+		if(!(lua_isnil(L, -1) && lua_isnil(L, -2))){
+			static const char* option_str[] = {"add", "subtract", "reverse subtract", "min", "max", nullptr};
+			static const GLenum option_enum[] = {GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX};
+			GLenum rgb_mode, alpha_mode;
+			if(lua_isnil(L, -2))
+                                glGetIntegerv(GL_BLEND_EQUATION_RGB, reinterpret_cast<GLint*>(&rgb_mode));
+			else
+				rgb_mode = option_enum[luaL_checkoption(L, -2, nullptr, option_str)];
+			if(lua_isnil(L, -1))
+                                glGetIntegerv(GL_BLEND_EQUATION_ALPHA, reinterpret_cast<GLint*>(&alpha_mode));
+			else
+				alpha_mode = option_enum[luaL_checkoption(L, -1, nullptr, option_str)];
+			glBlendEquationSeparate(rgb_mode, alpha_mode);
+		}
+		lua_pop(L, 2);
+		// Set blend function
+		lua_getfield(L, 1, "rgb_source_function");
+		lua_getfield(L, 1, "rgb_destination_function");
+		lua_getfield(L, 1, "alpha_source_function");
+		lua_getfield(L, 1, "alpha_destination_function");
+		if(!(lua_isnil(L, -4) && lua_isnil(L, -3) && lua_isnil(L, -2) && lua_isnil(L, -1))){
+			static const char* option_str[] = {"0", "1", "SRCc", "1-SRCc", "DSTc", "1-DSTc", "SRCa", "1-SRCa", "DSTa", "1-DSTa", "Cc", "1-Cc", "Ca", "1-Ca", "SRCa(s)", nullptr};
+			static const GLenum option_enum[] = {GL_ZERO, GL_ONE, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_COLOR, GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_SRC_ALPHA_SATURATE};
+			GLint rgb_src_func, rgb_dst_func, alpha_src_func, alpha_dst_func;
+			if(lua_isnil(L, -4))
+				glGetIntegerv(GL_BLEND_SRC_RGB, reinterpret_cast<GLint*>(&rgb_src_func));
+			else
+				rgb_src_func = option_enum[luaL_checkoption(L, -4, nullptr, option_str)];
+			if(lua_isnil(L, -3))
+				glGetIntegerv(GL_BLEND_DST_RGB, reinterpret_cast<GLint*>(&rgb_dst_func));
+			else
+				rgb_dst_func = option_enum[luaL_checkoption(L, -3, nullptr, option_str)];
+			if(lua_isnil(L, -2))
+				glGetIntegerv(GL_BLEND_SRC_ALPHA, reinterpret_cast<GLint*>(&alpha_src_func));
+			else
+				alpha_src_func = option_enum[luaL_checkoption(L, -2, nullptr, option_str)];
+			if(lua_isnil(L, -1))
+				glGetIntegerv(GL_BLEND_DST_ALPHA, reinterpret_cast<GLint*>(&alpha_dst_func));
+			else
+				alpha_dst_func = option_enum[luaL_checkoption(L, -1, nullptr, option_str)];
+			glBlendFuncSeparate(rgb_src_func, rgb_dst_func, alpha_src_func, alpha_dst_func);
+			if(glGetError() == GL_INVALID_ENUM)	// GL_SRC_ALPHA_SATURATE just allowed for source!
+				return luaL_error(L, "Invalid blend function!");
+		}
+		lua_pop(L, 4);
+		// Enable blending
 		glEnable(GL_BLEND);
 	}else
 		glDisable(GL_BLEND);
