@@ -25,6 +25,17 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 #define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))
 
+// OpenGL error check
+static bool glHasError(){
+	// No errors?
+	if(glGetError() == GL_NO_ERROR)
+		return false;
+	// Clear remaining errors
+	while(glGetError() != GL_NO_ERROR);
+	// Had error(s)!
+	return true;
+}
+
 // Unique names for Lua metatables
 #define LUA_TGL_CONTEXT "tgl_context"
 #define LUA_TGL_SHADER "tgl_shader"
@@ -33,7 +44,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #define LUA_TGL_TEXTURE "tgl_texture"
 #define LUA_TGL_FBO "tgl_fbo"
 
-// GL context management variables for thread-safety
+// GL context management variables
 static unsigned context_count = 0;
 
 // Context metatable methods
@@ -54,7 +65,7 @@ static int tgl_context_activate(lua_State* L){
 		if(glewInit() != GLEW_OK)
 			return luaL_error(L, "Couldn't initialize GLEW!");
 		// Clear all errors caused by GLFW & GLEW initializations
-		glGetError();
+		glHasError();
 	}
 	return 0;
 }
@@ -109,7 +120,7 @@ static int tgl_program_free(lua_State* L){
 
 static int tgl_program_use(lua_State* L){
 	glUseProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
-        if(glGetError() == GL_INVALID_OPERATION)
+        if(glHasError())
 		return luaL_error(L, "Can't use this program!");
 	return 0;
 }
@@ -209,7 +220,7 @@ static int tgl_program_uniform(lua_State* L){
 		}
 	}
 	// Check for error
-	if(glGetError() == GL_INVALID_OPERATION)
+	if(glHasError())
 		return luaL_error(L, "Setting uniform failed!");
 	return 0;
 }
@@ -281,7 +292,7 @@ static int tgl_vao_draw(lua_State* L){
 	glBindVertexArray(udata[1]);
 	// Draw (send vertex data to shader)
 	glDrawArrays(mode, first, count);
-	if(glGetError() == GL_INVALID_OPERATION)
+	if(glHasError())
 		return luaL_error(L, "Drawing operation was invalid!");
 	return 0;
 }
@@ -323,7 +334,7 @@ static int tgl_vao_create(lua_State* L){
         // Fill VBO
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, data.size() << 2, data.data(), GL_STATIC_DRAW);
-        if(glGetError() == GL_OUT_OF_MEMORY){
+        if(glHasError()){
 		glDeleteBuffers(1, &vbo);
 		return luaL_error(L, "Couldn't allocate memory for VBO data!");
         }
@@ -336,13 +347,13 @@ static int tgl_vao_create(lua_State* L){
 	GLbyte* offset = 0;
 	for(const auto& prop : props){
 		glEnableVertexAttribArray(prop.location_index);
-		if(glGetError() != GL_NO_ERROR){
+		if(glHasError()){
 			glDeleteVertexArrays(1, &vao);
 			glDeleteBuffers(1, &vbo);
                         return luaL_error(L, "Invalid location!");
 		}
 		glVertexAttribPointer(prop.location_index, prop.vertex_size, GL_FLOAT, GL_FALSE, stride, offset);
-		if(glGetError() == GL_INVALID_VALUE){
+		if(glHasError()){
 			glDeleteVertexArrays(1, &vao);
 			glDeleteBuffers(1, &vbo);
                         return luaL_error(L, "Invalid vertex size!");
@@ -451,7 +462,7 @@ static int tgl_texture_data(lua_State* L){
 			glGenBuffers(1, &pbo);
 			glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
 			glBufferData(GL_PIXEL_PACK_BUFFER, data_size, nullptr, GL_STREAM_READ);	// Reserve enough memory for all supported formats
-			if(glGetError() == GL_OUT_OF_MEMORY){
+			if(glHasError()){
 				glDeleteBuffers(1, &pbo);
 				luaL_error(L, "Couldn't allocate memory for PBO!");
 			}
@@ -462,7 +473,7 @@ static int tgl_texture_data(lua_State* L){
 		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, nullptr);
 		// Copy/push PBO to Lua
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-		if(glGetError() == GL_OUT_OF_MEMORY || !pbo_map)
+		if(glHasError() || !pbo_map)
 			luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
 		lua_pushlstring(L, static_cast<char*>(pbo_map), data_size);
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
@@ -476,7 +487,7 @@ static int tgl_texture_data(lua_State* L){
 static int tgl_texture_bind(lua_State* L){
 	// Set active texture
 	glActiveTexture(GL_TEXTURE0 + luaL_optinteger(L, 2, 0));
-	if(glGetError() == GL_INVALID_ENUM)
+	if(glHasError())
 		return luaL_error(L, "Invalid unit!");
 	// Bind texture
 	glBindTexture(GL_TEXTURE_2D, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
@@ -503,7 +514,7 @@ static int tgl_texture_create(lua_State* L){
 	// Fill texture
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format,  GL_UNSIGNED_BYTE, data);
-	if(glGetError() == GL_INVALID_VALUE){
+	if(glHasError()){
 		glDeleteTextures(1, &tex);
 		return luaL_error(L, "Invalid texture value!");
 	}
@@ -575,7 +586,7 @@ static int tgl_fbo_blit(lua_State *L){
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, udata[2]);
 	// Blit source to destination FBO (includes downsampling)
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	if(glGetError() == GL_INVALID_OPERATION){
+	if(glHasError()){
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDeleteFramebuffers(1, &fbo);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
@@ -601,10 +612,9 @@ static int tgl_fbo_create(lua_State* L){
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
-	const GLenum err = glGetError();
-	if(err != GL_NO_ERROR){
+	if(glHasError()){
 		glDeleteRenderbuffers(2, rbo);
-		return luaL_error(L, err == GL_INVALID_VALUE ? "Invalid dimensions!" : "Couldn't allocate memory for FBO buffers!");
+		return luaL_error(L, "Couldn't allocate memory for FBO buffers!");
 	}
 	// Generate FBO
 	GLuint fbo;
@@ -666,7 +676,7 @@ static int tgl_clear(lua_State* L){
 
 static int tgl_viewport(lua_State* L){
 	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
-        if(glGetError() == GL_INVALID_VALUE)
+        if(glHasError())
 		return luaL_error(L, "Invalid rectangle!");
 	return 0;
 }
@@ -682,7 +692,7 @@ static int tgl_size(lua_State* L){
 			glLineWidth(luaL_checknumber(L, 2));
 			break;
 	}
-        if(glGetError() == GL_INVALID_VALUE)
+        if(glHasError())
 		return luaL_error(L, "Size have to be greater than zero!");
 	return 0;
 }
@@ -697,7 +707,7 @@ static int tgl_mode(lua_State* L){
 static int tgl_scissor(lua_State* L){
 	if(lua_gettop(L)){
 		glScissor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
-		if(glGetError() == GL_INVALID_VALUE)
+		if(glHasError())
 			return luaL_error(L, "Invalid rectangle!");
 		glEnable(GL_SCISSOR_TEST);
 	}else
@@ -869,7 +879,7 @@ static int tgl_blend(lua_State* L){
 			else
 				alpha_dst_func = option_enum[luaL_checkoption(L, -1, nullptr, option_str)];
 			glBlendFuncSeparate(rgb_src_func, rgb_dst_func, alpha_src_func, alpha_dst_func);
-			if(glGetError() == GL_INVALID_ENUM)	// GL_SRC_ALPHA_SATURATE just allowed for source!
+			if(glHasError())	// GL_SRC_ALPHA_SATURATE just allowed for source!
 				return luaL_error(L, "Invalid blend function!");
 		}
 		lua_pop(L, 4);
@@ -900,9 +910,6 @@ static int tgl_info(lua_State* L){
                                 }
 			}
 			break;
-
-		// TODO
-
 	}
 	return 1;
 }
