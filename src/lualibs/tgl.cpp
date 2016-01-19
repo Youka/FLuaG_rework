@@ -25,7 +25,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 #define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))
 
-// OpenGL error check
+// OpenGL error check (application hang without context)
 static bool glHasError(){
 	// No errors?
 	if(glGetError() == GL_NO_ERROR)
@@ -46,6 +46,9 @@ static bool glHasError(){
 
 // GL context management variables
 static unsigned context_count = 0;
+
+// OpenGL context check in Lua (to insert on function begin)
+#define TGL_CHECK_CONTEXT if(!glfwGetCurrentContext()) return luaL_error(L, "No context!");
 
 // Context metatable methods
 static int tgl_context_free(lua_State* L){
@@ -77,6 +80,7 @@ static int tgl_shader_free(lua_State* L){
 }
 
 static int tgl_shader_create(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	static const char* option_str[] = {"vertex", "fragment", nullptr};
 	static const GLenum option_enum[] = {GL_VERTEX_SHADER, GL_FRAGMENT_SHADER};
@@ -119,13 +123,15 @@ static int tgl_program_free(lua_State* L){
 }
 
 static int tgl_program_use(lua_State* L){
+	TGL_CHECK_CONTEXT
 	glUseProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
-        if(glHasError())
+	if(glHasError())
 		return luaL_error(L, "Can't use this program!");
 	return 0;
 }
 
 static int tgl_program_uniform(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get main arguments
 	const GLuint program = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
 	const char* location = luaL_checkstring(L, 2);
@@ -226,6 +232,7 @@ static int tgl_program_uniform(lua_State* L){
 }
 
 static int tgl_program_create(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const GLuint vshader = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
 		fshader = *static_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_SHADER));
@@ -278,6 +285,7 @@ static int tgl_vao_free(lua_State* L){
 }
 
 static int tgl_vao_draw(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	static const char* option_str[] = {"points", "line strip", "line loop", "lines", "triangle strip", "triangle fan", "triangles", nullptr};
@@ -298,6 +306,7 @@ static int tgl_vao_draw(lua_State* L){
 }
 
 static int tgl_vao_create(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_checktype(L, 2, LUA_TTABLE);
@@ -386,6 +395,7 @@ static int tgl_texture_free(lua_State* L){
 }
 
 static int tgl_texture_param(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	const std::string param = luaL_checkstring(L, 2);
@@ -423,6 +433,7 @@ static int tgl_texture_param(lua_State* L){
 }
 
 static int tgl_texture_data(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", "none", nullptr};
@@ -464,7 +475,7 @@ static int tgl_texture_data(lua_State* L){
 			glBufferData(GL_PIXEL_PACK_BUFFER, data_size, nullptr, GL_STREAM_READ);	// Reserve enough memory for all supported formats
 			if(glHasError()){
 				glDeleteBuffers(1, &pbo);
-				luaL_error(L, "Couldn't allocate memory for PBO!");
+				return luaL_error(L, "Couldn't allocate memory for PBO!");
 			}
 			udata[1] = pbo;
 		}
@@ -474,7 +485,7 @@ static int tgl_texture_data(lua_State* L){
 		// Copy/push PBO to Lua
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if(glHasError() || !pbo_map)
-			luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
+			return luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
 		lua_pushlstring(L, static_cast<char*>(pbo_map), data_size);
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 		// Return header + data to Lua
@@ -485,6 +496,7 @@ static int tgl_texture_data(lua_State* L){
 }
 
 static int tgl_texture_bind(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Set active texture
 	glActiveTexture(GL_TEXTURE0 + luaL_optinteger(L, 2, 0));
 	if(glHasError())
@@ -495,6 +507,7 @@ static int tgl_texture_bind(lua_State* L){
 }
 
 static int tgl_texture_create(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const GLsizei width = luaL_checkinteger(L, 1),
 		height = luaL_checkinteger(L, 2);
@@ -600,6 +613,7 @@ static int tgl_fbo_blit(lua_State *L){
 }
 
 static int tgl_fbo_create(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const int width = luaL_checkinteger(L, 1),
 		height = luaL_checkinteger(L, 2),
@@ -654,6 +668,7 @@ static int tgl_fbo_create(lua_State* L){
 
 // General functions
 static int tgl_clear(lua_State* L){
+	TGL_CHECK_CONTEXT
 	// Get main argument
 	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
 	static const GLenum option_enum[] = {GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT};
@@ -675,6 +690,7 @@ static int tgl_clear(lua_State* L){
 }
 
 static int tgl_viewport(lua_State* L){
+	TGL_CHECK_CONTEXT
 	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
         if(glHasError())
 		return luaL_error(L, "Invalid rectangle!");
@@ -682,6 +698,7 @@ static int tgl_viewport(lua_State* L){
 }
 
 static int tgl_size(lua_State* L){
+	TGL_CHECK_CONTEXT
 	static const char* option_str[] = {"points", "lines", nullptr};
 	static const GLenum option_enum[] = {GL_POINTS, GL_LINES};
 	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
@@ -698,6 +715,7 @@ static int tgl_size(lua_State* L){
 }
 
 static int tgl_mode(lua_State* L){
+	TGL_CHECK_CONTEXT
 	static const char* option_str[] = {"point", "line", "fill", nullptr};
 	static const GLenum option_enum[] = {GL_POINT, GL_LINE, GL_FILL};
 	glPolygonMode(GL_FRONT_AND_BACK, option_enum[luaL_checkoption(L, 1, nullptr, option_str)]);
@@ -705,6 +723,7 @@ static int tgl_mode(lua_State* L){
 }
 
 static int tgl_scissor(lua_State* L){
+	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		glScissor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
 		if(glHasError())
@@ -716,6 +735,7 @@ static int tgl_scissor(lua_State* L){
 }
 
 static int tgl_logic(lua_State* L){
+	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		static const char* option_str[] = {"clear", "set", "copy", "copy inverted", "noop", "invert", "and", "nand", "or", "nor", "xor", "equiv", "and reverse", "and inverted", "or reverse", "or inverted", nullptr};
 		static const GLenum option_enum[] = {GL_CLEAR, GL_SET, GL_COPY, GL_COPY_INVERTED, GL_NOOP, GL_INVERT, GL_AND, GL_NAND, GL_OR, GL_NOR, GL_XOR, GL_EQUIV, GL_AND_REVERSE, GL_AND_INVERTED, GL_OR_REVERSE, GL_OR_INVERTED};
@@ -727,6 +747,7 @@ static int tgl_logic(lua_State* L){
 }
 
 static int tgl_mask(lua_State* L){
+	TGL_CHECK_CONTEXT
 	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
 	static const GLenum option_enum[] = {GL_COLOR, GL_DEPTH, GL_STENCIL};
 	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
@@ -744,6 +765,7 @@ static int tgl_mask(lua_State* L){
 }
 
 static int tgl_depth(lua_State* L){
+	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		static const char* option_str[] = {"never", "less", "equal", "less equal", "greater", "not equal", "greater equal", "always", nullptr};
 		static const GLenum option_enum[] = {GL_NEVER, GL_LESS, GL_EQUAL, GL_LEQUAL, GL_GREATER, GL_NOTEQUAL, GL_GEQUAL, GL_ALWAYS};
@@ -755,6 +777,7 @@ static int tgl_depth(lua_State* L){
 }
 
 static int tgl_stencil(lua_State* L){
+	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		// Check argument
 		luaL_checktype(L, 1, LUA_TTABLE);
@@ -813,6 +836,7 @@ static int tgl_stencil(lua_State* L){
 }
 
 static int tgl_blend(lua_State* L){
+	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		// Check argument
 		luaL_checktype(L, 1, LUA_TTABLE);
@@ -891,6 +915,7 @@ static int tgl_blend(lua_State* L){
 }
 
 static int tgl_info(lua_State* L){
+	TGL_CHECK_CONTEXT
 	static const char* option_str[] = {"version", "extensions", nullptr};
 	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS};
 	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
