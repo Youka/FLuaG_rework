@@ -13,15 +13,53 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include <functional>
+
+// Lua compatibility macros
+#if LUA_VERSION_NUM <= 501
+	#define lua_rawlen lua_objlen
+#endif
+#define luaL_optboolean(L, arg, d) (lua_isnoneornil(L, arg) ? d : (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg)))
 
 static int table_copy(lua_State* L){
-
-	// TODO
-
-	return 0;
+	// Check main argument
+	luaL_checktype(L, 1, LUA_TTABLE);
+	// Get optional argument
+	const bool deep = luaL_optboolean(L, 2, true);
+	// Remove non-main (=unnecessary) arguments
+	const int args_n = lua_gettop(L);
+	if(args_n > 1)
+		lua_pop(L, args_n - 1);
+	// Copy recursive & generate new table
+	std::function<void(void)> copy;
+	copy = [&copy,L,deep](){
+		// Create output table
+		lua_createtable(L, lua_rawlen(L, -1), 0);
+		// Iterate through input table elements
+		lua_pushnil(L);
+		while(lua_next(L, -3)){
+			// Duplicate key for next iteration pass
+			lua_pushvalue(L, -2);
+			lua_insert(L, -2);
+			// Set key+value to output table
+			if(lua_istable(L, -1) && deep)
+				copy();
+			lua_rawset(L, -4);
+		}
+		// Finally, set input metatable to output
+		if(lua_getmetatable(L, -2))
+			lua_setmetatable(L, -2);
+		// Remove input table
+		lua_remove(L, -2);
+	};
+	copy();
+	// Return table result of copy
+	return 1;
 }
 
 static int table_tostring(lua_State* L){
+	// Check main argument
+	luaL_checktype(L, 1, LUA_TTABLE);
 
 	// TODO
 
