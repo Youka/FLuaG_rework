@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: libs.h
+File: tableex.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -12,15 +12,37 @@ Permission is granted to anyone to use this software for any purpose, including 
     3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma once
+#include "libs.h"
 
-#include <lua.hpp>
+static int table_copy(lua_State* L){
 
-int luaopen_mathex(lua_State* L);
-int luaopen_tableex(lua_State* L);
-int luaopen_regex(lua_State* L);
-int luaopen_algorithm(lua_State* L);
-int luaopen_filesystem(lua_State* L);
-int luaopen_png(lua_State* L);
-int luaopen_tgl(lua_State* L);
-int luaopen_font(lua_State* L);
+	// TODO
+
+	return 0;
+}
+
+static int table_tostring(lua_State* L){
+
+	// TODO
+
+	return 0;
+}
+
+int luaopen_tableex(lua_State* L){
+	// Get 'table' table
+	lua_getglobal(L, "table");
+	const bool is_global = lua_istable(L, -1);
+	if(!is_global){
+		lua_pop(L, 1);
+		lua_createtable(L, 0, 2);
+	}
+	// Set table functions
+	lua_pushcfunction(L, table_copy); lua_setfield(L, -2, "copy");
+	lua_pushcfunction(L, table_tostring); lua_setfield(L, -2, "tostring");
+	// Set table to global environment
+	if(is_global)
+		lua_pop(L, 1);
+	else
+		lua_setglobal(L, "table");
+	return 0;
+}
