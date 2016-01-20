@@ -17,6 +17,9 @@ int main(const int argc, const char** argv){
 	void(*fluag_set_userdata)(fluag_h, const char*);
 	void(*fluag_destroy)(fluag_h);
 	const char*(*fluag_get_version)(void);
+#ifdef __GNUC__
+	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+#endif
 	if(!(
 		DLL_ASSIGN_PROC(plugin, fluag_create) &&
 		DLL_ASSIGN_PROC(plugin, fluag_load_script) &&
