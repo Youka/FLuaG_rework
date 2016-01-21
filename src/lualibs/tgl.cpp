@@ -13,17 +13,12 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <algorithm>
-
-// Lua compatibility macros
-#if LUA_VERSION_NUM <= 501
-	#define lua_rawlen lua_objlen
-#endif
-#define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))
 
 // OpenGL error check (application hang without context)
 static bool glHasError(){

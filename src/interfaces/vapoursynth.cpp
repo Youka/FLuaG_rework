@@ -16,6 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include <config.h>
 #include "../main/FLuaG.hpp"
+#include "../utils/imageop.hpp"
 
 namespace VS{
 	// Filter instance data
@@ -44,14 +45,22 @@ namespace VS{
 			const VSFrameRef* src = vsapi->getFrameFilter(n, data->node.get(), frame_ctx);
 			std::unique_ptr<VSFrameRef, std::function<void(VSFrameRef*)>> dst(vsapi->copyFrame(src, core), [vsapi](VSFrameRef* frame){vsapi->freeFrame(frame);});
 			vsapi->freeFrame(src);
+			// Align frame bottom-up
+			unsigned char* const fdata = vsapi->getWritePtr(dst.get(), 0);
+			const int stride = vsapi->getStride(dst.get(), 0);
+			if(stride < 0)
+				ImageOp::flip(fdata, data->vi->height, -stride);
 			// Render on frame
 			try{
-				data->F.ProcessFrame(vsapi->getWritePtr(dst.get(), 0), vsapi->getStride(dst.get(), 0), n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
+				data->F.ProcessFrame(fdata, ::abs(stride), n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
 				// Return new frame
 				return dst.release();
 			}catch(FLuaG::exception e){
 				vsapi->setFilterError(e.what(), frame_ctx);
 			}
+			// Realign frame to origin
+			if(stride < 0)
+				ImageOp::flip(fdata, data->vi->height, -stride);
 		}
 		return nullptr;
 	}

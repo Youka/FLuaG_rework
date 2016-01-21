@@ -16,7 +16,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../lualibs/libs.h"
 #include <map>
 #ifdef _WIN32
-	#include <windows.h>
+	#include <libloaderapi.h>
+	#include "../utils/textconv.hpp"
 #else
 	#include <dlfcn.h>
 #endif
@@ -31,15 +32,9 @@ std::string get_this_dir(){
 #ifdef _WIN32
 	HMODULE module;
 	if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(get_this_dir), &module)){
-		DWORD filenamew_len;
 		wchar_t filenamew[MAX_PATH];
-		if((filenamew_len = GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))){
-			int path_len = WideCharToMultiByte(CP_UTF8, 0x0, filenamew, filenamew_len, nullptr, 0, nullptr, nullptr);
-			if(path_len){
-				path.resize(path_len);
-				WideCharToMultiByte(CP_UTF8, 0x0, filenamew, filenamew_len, const_cast<char*>(path.data()), path_len, nullptr, nullptr);
-			}
-		}
+		if(GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))
+			path = Utf8::from_utf16(filenamew);
 	}
 #else
 	Dl_info dli;

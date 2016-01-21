@@ -13,14 +13,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
 #include <functional>
 #include <sstream>
-
-// Lua compatibility macros
-#if LUA_VERSION_NUM <= 501
-	#define lua_rawlen lua_objlen
-#endif
-#define luaL_optboolean(L, arg, d) (lua_isnoneornil(L, arg) ? d : (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg)))
 
 static int table_copy(lua_State* L){
 	// Check main argument
