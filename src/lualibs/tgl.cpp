@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <mutex>
 #include <vector>
 #include <algorithm>
 
@@ -40,6 +41,7 @@ static bool glHasError(){
 #define LUA_TGL_FBO "tgl_fbo"
 
 // GL context management variables
+static std::mutex context_mutex;
 static unsigned context_count = 0;
 
 // OpenGL context check in Lua (to insert on function begin)
@@ -47,6 +49,7 @@ static unsigned context_count = 0;
 
 // Context metatable methods
 static int tgl_context_free(lua_State* L){
+	std::unique_lock<std::mutex> context_lock(context_mutex);
 	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	if(!--context_count)
 		glfwTerminate();
@@ -59,6 +62,7 @@ static int tgl_context_activate(lua_State* L){
 	// Further context preparations
 	if(glfwGetCurrentContext()){
 		// Initialize GLEW
+		std::unique_lock<std::mutex> context_lock(context_mutex);
 		glewExperimental = GL_TRUE;
 		if(glewInit() != GLEW_OK)
 			return luaL_error(L, "Couldn't initialize GLEW!");
@@ -936,6 +940,7 @@ static int tgl_info(lua_State* L){
 
 int luaopen_tgl(lua_State* L){
 	// Initialize GLFW with general properties
+	std::unique_lock<std::mutex> context_lock(context_mutex);
 	if(!context_count){
 		if(glfwInit() != GL_TRUE)
 			return luaL_error(L, "Couldn't initialize GLFW!");
