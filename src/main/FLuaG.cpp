@@ -13,45 +13,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "FLuaG.hpp"
-#include "../lualibs/libs.h"
 #include <map>
-#ifdef _WIN32
-	#include <libloaderapi.h>
-	#include "../utils/textconv.hpp"
-#else
-	#include <dlfcn.h>
-#endif
-
-#ifdef _WIN32	// Unix needs the following function exported for DL informations
-static
-#endif
-std::string get_this_dir(){
-	// Result buffer
-	std::string path;
-	// Get this DLL filename into the buffer
-#ifdef _WIN32
-	HMODULE module;
-	if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(get_this_dir), &module)){
-		wchar_t filenamew[MAX_PATH];
-		if(GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))
-			path = Utf8::from_utf16(filenamew);
-	}
-#else
-	Dl_info dli;
-	if(dladdr(get_this_path, &dli))
-		path = dli.dli_fname;
-#endif
-	// Shorten filename to directory
-	if(!path.empty()){
-		std::string::size_type separator = path.find_last_of("\\/");
-		if(separator != std::wstring::npos)
-			path.resize(separator+1);
-		else
-			path.clear();
-	}
-	// Return directory or empty string on failure
-	return path;
-}
+#include "../lualibs/libs.h"
+#include "../utils/module.hpp"
 
 #define LSTATE this->L.get()
 
@@ -85,7 +49,7 @@ namespace FLuaG{
 		}
 		lua_pop(LSTATE, -1);
 		// Extend Lua search paths
-		std::string path = get_this_dir();
+		std::string path = Module::dir();
 		if(!path.empty()){
 			path.append("?.lua;");
 			lua_getglobal(LSTATE, "package");
