@@ -74,6 +74,7 @@ namespace AVS{
 		// Set userdata/script to clip
 		try{
 			std::unique_ptr<FLuaG::Script> F(new FLuaG::Script());
+			assert(vinfo->width >= 0 && vinfo->height >= 0 && vinfo->num_frames >= 0);
 			F->SetVideo({
 				static_cast<unsigned short>(vinfo->width),
 				static_cast<unsigned short>(vinfo->height),

@@ -16,10 +16,12 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include <memory>
 #include <algorithm>
+#include <cassert>
 
 namespace ImageOp{
 	// Flip data rows vertically
 	static inline void flip(unsigned char* data, const unsigned height, const unsigned stride){
+		assert(data);
 		const std::unique_ptr<unsigned char> tmp(new unsigned char[stride]);
 		unsigned char* data_tail = data + (height-1) * stride;
 		for(const unsigned char* const data_stop = data + (height >> 1) * stride; data != data_stop; data = std::copy(tmp.get(), tmp.get()+stride, data))

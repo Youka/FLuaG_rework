@@ -16,6 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <map>
 #include "../lualibs/libs.h"
 #include "../utils/module.hpp"
+#include <cassert>
 
 #define LSTATE this->L.get()
 
@@ -174,6 +175,7 @@ namespace FLuaG{
 	}
 
 	void Script::ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception){
+		assert(image_data);
 		// Check for valid stride
 		if(stride < this->image_rowsize)
 			throw exception("Image stride cannot be smaller than rowsize!");

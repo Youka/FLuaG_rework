@@ -89,6 +89,7 @@ namespace VS{
 			*userdata = vsapi->propGetData(in, "userdata", 0, nullptr);
 		// Set userdata/script to clip
 		try{
+			assert(inst_data->vi->width >= 0 && inst_data->vi->height >= 0 && inst_data->vi->numFrames >= 0);
 			inst_data->F.SetVideo({
 				static_cast<unsigned short>(inst_data->vi->width),
 				static_cast<unsigned short>(inst_data->vi->height),
