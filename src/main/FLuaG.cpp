@@ -174,7 +174,7 @@ namespace FLuaG{
 		}
 	}
 
-	void Script::ProcessFrame(unsigned char* image_data, unsigned stride, unsigned long ms) throw(exception){
+	void Script::ProcessFrame(unsigned char* image_data, const unsigned stride, const unsigned long ms) throw(exception){
 		assert(image_data);
 		// Check for valid stride
 		if(stride < this->image_rowsize)
@@ -186,7 +186,7 @@ namespace FLuaG{
 			throw exception("'GetFrame' function is missing");
 		}
 		// Push arguments and call function
-		std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
+		const std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
 		this->lua_pushimage(image_data_shared, stride);
 		lua_pushinteger(LSTATE, ms);
 #ifdef FLUAG_FORCE_SINGLE_THREAD

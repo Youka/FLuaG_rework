@@ -44,7 +44,7 @@ namespace Module{
 #endif
 		// Shorten filename to directory
 		if(!path.empty()){
-			std::string::size_type separator = path.find_last_of("\\/");
+			const std::string::size_type separator = path.find_last_of("\\/");
 			if(separator != std::wstring::npos)
 				path.resize(separator+1);
 			else

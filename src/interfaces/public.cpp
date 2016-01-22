@@ -20,7 +20,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 fluag_h fluag_create(void){
 	try{
 		return new FLuaG::Script();
-	}catch(std::bad_alloc){
+	}catch(const std::bad_alloc){
 		return 0;
 	}
 }
@@ -29,7 +29,7 @@ int fluag_load_file(fluag_h F, const char* filename, char* warning){
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->LoadFile(filename);
-		}catch(FLuaG::exception e){
+		}catch(const FLuaG::exception& e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
 			return 0;
@@ -41,7 +41,7 @@ int fluag_load_script(fluag_h F, const char* script, char* warning){
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->LoadScript(script);
-		}catch(FLuaG::exception e){
+		}catch(const FLuaG::exception& e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
 			return 0;
@@ -63,7 +63,7 @@ int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, u
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->ProcessFrame(image_data, stride, ms);
-		}catch(FLuaG::exception e){
+		}catch(const FLuaG::exception& e){
 			if(warning)
 				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
 			return 0;

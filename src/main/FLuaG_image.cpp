@@ -46,7 +46,7 @@ static int image_data_access(lua_State* L){
 	if(udata->data.expired())
 		return luaL_error(L, "Data are already dead!");
 	// Choose operation
-	unsigned long image_size = udata->height * udata->rowsize;
+	const unsigned long image_size = udata->height * udata->rowsize;
 	if(data){
 		// Check argument
 		if(data_len != image_size)
@@ -82,8 +82,7 @@ static int image_data_access(lua_State* L){
 namespace FLuaG{
 	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride){
 		// Create & push image data as Lua userdata
-		ImageData** udata = static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*)));
-		*udata = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
+		*static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*))) = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable
 		if(luaL_newmetatable(LSTATE, LUA_IMAGE_DATA)){
 			lua_pushcfunction(LSTATE, image_data_delete); lua_setfield(LSTATE, -2, "__gc");

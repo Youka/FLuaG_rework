@@ -55,7 +55,7 @@ namespace VS{
 				data->F.ProcessFrame(fdata, ::abs(stride), n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
 				// Return new frame
 				return dst.release();
-			}catch(FLuaG::exception e){
+			}catch(const FLuaG::exception& e){
 				vsapi->setFilterError(e.what(), frame_ctx);
 			}
 			// Realign frame to origin
@@ -102,7 +102,9 @@ namespace VS{
 			inst_data->F.LoadFile(filename);
 			// Create filter object and pass to frameserver
 			vsapi->createFilter(in, out, PROJECT_NAME, init_filter, get_frame, free_filter, fmParallel, 0, inst_data.release(), core);
-		}catch(FLuaG::exception e){
+		}catch(const std::bad_alloc){
+			vsapi->setError(out, "Not enough memory!");
+		}catch(const FLuaG::exception& e){
 			vsapi->setError(out, e.what());
 		}
 	}

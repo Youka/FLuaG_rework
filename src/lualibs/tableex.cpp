@@ -67,7 +67,7 @@ static int table_tostring(lua_State* L){
 	std::function<void(const unsigned)> build;
 	build = [&build,L,&buf](const unsigned indent){
 		// Indentation strings
-		std::string indent_str(indent, '\t'), indent_more_str(indent+1, '\t');
+		const std::string indent_str(indent, '\t'), indent_more_str(indent+1, '\t');
 		// Write table header
 		if(buf.tellp())
 			buf << '\n';

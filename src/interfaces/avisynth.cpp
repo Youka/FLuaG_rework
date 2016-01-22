@@ -45,7 +45,7 @@ namespace AVS{
 		// Render on frame
 		try{
 			static_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(data, ::abs(pitch), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
-		}catch(FLuaG::exception e){
+		}catch(const FLuaG::exception& e){
 			filter_info->error = avs_library->avs_save_string(filter_info->env, e.what(), -1);
 			// Because the AVS C API error handling is broken
 			MessageBoxW(NULL, Utf8::to_utf16(e.what()).c_str(), L"FLuaG error", MB_OK | MB_ICONERROR);
@@ -86,9 +86,9 @@ namespace AVS{
 				F->SetUserdata(userdata);
 			F->LoadFile(filename);
 			filter_info->user_data = F.release();
-		}catch(std::bad_alloc){
+		}catch(const std::bad_alloc){
 			return avs_new_value_error("Not enough memory!");
-		}catch(FLuaG::exception e){
+		}catch(const FLuaG::exception& e){
 			return avs_new_value_error(avs_library->avs_save_string(env, e.what(), -1));
 		}
 		// Set filter callbacks to clip
