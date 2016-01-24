@@ -38,7 +38,7 @@ namespace FLuaG{
 					{"regex", luaopen_regex},
 					{"algorithm", luaopen_algorithm},
 					{"filesystem", luaopen_filesystem},
-					{"png", luaopen_png},
+					{"tga", luaopen_tga},
 					{"tgl", luaopen_tgl},
 					{"font", luaopen_font}
 				};
