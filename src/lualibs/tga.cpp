@@ -88,6 +88,8 @@ static int tga_decode(std::istream& in, lua_State* L){
 	}
 	if((tga_header.image_type == 2 || tga_header.image_type == 10) && tga_header.pixel_depth != 24 && tga_header.pixel_depth != 32)
 		return luaL_error(L, "RGB just with 8-bit channels supported!");
+	if((tga_header.image_type == 1 || tga_header.image_type == 9) && tga_header.pixel_depth > 16)
+		return luaL_error(L, "Colormap indices above 16-bit aren't supported!");
 	if(tga_header.pixel_depth != 1 && tga_header.pixel_depth != 8 && tga_header.pixel_depth != 16 && tga_header.pixel_depth != 24 && tga_header.pixel_depth != 32)
 		return luaL_error(L, "Pixel depth must be 1, 8, 16, 24 or 32!");
 	// Read image id from stream
@@ -112,11 +114,19 @@ static int tga_decode(std::istream& in, lua_State* L){
 		case 1:
 			pixels.resize(image_size * (tga_header.color_map_entry_size >> 3));
 			switch(tga_header.pixel_depth){
-				case 1:
-
-					// TODO
-
-					break;
+				case 1:{
+						std::vector<unsigned char> indices;
+						indices.reserve(image_size);
+						while(indices.size() != indices.capacity()){
+							char byte;
+							if(!in.get(byte))
+								return luaL_error(L, "Couldn't read uncompressed colormap data!");
+							for(int i = 0; i < 8 && indices.size() != indices.capacity(); ++i)
+								indices.push_back(byte >> i & 0x1);
+						}
+						if(!colormapx_to_pixels(indices, colormap, pixels, tga_header.color_map_entry_size))
+							return luaL_error(L, "Colormap access out-of-bounds!");
+					}break;
 				case 8:{
 						std::vector<unsigned char> indices(image_size);
 						if(!in.read(reinterpret_cast<char*>(indices.data()), indices.size()))
@@ -127,18 +137,6 @@ static int tga_decode(std::istream& in, lua_State* L){
 				case 16:{
 						std::vector<unsigned short> indices(image_size);
 						if(!in.read(reinterpret_cast<char*>(indices.data()), indices.size() << 1))
-							return luaL_error(L, "Couldn't read uncompressed colormap data!");
-						if(!colormapx_to_pixels(indices, colormap, pixels, tga_header.color_map_entry_size))
-							return luaL_error(L, "Colormap access out-of-bounds!");
-					}break;
-				case 24:
-
-					// TODO
-
-					break;
-				case 32:{
-						std::vector<unsigned> indices(image_size);
-						if(!in.read(reinterpret_cast<char*>(indices.data()), indices.size() << 2))
 							return luaL_error(L, "Couldn't read uncompressed colormap data!");
 						if(!colormapx_to_pixels(indices, colormap, pixels, tga_header.color_map_entry_size))
 							return luaL_error(L, "Colormap access out-of-bounds!");
@@ -177,10 +175,16 @@ static int tga_decode(std::istream& in, lua_State* L){
 			break;
 	}
 	// Send TGA data to Lua
-
-	// TODO
-
-	return 0;
+	lua_createtable(L, 0, 7);
+	lua_pushlstring(L, image_id.data(), image_id.length()); lua_setfield(L, -2, "image_id");
+	const unsigned char pixel_size = pixels.size() / image_size;
+	lua_pushstring(L, pixel_size == 4 ? "bgra" : (pixel_size == 3 ? "bgr" : "a")); lua_setfield(L, -2, "type");
+	lua_pushinteger(L, tga_header.x_origin); lua_setfield(L, -2, "x_origin");
+	lua_pushinteger(L, tga_header.y_origin); lua_setfield(L, -2, "y_origin");
+	lua_pushinteger(L, tga_header.image_width); lua_setfield(L, -2, "width");
+	lua_pushinteger(L, tga_header.image_height); lua_setfield(L, -2, "height");
+	lua_pushlstring(L, pixels.data(), pixels.size()); lua_setfield(L, -2, "data");
+	return 1;
 }
 
 static void tga_encode(std::ostream& out, lua_State* L){
