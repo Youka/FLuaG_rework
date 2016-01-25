@@ -21,6 +21,6 @@ int luaopen_tableex(lua_State* L);
 int luaopen_regex(lua_State* L);
 int luaopen_algorithm(lua_State* L);
 int luaopen_filesystem(lua_State* L);
-int luaopen_tga(lua_State* L);
+int luaopen_png(lua_State* L);
 int luaopen_tgl(lua_State* L);
 int luaopen_font(lua_State* L);

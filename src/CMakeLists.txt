@@ -2,6 +2,8 @@
 include(FindLua)
 include(FindOpenGL)
 include(FindGLEW)
+include(FindZLIB)
+include(FindPNG)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
 
@@ -27,6 +29,9 @@ set(DEPEND_GLEW_INC "${GLEW_INCLUDE_DIRS}" CACHE PATH "GLEW headers directory pa
 set(DEPEND_GLEW_LIB "${GLEW_LIBRARIES}" CACHE FILEPATH "GLEW library path")
 set(DEPEND_GLFW_INC "${GLFW_INCLUDE_DIR}" CACHE PATH "GLFW headers directory path")
 set(DEPEND_GLFW_LIB "${GLFW_LIBRARIES}" CACHE FILEPATH "GLFW library path")
+set(DEPEND_ZLIB_LIB "${ZLIB_LIBRARIES}" CACHE FILEPATH "Zlib library path")
+set(DEPEND_PNG_INC "${PNG_INCLUDE_DIRS}" CACHE PATH "Libpng headers directory path")
+set(DEPEND_PNG_LIB "${PNG_LIBRARIES}" CACHE FILEPATH "Libpng library path")
 if(CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
@@ -41,7 +46,7 @@ add_compile_options(${COMPILE_WARNINGS})
 message(STATUS "Compile warnings: ${COMPILE_WARNINGS}")
 
 # Add feature definitions
-set(COMPILE_DEFINITIONS -D_USE_MATH_DEFINES)
+set(COMPILE_DEFINITIONS -D_USE_MATH_DEFINES ${PNG_DEFINITIONS})
 if(WIN32)
 	set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} -DWIN_LEAN_AND_MEAN)
 endif()
@@ -99,8 +104,8 @@ if(NOT WIN32)
 	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp")
 endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
-target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC})
-target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB})
+target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC})
+target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB} ${DEPEND_ZLIB_LIB})
 
 # Setup library installation
 install(TARGETS fluag	# Runtime
