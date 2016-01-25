@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <fstream>
 #include <png.h>
 #include <memory>
+#include <cassert>
 
 static int png_decode(std::istream& in, lua_State* L){
 	// Check PNG signature
@@ -55,11 +56,9 @@ static int png_decode(std::istream& in, lua_State* L){
 	// Read PNG image
 	const png_size_t rowbytes = png_get_rowbytes(png.get(), png_info);
 	std::string data(height * rowbytes, '\0');
-	const std::unique_ptr<png_bytep[]> rows(new png_bytep[height]);
-	rows[0] = reinterpret_cast<png_bytep>(const_cast<char*>(data.data()));
-	for(png_uint_32 y = 1; y < height; ++y)
-		rows[y] = rows[y-1] + rowbytes;
-	png_read_image(png.get(), rows.get());
+	png_bytep pdata = reinterpret_cast<png_bytep>(const_cast<char*>(data.data()));
+	for(const png_bytep data_end = pdata + height * rowbytes; pdata != data_end; pdata += rowbytes)
+		png_read_row(png.get(), pdata, nullptr);
 	// Send PNG data to Lua
 	lua_createtable(L, 0, 4);
 	lua_pushinteger(L, width); lua_setfield(L, -2, "width");
@@ -69,10 +68,53 @@ static int png_decode(std::istream& in, lua_State* L){
 	return 1;
 }
 
-static void png_encode(std::ostream& out, lua_State* L){
-
-	// TODO
-
+static int png_encode(std::ostream& out, lua_State* L){
+	// Get arguments
+	luaL_checktype(L, 1, LUA_TTABLE);
+	lua_getfield(L, 1, "width");
+	lua_getfield(L, 1, "height");
+	lua_getfield(L, 1, "type");
+	lua_getfield(L, 1, "data");
+	const int width = luaL_checkinteger(L, -4), height = luaL_checkinteger(L, -3);
+	size_t data_len;
+	const std::string type(luaL_checkstring(L, -2)),
+			data(luaL_checklstring(L, -1, &data_len), data_len);
+	lua_pop(L, 4);
+	// Check arguments
+	if(width < 0 || height < 0)
+		return luaL_error(L, "Invalid dimension!");
+	if(type != "bgr" && type != "bgra")
+		return luaL_error(L, "Invalid type!");
+	const bool has_alpha = type == "bgra";
+	if(data_len != static_cast<size_t>(width * height * (has_alpha ? 4 : 3)))
+		return luaL_error(L, "Invalid data size!");
+	// Create PNG structures
+	png_infop png_info = nullptr;
+	const std::unique_ptr<png_struct,std::function<void(png_structp)>> png(png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr), [&png_info](png_structp png){png_destroy_write_struct(&png, &png_info);});
+	if(!png || !(png_info = png_create_info_struct(png.get())))
+		return luaL_error(L, "Couldn't create PNG structures!");
+	// Set PNG error "handler"
+	if(setjmp(png_jmpbuf(png.get())))
+		return luaL_error(L, "PNG write error occured!");
+	// Set PNG target writer
+	png_set_write_fn(png.get(), &out, [](png_structp png, png_bytep in, png_size_t in_size){
+		if(!static_cast<std::ostream*>(png_get_io_ptr(png))->write(reinterpret_cast<char*>(in), in_size))
+			png_longjmp(png, 1);
+	}, nullptr);
+        // Write PNG header informations
+	png_set_IHDR(png.get(), png_info, width, height, 8, has_alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_write_info(png.get(), png_info);
+	// Set PNG image transformations
+	png_set_bgr(png.get());
+	// Write PNG image
+	png_bytep pdata = reinterpret_cast<png_bytep>(const_cast<char*>(data.data()));
+	const png_size_t rowbytes = png_get_rowbytes(png.get(), png_info);
+	assert(rowbytes == static_cast<png_size_t>(width * (has_alpha ? 4 : 3)));
+	for(const png_bytep data_end = pdata + height * rowbytes; pdata != data_end; pdata += rowbytes)
+		png_write_row(png.get(), pdata);
+	png_write_end(png.get(), png_info);
+	// No errors occured
+	return 0;
 }
 
 // General functions
@@ -101,6 +143,7 @@ static int png_write_file(lua_State* L){
 	std::ofstream out(luaL_checkstring(L, 1), std::ios_base::binary);
 	if(!out)
 		return luaL_error(L, "Couldn't open output file!");
+	lua_remove(L, 1); // Set data table to stack bottom
 	png_encode(out, L);
 	return 0;
 }
