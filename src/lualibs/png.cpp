@@ -52,7 +52,6 @@ static int png_decode(std::istream& in, lua_State* L){
 	png_set_expand(png.get());			// Converts PALETTE->RGB24, GREY?->GREY8, RNG_CHUNK->ALPHA
 	png_set_strip_16(png.get());			// Converts RGB48->RGB24, GREY16->GREY8
 	png_set_gray_to_rgb(png.get());			// Converts GREY->RGB
-	png_set_bgr(png.get());				// Converts RGB->BGR
 	png_read_update_info(png.get(), png_info);	// Update header to new format after conversions
 	// Read PNG image
 	const png_size_t rowbytes = png_get_rowbytes(png.get(), png_info);
@@ -64,7 +63,7 @@ static int png_decode(std::istream& in, lua_State* L){
 	lua_createtable(L, 0, 4);
 	lua_pushinteger(L, width); lua_setfield(L, -2, "width");
 	lua_pushinteger(L, height); lua_setfield(L, -2, "height");
-	lua_pushstring(L, color_type & PNG_COLOR_MASK_ALPHA ? "bgra" : "bgr"); lua_setfield(L, -2, "type");
+	lua_pushstring(L, color_type & PNG_COLOR_MASK_ALPHA ? "rgba" : "rgb"); lua_setfield(L, -2, "type");
 	lua_pushlstring(L, data.data(), data.length()); lua_setfield(L, -2, "data");
 	return 1;
 }
@@ -83,9 +82,9 @@ static int png_encode(std::ostream& out, lua_State* L){
 	// Check arguments
 	if(width < 0 || height < 0)
 		return luaL_error(L, "Invalid dimension!");
-	if(type != "bgr" && type != "bgra")
+	if(type != "rgb" && type != "rgba")
 		return luaL_error(L, "Invalid type!");
-	const bool has_alpha = type == "bgra";
+	const bool has_alpha = type == "rgba";
 	if(data.length() != static_cast<size_t>(width * height * (has_alpha ? 4 : 3)))
 		return luaL_error(L, "Invalid data size!");
 	// Create PNG structures
@@ -104,8 +103,6 @@ static int png_encode(std::ostream& out, lua_State* L){
         // Write PNG header informations
 	png_set_IHDR(png.get(), png_info, width, height, 8, has_alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 	png_write_info(png.get(), png_info);
-	// Set PNG image transformations
-	png_set_bgr(png.get());
 	// Write PNG image
 	png_bytep pdata = reinterpret_cast<png_bytep>(const_cast<char*>(data.data()));
 	const png_size_t rowbytes = png_get_rowbytes(png.get(), png_info);
