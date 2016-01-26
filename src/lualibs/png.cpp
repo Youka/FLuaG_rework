@@ -13,6 +13,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
 #include <sstream>
 #include <fstream>
 #include <png.h>
@@ -76,9 +77,8 @@ static int png_encode(std::ostream& out, lua_State* L){
 	lua_getfield(L, 1, "type");
 	lua_getfield(L, 1, "data");
 	const int width = luaL_checkinteger(L, -4), height = luaL_checkinteger(L, -3);
-	size_t data_len;
 	const std::string type(luaL_checkstring(L, -2)),
-			data(luaL_checklstring(L, -1, &data_len), data_len);
+			data(luaL_checkstring(L, -1), lua_rawlen(L, -1));
 	lua_pop(L, 4);
 	// Check arguments
 	if(width < 0 || height < 0)
@@ -86,7 +86,7 @@ static int png_encode(std::ostream& out, lua_State* L){
 	if(type != "bgr" && type != "bgra")
 		return luaL_error(L, "Invalid type!");
 	const bool has_alpha = type == "bgra";
-	if(data_len != static_cast<size_t>(width * height * (has_alpha ? 4 : 3)))
+	if(data.length() != static_cast<size_t>(width * height * (has_alpha ? 4 : 3)))
 		return luaL_error(L, "Invalid data size!");
 	// Create PNG structures
 	png_infop png_info = nullptr;
@@ -119,8 +119,7 @@ static int png_encode(std::ostream& out, lua_State* L){
 
 // General functions
 static int png_read(lua_State* L){
-	size_t len;
-	std::istringstream in(std::string(luaL_checklstring(L, 1, &len), len));
+	std::istringstream in(std::string(luaL_checkstring(L, 1), lua_rawlen(L, 1)));
 	return png_decode(in, L);
 }
 
