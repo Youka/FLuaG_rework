@@ -19,7 +19,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 int luaopen_mathex(lua_State* L);
 int luaopen_tableex(lua_State* L);
 int luaopen_regex(lua_State* L);
-int luaopen_algorithm(lua_State* L);
+int luaopen_geometry(lua_State* L);
 int luaopen_filesystem(lua_State* L);
 int luaopen_png(lua_State* L);
 int luaopen_tgl(lua_State* L);

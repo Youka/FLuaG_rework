@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: imageop.hpp
+File: math.hpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -14,18 +14,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #pragma once
 
-#include <memory>
-#include <algorithm>
-#include <cassert>
-
-namespace ImageOp{
-	// Flip data rows vertically
-	inline void flip(unsigned char* data, const unsigned height, const unsigned stride){
-		assert(data);
-		const std::unique_ptr<unsigned char> tmp(new unsigned char[stride]);
-		unsigned char* data_tail = data + (height-1) * stride;
-		for(const unsigned char* const data_stop = data + (height >> 1) * stride; data != data_stop; data = std::copy(tmp.get(), tmp.get()+stride, data))
-			std::copy(data_tail, data_tail+stride, tmp.get()),
-			data_tail = std::copy(data, data+stride, data_tail) - (stride << 1);
+namespace Math{
+	template<typename T>
+	inline char sign(T x){
+		return x < 0 ? -1 : (x > 0 ? 1 : 0);
 	}
 }

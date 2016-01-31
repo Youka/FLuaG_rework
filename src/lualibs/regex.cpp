@@ -48,9 +48,8 @@ static int regex_match(lua_State* L){
 	lua_createtable(L, std::distance(it, it_end), 0);
 	for(int i = 1; it != it_end; ++it, ++i){
 		const std::smatch& matches = *it;
-		auto sub_it = matches.begin(), sub_it_end = matches.end();
 		lua_createtable(L, matches.size(), 0);
-		for(int sub_i = 1; sub_it != sub_it_end; ++sub_it, ++sub_i){
+		for(size_t sub_i = 1; sub_i <= matches.size(); ++sub_i){
 			lua_createtable(L, 0, 2);
 			lua_pushinteger(L, 1+matches.position(sub_i-1)); lua_setfield(L, -2, "position");
 			lua_pushstring(L, matches.str(sub_i-1).c_str()); lua_setfield(L, -2, "string");

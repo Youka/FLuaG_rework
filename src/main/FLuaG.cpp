@@ -36,14 +36,14 @@ namespace FLuaG{
 					{"mathx", luaopen_mathex},
 					{"tablex", luaopen_tableex},
 					{"regex", luaopen_regex},
-					{"algorithm", luaopen_algorithm},
+					{"geometry", luaopen_geometry},
 					{"filesystem", luaopen_filesystem},
 					{"png", luaopen_png},
 					{"tgl", luaopen_tgl},
 					{"font", luaopen_font}
 				};
-				for(auto it = libs.cbegin(); it != libs.cend(); ++it){
-					lua_pushcfunction(LSTATE, it->second); lua_setfield(LSTATE, -2, it->first);
+				for(const auto& entry : libs){
+					lua_pushcfunction(LSTATE, entry.second); lua_setfield(LSTATE, -2, entry.first);
 				}
 			}
 			lua_pop(LSTATE, -1);
