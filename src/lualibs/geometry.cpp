@@ -136,8 +136,8 @@ static int geometry_curve_flatten(lua_State* L){
 			points[3] - points[2]
 		}};
 		const auto vecs_end = std::remove(vecs.begin(), vecs.end(), Point2d{0,0});
-		if(std::next(vecs.cbegin(),2) <= vecs_end)
-			for(auto it = std::next(vecs.cbegin()); it != vecs_end; ++it)
+		if(vecs.cbegin()+2 <= vecs_end)
+			for(auto it = vecs.cbegin()+1; it != vecs_end; ++it)
 				if(std::abs(normal_z(*(it-1), *it)) > tolerance)
 					return false;
 		return true;
