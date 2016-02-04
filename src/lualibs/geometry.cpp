@@ -116,6 +116,8 @@ static int geometry_curve_flatten(lua_State* L){
 		{luaL_checknumber(L, 7), luaL_checknumber(L, 8)}
 	}};
 	const double tolerance = luaL_optnumber(L, 9, 0.1);
+	if(tolerance <= 0)
+		return luaL_error(L, "Tolerance must be greater zero!");
 	// Helper functions
 	auto curve_split = [](const std::array<Point2d,4>& points) -> std::array<Point2d,8>{
 		static const Point2d half{0.5, 0.5};

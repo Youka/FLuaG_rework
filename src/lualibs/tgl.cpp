@@ -20,6 +20,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 // OpenGL error check (application hang without context)
 static bool glHasError(){
@@ -929,9 +930,10 @@ static int tgl_info(lua_State* L){
 				GLint extensions_n;
 				glGetIntegerv(GL_NUM_EXTENSIONS, &extensions_n);
 				lua_createtable(L, extensions_n, 0);
-                                for(GLint i = 0; i < extensions_n; ++i){
-					lua_pushstring(L, reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))); lua_rawseti(L, -2, i);
-                                }
+					for(GLint i = 0; i < extensions_n; ++i){
+						assert(glGetStringi(GL_EXTENSIONS, i));
+						lua_pushstring(L, reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))); lua_rawseti(L, -2, i);
+					}
 			}
 			break;
 	}
