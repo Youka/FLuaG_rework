@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: libs.h
+File: utf8.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -12,16 +12,11 @@ Permission is granted to anyone to use this software for any purpose, including 
     3. This notice may not be removed or altered from any source distribution.
 */
 
-#pragma once
+#include "libs.h"
 
-#include <lua.hpp>
+int luaopen_utf8(lua_State* L){
 
-int luaopen_mathex(lua_State* L);
-int luaopen_tableex(lua_State* L);
-int luaopen_regex(lua_State* L);
-int luaopen_geometry(lua_State* L);
-int luaopen_filesystem(lua_State* L);
-int luaopen_png(lua_State* L);
-int luaopen_tgl(lua_State* L);
-int luaopen_font(lua_State* L);
-int luaopen_utf8(lua_State* L);
+	// TODO
+
+	return luaL_error(L, "UTF8 not implemented yet!");
+}

@@ -40,7 +40,8 @@ namespace FLuaG{
 					{"filesystem", luaopen_filesystem},
 					{"png", luaopen_png},
 					{"tgl", luaopen_tgl},
-					{"font", luaopen_font}
+					{"font", luaopen_font},
+					{"utf8", luaopen_utf8}
 				};
 				for(const auto& entry : libs){
 					lua_pushcfunction(LSTATE, entry.second); lua_setfield(LSTATE, -2, entry.first);
