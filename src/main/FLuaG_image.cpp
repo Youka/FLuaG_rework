@@ -13,6 +13,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "FLuaG.hpp"
+#include "../utils/lua.h"
 #include <vector>
 
 // Unique name for Lua metatable
@@ -85,9 +86,13 @@ namespace FLuaG{
 		*static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*))) = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable
 		if(luaL_newmetatable(LSTATE, LUA_IMAGE_DATA)){
-			lua_pushcfunction(LSTATE, image_data_delete); lua_setfield(LSTATE, -2, "__gc");
-			lua_pushcfunction(LSTATE, image_data_size); lua_setfield(LSTATE, -2, "__len");
-			lua_pushcfunction(LSTATE, image_data_access); lua_setfield(LSTATE, -2, "__call");
+			static const luaL_Reg l[] = {
+				{"__gc", image_data_delete},
+				{"__len", image_data_size},
+				{"__call", image_data_access},
+				{NULL, NULL}
+			};
+			luaL_setfuncs(LSTATE, l, 0);
 		}
 		// Bind metatable to userdata
 		lua_setmetatable(LSTATE, -2);

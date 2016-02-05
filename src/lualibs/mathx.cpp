@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: mathex.cpp
+File: mathx.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -13,6 +13,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
+#include "../utils/math.hpp"
 #include <cmath>
 
 static int math_hypot(lua_State* L){
@@ -20,23 +22,25 @@ static int math_hypot(lua_State* L){
 	return 1;
 }
 
-int luaopen_mathex(lua_State* L){
-	// Get 'math' table
+static int math_sign(lua_State* L){
+	lua_pushinteger(L, Math::sign(luaL_checknumber(L, 1)));
+	return 1;
+}
+
+int luaopen_mathx(lua_State* L){
+	static const luaL_Reg l[] = {
+		{"hypot", math_hypot},
+		{"sign", math_sign},
+		{NULL, NULL}
+	};
 	lua_getglobal(L, "math");
-	const bool is_global = lua_istable(L, -1);
-	if(!is_global){
+	if(lua_istable(L, -1)){
+		luaL_setfuncs(L, l, 0);
 		lua_pop(L, 1);
-		lua_createtable(L, 0, 1);
-	}
-	// Set table functions
-	lua_pushcfunction(L, math_hypot); lua_setfield(L, -2, "hypot");
-
-	// TODO
-
-	// Set table to global environment
-	if(is_global)
+	}else{
 		lua_pop(L, 1);
-	else
+		luaL_newlib(L, l);
 		lua_setglobal(L, "math");
+	}
 	return 0;
 }

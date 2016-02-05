@@ -13,6 +13,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
 
 // Helpers
 static unsigned charsize(const unsigned char c){
@@ -78,10 +79,13 @@ static int utf8_len(lua_State* L){
 }
 
 int luaopen_utf8(lua_State* L){
-	lua_createtable(L, 0, 4);
+	static const luaL_Reg l[] = {
+		{"charrange", utf8_charrange},
+		{"chars", utf8_chars},
+		{"len", utf8_len},
+		{NULL, NULL}
+	};
+	luaL_newlib(L, l);
 	lua_pushstring(L, "[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*"); lua_setfield(L, -2, "charpattern");
-	lua_pushcfunction(L, utf8_charrange); lua_setfield(L, -2, "charrange");
-	lua_pushcfunction(L, utf8_chars); lua_setfield(L, -2, "chars");
-	lua_pushcfunction(L, utf8_len); lua_setfield(L, -2, "len");
 	return 1;
 }

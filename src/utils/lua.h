@@ -16,6 +16,19 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #if LUA_VERSION_NUM <= 501
 	#define lua_rawlen lua_objlen
+	#define luaL_newlibtable(L, l) lua_createtable(L, 0, sizeof(l)/sizeof(l[0])-1)
+	inline void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup){
+		if(nup == 0)
+			luaL_register(L, NULL, l);
+		else{
+			for(; l->name != NULL; ++l){
+				for(int n = lua_gettop(L), i = n - nup + 1; i <= n; lua_pushvalue(L, i++));
+				lua_pushcclosure(L, l->func, nup); lua_setfield(L, -2, l->name);
+			}
+			lua_pop(L, nup);
+		}
+	}
+	#define luaL_newlib(L, l) (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
 #endif
 
 #define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))

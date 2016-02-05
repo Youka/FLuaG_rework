@@ -166,11 +166,11 @@ static int geometry_curve_flatten(lua_State* L){
 }
 
 int luaopen_geometry(lua_State* L){
-	lua_createtable(L, 0, 2);
-	lua_pushcfunction(L, geometry_ear_clipping); lua_setfield(L, -2, "earclipping");
-	lua_pushcfunction(L, geometry_curve_flatten); lua_setfield(L, -2, "curveflatten");
-
-	// TODO
-
+	static const luaL_Reg l[] = {
+		{"earclipping", geometry_ear_clipping},
+		{"curveflatten", geometry_curve_flatten},
+		{NULL, NULL}
+	};
+	luaL_newlib(L, l);
 	return 1;
 }

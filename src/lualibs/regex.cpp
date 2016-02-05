@@ -95,10 +95,14 @@ static int regex_create(lua_State* L){
 		return luaL_error(L, e.what());
 	}
 	if(luaL_newmetatable(L, LUA_REGEX)){
-		lua_pushcfunction(L, regex_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", regex_free},
+			{"replace", regex_replace},
+			{"match", regex_match},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, regex_replace); lua_setfield(L, -2, "replace");
-		lua_pushcfunction(L, regex_match); lua_setfield(L, -2, "match");
 	}
 	lua_setmetatable(L, -2);
 	return 1;

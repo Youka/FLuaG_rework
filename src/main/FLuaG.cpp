@@ -13,8 +13,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "FLuaG.hpp"
-#include <map>
 #include "../lualibs/libs.h"
+#include "../utils/lua.h"
 #include "../utils/module.hpp"
 #include <cassert>
 
@@ -32,24 +32,23 @@ namespace FLuaG{
 		if(lua_istable(LSTATE, -1)){
 			lua_getfield(LSTATE, -1, "preload");
 			if(lua_istable(LSTATE, -1)){
-				static const std::map<const char*, int(*)(lua_State*)> libs{
-					{"mathx", luaopen_mathex},
-					{"tablex", luaopen_tableex},
+				static const luaL_Reg l[] = {
+					{"mathx", luaopen_mathx},
+					{"tablex", luaopen_tablex},
 					{"regex", luaopen_regex},
 					{"geometry", luaopen_geometry},
 					{"filesystem", luaopen_filesystem},
 					{"png", luaopen_png},
 					{"tgl", luaopen_tgl},
 					{"font", luaopen_font},
-					{"utf8", luaopen_utf8}
+					{"utf8", luaopen_utf8},
+					{NULL, NULL}
 				};
-				for(const auto& entry : libs){
-					lua_pushcfunction(LSTATE, entry.second); lua_setfield(LSTATE, -2, entry.first);
-				}
+				luaL_setfuncs(LSTATE, l, 0);
 			}
-			lua_pop(LSTATE, -1);
+			lua_pop(LSTATE, 1);
 		}
-		lua_pop(LSTATE, -1);
+		lua_pop(LSTATE, 1);
 		// Extend Lua search paths
 		std::string path = Module::dir();
 		if(!path.empty()){

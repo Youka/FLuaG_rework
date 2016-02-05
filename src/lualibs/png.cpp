@@ -150,11 +150,14 @@ static int png_version(lua_State* L){
 }
 
 int luaopen_png(lua_State* L){
-	lua_createtable(L, 0, 5);
-	lua_pushcfunction(L, png_read); lua_setfield(L, -2, "read");
-	lua_pushcfunction(L, png_read_file); lua_setfield(L, -2, "readfile");
-	lua_pushcfunction(L, png_write); lua_setfield(L, -2, "write");
-	lua_pushcfunction(L, png_write_file); lua_setfield(L, -2, "writefile");
-	lua_pushcfunction(L, png_version); lua_setfield(L, -2, "version");
+	static const luaL_Reg l[] = {
+		{"read", png_read},
+		{"readfile", png_read_file},
+		{"write", png_write},
+		{"writefile", png_write_file},
+		{"version", png_version},
+		{NULL, NULL}
+	};
+	luaL_newlib(L, l);
 	return 1;
 }

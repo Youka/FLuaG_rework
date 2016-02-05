@@ -108,7 +108,11 @@ static int tgl_shader_create(lua_State* L){
 	*static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = shader;
 	// Fetch/create Lua tgl shader metatable
 	if(luaL_newmetatable(L, LUA_TGL_SHADER)){
-		lua_pushcfunction(L, tgl_shader_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_shader_free},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -265,10 +269,14 @@ static int tgl_program_create(lua_State* L){
 	*static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint))) = program;
 	// Fetch/create Lua tgl program metatable
 	if(luaL_newmetatable(L, LUA_TGL_PROGRAM)){
-		lua_pushcfunction(L, tgl_program_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_program_free},
+			{"use", tgl_program_use},
+			{"uniform", tgl_program_uniform},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_program_use); lua_setfield(L, -2, "use");
-		lua_pushcfunction(L, tgl_program_uniform); lua_setfield(L, -2, "uniform");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -375,9 +383,13 @@ static int tgl_vao_create(lua_State* L){
 	udata[1] = vao;
 	// Fetch/create Lua tgl vao metatable
 	if(luaL_newmetatable(L, LUA_TGL_VAO)){
-		lua_pushcfunction(L, tgl_vao_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_vao_free},
+			{"draw", tgl_vao_draw},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_vao_draw); lua_setfield(L, -2, "draw");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -542,11 +554,15 @@ static int tgl_texture_create(lua_State* L){
 	udata[1] = 0;	// Reserved for PBO on data access
 	// Fetch/create Lua tgl texture metatable
 	if(luaL_newmetatable(L, LUA_TGL_TEXTURE)){
-		lua_pushcfunction(L, tgl_texture_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_texture_free},
+			{"parameter", tgl_texture_param},
+			{"data", tgl_texture_data},
+			{"bind", tgl_texture_bind},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_texture_param); lua_setfield(L, -2, "parameter");
-		lua_pushcfunction(L, tgl_texture_data); lua_setfield(L, -2, "data");
-		lua_pushcfunction(L, tgl_texture_bind); lua_setfield(L, -2, "bind");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -654,11 +670,15 @@ static int tgl_fbo_create(lua_State* L){
 	udata[2] = fbo;
 	// Fetch/create Lua tgl fbo metatable
 	if(luaL_newmetatable(L, LUA_TGL_FBO)){
-		lua_pushcfunction(L, tgl_fbo_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_fbo_free},
+			{"bind", tgl_fbo_bind},
+			{"info", tgl_fbo_info},
+			{"blit", tgl_fbo_blit},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_fbo_bind); lua_setfield(L, -2, "bind");
-		lua_pushcfunction(L, tgl_fbo_info); lua_setfield(L, -2, "info");
-		lua_pushcfunction(L, tgl_fbo_blit); lua_setfield(L, -2, "blit");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
@@ -963,25 +983,29 @@ int luaopen_tgl(lua_State* L){
 	*udata = window;
 	// Fetch/create Lua tgl context metatable
 	if(luaL_newmetatable(L, LUA_TGL_CONTEXT)){
-		lua_pushcfunction(L, tgl_context_free); lua_setfield(L, -2, "__gc");
+		static const luaL_Reg l[] = {
+			{"__gc", tgl_context_free},
+			{"activate", tgl_context_activate},
+			{"createshader", tgl_shader_create},
+			{"createprogram", tgl_program_create},
+			{"createvao", tgl_vao_create},
+			{"createtexture", tgl_texture_create},
+			{"createfbo", tgl_fbo_create},
+			{"clear", tgl_clear},
+			{"viewport", tgl_viewport},
+			{"size", tgl_size},
+			{"mode", tgl_mode},
+			{"scissor", tgl_scissor},
+			{"logic", tgl_logic},
+			{"mask", tgl_mask},
+			{"depth", tgl_depth},
+			{"stencil", tgl_stencil},
+			{"blend", tgl_blend},
+			{"info", tgl_info},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
-		lua_pushcfunction(L, tgl_context_activate); lua_setfield(L, -2, "activate");
-		lua_pushcfunction(L, tgl_shader_create); lua_setfield(L, -2, "createshader");
-		lua_pushcfunction(L, tgl_program_create); lua_setfield(L, -2, "createprogram");
-		lua_pushcfunction(L, tgl_vao_create); lua_setfield(L, -2, "createvao");
-		lua_pushcfunction(L, tgl_texture_create); lua_setfield(L, -2, "createtexture");
-		lua_pushcfunction(L, tgl_fbo_create); lua_setfield(L, -2, "createfbo");
-		lua_pushcfunction(L, tgl_clear); lua_setfield(L, -2, "clear");
-		lua_pushcfunction(L, tgl_viewport); lua_setfield(L, -2, "viewport");
-		lua_pushcfunction(L, tgl_size); lua_setfield(L, -2, "size");
-		lua_pushcfunction(L, tgl_mode); lua_setfield(L, -2, "mode");
-		lua_pushcfunction(L, tgl_scissor); lua_setfield(L, -2, "scissor");
-		lua_pushcfunction(L, tgl_logic); lua_setfield(L, -2, "logic");
-		lua_pushcfunction(L, tgl_mask); lua_setfield(L, -2, "mask");
-		lua_pushcfunction(L, tgl_depth); lua_setfield(L, -2, "depth");
-		lua_pushcfunction(L, tgl_stencil); lua_setfield(L, -2, "stencil");
-		lua_pushcfunction(L, tgl_blend); lua_setfield(L, -2, "blend");
-		lua_pushcfunction(L, tgl_info); lua_setfield(L, -2, "info");
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);

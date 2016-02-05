@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: tableex.cpp
+File: tablex.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -143,21 +143,20 @@ static int table_tostring(lua_State* L){
 	return 1;
 }
 
-int luaopen_tableex(lua_State* L){
-	// Get 'table' table
+int luaopen_tablex(lua_State* L){
+	static const luaL_Reg l[] = {
+		{"copy", table_copy},
+		{"tostring", table_tostring},
+		{NULL, NULL}
+	};
 	lua_getglobal(L, "table");
-	const bool is_global = lua_istable(L, -1);
-	if(!is_global){
+	if(lua_istable(L, -1)){
+		luaL_setfuncs(L, l, 0);
 		lua_pop(L, 1);
-		lua_createtable(L, 0, 2);
-	}
-	// Set table functions
-	lua_pushcfunction(L, table_copy); lua_setfield(L, -2, "copy");
-	lua_pushcfunction(L, table_tostring); lua_setfield(L, -2, "tostring");
-	// Set table to global environment
-	if(is_global)
+	}else{
 		lua_pop(L, 1);
-	else
+		luaL_newlib(L, l);
 		lua_setglobal(L, "table");
+	}
 	return 0;
 }
