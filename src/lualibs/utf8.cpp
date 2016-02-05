@@ -13,11 +13,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
-#include <vector>
-#include <sstream>
 
 // Helpers
-static unsigned codepoint_size(const unsigned char c){
+static unsigned charsize(const unsigned char c){
 	if(c < 128)
 		return 1;
 	else if(c < 224)
@@ -27,119 +25,63 @@ static unsigned codepoint_size(const unsigned char c){
 	return 4;
 }
 
-static bool check_codepoint(const unsigned cp){
-	const unsigned char* pcp = reinterpret_cast<const unsigned char*>(&cp);
-	const unsigned cps = codepoint_size(*pcp);
-        return !(
-		(cps > 3 ? pcp[3] < 0x80 || pcp[3] > 0xbf : pcp[3] != 0) ||
-		(cps > 2 ? pcp[2] < 0x80 || pcp[2] > 0xbf : pcp[2] != 0) ||
-		(cps > 1 ? pcp[1] < 0x80 || pcp[1] > 0xbf : pcp[1] != 0) ||
-		(*pcp > 0x7f && *pcp < 0xc2) || *pcp > 0xf4
-	);
-}
-
-struct Codepoints{
-	bool error;
-	struct Codepoint{
-		size_t byte_pos;
-		unsigned value;
-	};
-	std::vector<Codepoint> items;
-};
-Codepoints codepoints(const std::string& s){
-	// Output buffer
-	Codepoints result{false};
-	result.items.reserve(s.length() << 2);
-	// Go through bytes
-	unsigned cps;
-	for(const unsigned char* pchar = reinterpret_cast<const unsigned char*>(s.data()), *pchar_end = pchar+s.length(); pchar != pchar_end; pchar += cps){
-		cps = codepoint_size(*pchar);
-		// Check valid byte sequence
-		const size_t byte_pos = pchar - reinterpret_cast<const unsigned char*>(s.data());
-		if(pchar+cps > pchar_end){
-			result.error = true;
-			result.items.push_back({byte_pos, 0});
-			break;
-		}
-		// Add codepoint to output
-		switch(cps){
-			case 1: result.items.push_back({byte_pos, *pchar}); break;
-			case 2: result.items.push_back({byte_pos, *reinterpret_cast<const unsigned short*>(pchar)}); break;
-			case 3: result.items.push_back({byte_pos, *pchar + static_cast<const unsigned>(*reinterpret_cast<const unsigned short*>(pchar+1) << 8)}); break;
-			case 4: result.items.push_back({byte_pos, *reinterpret_cast<const unsigned*>(pchar)}); break;
-		}
-		if(!check_codepoint(result.items.back().value)){
-			result.error = true;
-			break;
-		}
-	}
-	// Return valid or invalid output
-	return result;
+static bool checkchar(const unsigned char* c){
+	const unsigned cn = charsize(*c);
+	return *c != 0x0 && (*c <= 0x7f || (*c >= 0xc2 && *c <= 0xf4)) &&
+		(cn < 2 || (c[1] >= 0x80 && c[1] <= 0xbf)) &&
+		(cn < 3 || (c[2] >= 0x80 && c[2] <= 0xbf)) &&
+		(cn < 4 || (c[3] >= 0x80 && c[3] <= 0xbf));
 }
 
 // General functions
-static int utf8_char(lua_State* L){
-	std::ostringstream ss;
-	const int n = lua_gettop(L);
-	for(int i = 1; i <= n; ++i){
-		const lua_Integer cp = luaL_checkinteger(L, i);
-		if(!check_codepoint(cp))
-			return luaL_argerror(L, i, "Invalid codepoint!");
-		const char* pcp = reinterpret_cast<const char*>(&cp);
-		ss.write(pcp, codepoint_size(*pcp));
+static int utf8_charrange(lua_State* L){
+	// Get arguments
+	size_t s_len;
+	const char* s = luaL_checklstring(L, 1, &s_len);
+	int i = luaL_optinteger(L, 2, 1);
+	// Fix position
+	if(i < 0) i += s_len + 1;
+	// Get charrange
+	if(i >= 1 && i <= static_cast<decltype(i)>(s_len)){
+		lua_pushinteger(L, charsize(s[i-1]));
+		return 1;
 	}
-	lua_pushstring(L, ss.str().c_str());
+	return 0;
+}
+
+static int utf8_chars(lua_State* L){
+	luaL_checktype(L, 1, LUA_TSTRING);
+	lua_pushinteger(L, 0);
+	lua_pushcclosure(L, [](lua_State* L){
+		const int i = lua_tointeger(L, lua_upvalueindex(2));
+		const char* s = lua_tostring(L, lua_upvalueindex(1)) + i;
+		if(*s == '\0')
+			return 0;
+		if(!checkchar(reinterpret_cast<const unsigned char*>(s)))
+			return luaL_error(L, "Invalid byte sequence found!");
+		const unsigned cn = charsize(*s);
+		lua_pushlstring(L, s, cn);
+		lua_pushinteger(L, 1+i);
+		lua_pushinteger(L, i+cn); lua_replace(L, lua_upvalueindex(2));
+		return 2;
+	}, 2);
 	return 1;
 }
 
-static int utf8_codepoint(lua_State* L){
-	// Get arguments
-	const std::string s(luaL_checkstring(L, 1));
-	const int i = luaL_optinteger(L, 2, 1),
-		j = luaL_optinteger(L, 3, i);
-	// Check arguments
-	if(i < 1 || j < i)
-		return luaL_error(L, "Invalid byte position!");
-	// Extract codepoints
-	const int oldtop = lua_gettop(L);
-	if(i <= static_cast<int>(s.length())){
-		auto cps = codepoints(s.substr(i-1, j-i+1));
-		if(cps.error)
-			return luaL_error(L, "Invalid byte sequence found!");
-		for(auto cp : cps.items)
-			lua_pushinteger(L, cp.value);
-	}
-	return lua_gettop(L) - oldtop;
-}
-
-static int utf8_codes(lua_State* L){
-
-	// TODO
-
-	return 0;
-}
-
 static int utf8_len(lua_State* L){
-
-	// TODO
-
-	return 0;
-}
-
-static int utf8_offset(lua_State* L){
-
-	// TODO
-
-	return 0;
+	unsigned n = 0;
+	for(const char* s = luaL_checkstring(L, 1); *s != '\0'; s += charsize(*s), ++n)
+		if(!checkchar(reinterpret_cast<const unsigned char*>(s)))
+			return luaL_error(L, "Invalid byte sequence found!");
+	lua_pushinteger(L, n);
+	return 1;
 }
 
 int luaopen_utf8(lua_State* L){
-	lua_createtable(L, 0, 6);
-	lua_pushcfunction(L, utf8_char); lua_setfield(L, -2, "char");
+	lua_createtable(L, 0, 4);
 	lua_pushstring(L, "[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*"); lua_setfield(L, -2, "charpattern");
-	lua_pushcfunction(L, utf8_codepoint); lua_setfield(L, -2, "codepoint");
-	lua_pushcfunction(L, utf8_codes); lua_setfield(L, -2, "codes");
+	lua_pushcfunction(L, utf8_charrange); lua_setfield(L, -2, "charrange");
+	lua_pushcfunction(L, utf8_chars); lua_setfield(L, -2, "chars");
 	lua_pushcfunction(L, utf8_len); lua_setfield(L, -2, "len");
-	lua_pushcfunction(L, utf8_offset); lua_setfield(L, -2, "offset");
 	return 1;
 }
