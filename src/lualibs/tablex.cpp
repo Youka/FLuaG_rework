@@ -23,9 +23,7 @@ static int table_copy(lua_State* L){
 	// Get optional argument
 	const bool deep = luaL_optboolean(L, 2, true);
 	// Remove non-main (=unnecessary) arguments
-	const int args_n = lua_gettop(L);
-	if(args_n > 1)
-		lua_pop(L, args_n - 1);
+	lua_settop(L, 1);
 	// Copy recursive & generate new table
 	std::function<void(void)> copy;
 	copy = [&copy,L,deep](){
@@ -57,9 +55,7 @@ static int table_tostring(lua_State* L){
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	// Remove unnecessary arguments
-	const int args_n = lua_gettop(L);
-	if(args_n > 1)
-		lua_pop(L, args_n - 1);
+	lua_settop(L, 1);
 	// Output buffer
 	std::ostringstream buf;
 	buf << std::boolalpha << std::showbase;
@@ -143,10 +139,133 @@ static int table_tostring(lua_State* L){
 	return 1;
 }
 
+static int table_all_of(lua_State* L){
+	// Check arguments
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
+	// Clear stack from trash arguments
+	lua_settop(L, 2);
+	// Table contents all of ...?
+	const size_t n = lua_rawlen(L, 1);
+	if(lua_isfunction(L, 2))
+		for(size_t i = 1; i <= n; ++i){
+			lua_pushvalue(L, 2);
+			lua_rawgeti(L, 1, i);
+			lua_call(L, 1, 1);
+			if(!lua_toboolean(L, -1)){
+				lua_pushboolean(L, false);
+				return 1;
+			}
+			lua_pop(L, 1);
+		}
+	else
+		for(size_t i = 1; i <= n; ++i){
+			lua_rawgeti(L, 1, i);
+			if(!lua_equal(L, 2, -1)){
+				lua_pushboolean(L, false);
+				return 1;
+			}
+			lua_pop(L, 1);
+		}
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+static int table_compare(lua_State* L){
+	// Check arguments
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	luaL_argcheck(L, lua_isnoneornil(L, 3) || lua_isfunction(L, 3), 3, "optional function expected");
+	// Clear stack from trash arguments
+	lua_settop(L, 3);
+	// Compare table contents
+	const size_t n = lua_rawlen(L, 1);
+	if(n != lua_rawlen(L, 2)){
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	if(lua_isfunction(L, 3))
+		for(size_t i = 1; i <= n; ++i){
+			lua_pushvalue(L, 3);
+			lua_rawgeti(L, 1, i); lua_rawgeti(L, 2, i);
+			lua_call(L, 2, 1);
+			if(!lua_toboolean(L, -1)){
+				lua_pushboolean(L, false);
+				return 1;
+			}
+			lua_pop(L, 1);
+		}
+	else
+		for(size_t i = 1; i <= n; ++i){
+			lua_rawgeti(L, 1, i); lua_rawgeti(L, 2, i);
+			if(!lua_equal(L, -2, -1)){
+				lua_pushboolean(L, false);
+				return 1;
+			}
+			lua_pop(L, 2);
+		}
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+static int table_count(lua_State* L){
+	// Check arguments
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
+	// Clear stack from trash arguments
+	lua_settop(L, 2);
+	// Count matches
+	size_t count = 0;
+	const size_t n = lua_rawlen(L, 1);
+	if(lua_isfunction(L, 2))
+		for(size_t i = 1; i <= n; ++i){
+			lua_pushvalue(L, 2);
+			lua_rawgeti(L, 1, i);
+			lua_call(L, 1, 1);
+			if(lua_toboolean(L, -1))
+				++count;
+			lua_pop(L, 1);
+		}
+	else
+		for(size_t i = 1; i <= n; ++i){
+			lua_rawgeti(L, 1, i);
+			if(lua_equal(L, 2, -1))
+				++count;
+			lua_pop(L, 1);
+		}
+	lua_pushinteger(L, count);
+	return 1;
+}
+
+static int table_allocate(lua_State* L){
+	lua_createtable(L, luaL_checkinteger(L, 1), luaL_checkinteger(L, 2));
+	return 1;
+}
+
+static int table_fill(lua_State* L){
+	// Get/check argument
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
+	int n = luaL_checkinteger(L, 3),
+		i = luaL_optinteger(L, 4, 1);
+        // Fill table range with value
+	if(i >= 1 && n > 0)
+                for(n += i; i < n; ++i){
+			lua_pushvalue(L, 2);
+			lua_rawseti(L, 1, i);
+                }
+	return 0;
+}
+
 int luaopen_tablex(lua_State* L){
 	static const luaL_Reg l[] = {
 		{"copy", table_copy},
 		{"tostring", table_tostring},
+		{"allof", table_all_of},
+		{"compare", table_compare},
+		{"count", table_count},
+		{"allocate", table_allocate},
+		{"fill", table_fill},
 		{NULL, NULL}
 	};
 	lua_getglobal(L, "table");

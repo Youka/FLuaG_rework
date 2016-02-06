@@ -68,8 +68,8 @@ static int regex_create(lua_State* L){
 	std::regex_constants::syntax_option_type syntax = std::regex_constants::ECMAScript;
 	std::regex_constants::match_flag_type flag = std::regex_constants::match_default;
 	if(lua_istable(L, 2)){
-		const int n = lua_rawlen(L, 2);
-		for(int i = 1; i <= n; ++i){
+		const size_t n = lua_rawlen(L, 2);
+		for(size_t i = 1; i <= n; ++i){
 			lua_rawgeti(L, 2, i);
 			if(lua_isstring(L, -1)){
 				const std::string option = lua_tostring(L, -1);

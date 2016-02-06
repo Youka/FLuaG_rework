@@ -29,6 +29,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 		}
 	}
 	#define luaL_newlib(L, l) (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+#else
+	#define lua_equal(L, i1, i2) lua_compare(L, i1, i2, LUA_OPEQ)
 #endif
 
 #define luaL_checkboolean(L, arg) (luaL_checktype(L, arg, LUA_TBOOLEAN), lua_toboolean(L, arg))
