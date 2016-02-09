@@ -94,7 +94,7 @@ static int math_classify(lua_State* L){
 
 #define LUA_COMPLEX "complex"
 using complex = std::complex<double>;
-static int math_complex_create(lua_State* L);
+static void lua_pushcomplex(lua_State* L, const complex& c);
 
 static int math_complex_free(lua_State* L){
 	delete *static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX));
@@ -123,35 +123,23 @@ static int math_complex_tostring(lua_State* L){
 }
 
 static int math_complex_add(lua_State* L){
-	const complex x = **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) + **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX));
-	lua_settop(L, 0);
-	lua_pushnumber(L, x.real());
-	lua_pushnumber(L, x.imag());
-	return math_complex_create(L);
+	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) + **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
+	return 1;
 }
 
 static int math_complex_sub(lua_State* L){
-	const complex x = **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) - **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX));
-	lua_settop(L, 0);
-	lua_pushnumber(L, x.real());
-	lua_pushnumber(L, x.imag());
-	return math_complex_create(L);
+	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) - **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
+	return 1;
 }
 
 static int math_complex_mul(lua_State* L){
-	const complex x = **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) * **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX));
-	lua_settop(L, 0);
-	lua_pushnumber(L, x.real());
-	lua_pushnumber(L, x.imag());
-	return math_complex_create(L);
+	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) * **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
+	return 1;
 }
 
 static int math_complex_div(lua_State* L){
-	const complex x = **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) / **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX));
-	lua_settop(L, 0);
-	lua_pushnumber(L, x.real());
-	lua_pushnumber(L, x.imag());
-	return math_complex_create(L);
+	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) / **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
+	return 1;
 }
 
 static int math_complex_equal(lua_State* L){
@@ -159,10 +147,108 @@ static int math_complex_equal(lua_State* L){
 	return 1;
 }
 
-int math_complex_create(lua_State* L){	// Declared as static previously
-	const lua_Number real = luaL_optnumber(L, 1, 0),
-		imag = luaL_optnumber(L, 2, 0);
-	*static_cast<complex**>(lua_newuserdata(L, sizeof(complex*))) = new complex(real, imag);
+static int math_complex_pow(lua_State* L){
+	lua_pushcomplex(L, std::pow(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)), **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_abs(lua_State* L){
+	lua_pushnumber(L, std::abs(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_arg(lua_State* L){
+	lua_pushnumber(L, std::arg(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_norm(lua_State* L){
+	lua_pushnumber(L, std::norm(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_conj(lua_State* L){
+	lua_pushcomplex(L, std::conj(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_exp(lua_State* L){
+	lua_pushcomplex(L, std::exp(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_log(lua_State* L){
+	lua_pushcomplex(L, std::log(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_sqrt(lua_State* L){
+	lua_pushcomplex(L, std::sqrt(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_sin(lua_State* L){
+	lua_pushcomplex(L, std::sin(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_cos(lua_State* L){
+	lua_pushcomplex(L, std::cos(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_tan(lua_State* L){
+	lua_pushcomplex(L, std::tan(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_asin(lua_State* L){
+	lua_pushcomplex(L, std::asin(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_acos(lua_State* L){
+	lua_pushcomplex(L, std::acos(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_atan(lua_State* L){
+	lua_pushcomplex(L, std::atan(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_sinh(lua_State* L){
+	lua_pushcomplex(L, std::sinh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_cosh(lua_State* L){
+	lua_pushcomplex(L, std::cosh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_tanh(lua_State* L){
+	lua_pushcomplex(L, std::tanh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_asinh(lua_State* L){
+	lua_pushcomplex(L, std::asinh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_acosh(lua_State* L){
+	lua_pushcomplex(L, std::acosh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+static int math_complex_atanh(lua_State* L){
+	lua_pushcomplex(L, std::atanh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
+	return 1;
+}
+
+void lua_pushcomplex(lua_State* L, const complex& c){ // static definition on declaration
+	*static_cast<complex**>(lua_newuserdata(L, sizeof(complex*))) = new complex(c);
 	if(luaL_newmetatable(L, LUA_COMPLEX)){
 		static const luaL_Reg l[] = {
 			{"__gc", math_complex_free},
@@ -173,15 +259,41 @@ int math_complex_create(lua_State* L){	// Declared as static previously
 			{"__mul", math_complex_mul},
 			{"__div", math_complex_div},
 			{"__eq", math_complex_equal},
-
-			// TODO
-
+			{"__pow", math_complex_pow},
+			{"abs", math_complex_abs},
+			{"arg", math_complex_arg},
+			{"norm", math_complex_norm},
+			{"conj", math_complex_conj},
+			{"exp", math_complex_exp},
+			{"log", math_complex_log},
+			{"sqrt", math_complex_sqrt},
+			{"sin", math_complex_sin},
+			{"cos", math_complex_cos},
+			{"tan", math_complex_tan},
+			{"asin", math_complex_asin},
+			{"acos", math_complex_acos},
+			{"atan", math_complex_atan},
+			{"sinh", math_complex_sinh},
+			{"cosh", math_complex_cosh},
+			{"tanh", math_complex_tanh},
+			{"asinh", math_complex_asinh},
+			{"acosh", math_complex_acosh},
+			{"atanh", math_complex_atanh},
 			{NULL, NULL}
 		};
 		luaL_setfuncs(L, l, 0);
 		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
 	}
 	lua_setmetatable(L, -2);
+}
+
+static int math_complex_create(lua_State* L){
+	lua_pushcomplex(L, {luaL_optnumber(L, 1, 0), luaL_optnumber(L, 2, 0)});
+	return 1;
+}
+
+static int math_polar(lua_State* L){
+	lua_pushcomplex(L, std::polar(luaL_checknumber(L, 1), luaL_optnumber(L, 2, 0)));
 	return 1;
 }
 
@@ -200,6 +312,7 @@ int luaopen_mathx(lua_State* L){
 		{"frexp", math_frexp},
 		{"classify", math_classify},
 		{"complex", math_complex_create},
+		{"polar", math_polar},
 		{NULL, NULL}
 	};
 	lua_getglobal(L, "math");
