@@ -15,39 +15,25 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "libs.h"
 #include "../utils/lua.h"
 #include "../utils/math.hpp"
-#include <vector>
-#include <array>
 #include <algorithm>
 #include <functional>
 
-// Helpers
-struct Point2d{
-	double x, y;
-	Point2d operator+(const Point2d& other) const{return {this->x + other.x, this->y + other.y};};
-	Point2d operator-(const Point2d& other) const{return {this->x - other.x, this->y - other.y};};
-	Point2d operator*(const Point2d& other) const{return {this->x * other.x, this->y * other.y};};
-	bool operator==(const Point2d& other) const{return this->x == other.x && this->y == other.y;};
-	bool operator!=(const Point2d& other) const{return !(*this == other);};
-};
-
-static double normal_z(const Point2d& v1, const Point2d& v2){
-	return v1.x * v2.y - v1.y * v2.x;
-}
-static double normal_z(const Point2d& p0, const Point2d& p1, const Point2d& p2){
-	return normal_z(p1 - p0, p2 - p1);
+static int geometry_arc_curve(lua_State* L){
+	const auto curves = Geometry::arc_to_curves({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, luaL_checknumber(L, 5));
+	lua_createtable(L, curves.size() << 3, 0);
+	int i = 0;
+	for(const auto& curve : curves){
+		lua_pushnumber(L, curve[3].y); lua_pushnumber(L, curve[3].x); lua_pushnumber(L, curve[2].y); lua_pushnumber(L, curve[2].x); lua_pushnumber(L, curve[1].y); lua_pushnumber(L, curve[1].x); lua_pushnumber(L, curve[0].y); lua_pushnumber(L, curve[0].x);
+		lua_rawseti(L, -9, ++i); lua_rawseti(L, -8, ++i); lua_rawseti(L, -7, ++i); lua_rawseti(L, -6, ++i); lua_rawseti(L, -5, ++i); lua_rawseti(L, -4, ++i); lua_rawseti(L, -3, ++i); lua_rawseti(L, -2, ++i);
+	}
+	return 1;
 }
 
-static bool in_triangle(const Point2d& p, const Point2d& t1, const Point2d& t2, const Point2d& t3){
-	const char t2t3p = Math::sign(normal_z(t2, t3, p));
-	return Math::sign(normal_z(t1, t2, p)) == t2t3p && t2t3p == Math::sign(normal_z(t3, t1, p));
-}
-
-// General functions
 static int geometry_ear_clipping(lua_State* L){
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	// Get argument (table) as 2d points
-	std::vector<Point2d> points(lua_rawlen(L, 1) >> 1);
+	std::vector<Geometry::Point2d> points(lua_rawlen(L, 1) >> 1);
 	size_t i = 0;
 	for(auto& point : points){
 		lua_rawgeti(L, 1, ++i); lua_rawgeti(L, 1, ++i);
@@ -55,16 +41,16 @@ static int geometry_ear_clipping(lua_State* L){
 		lua_pop(L, 2);
 	}
 	// Buffers for output & calculations
-	std::vector<std::array<Point2d,3>> triangles; triangles.reserve(points.size()-2);
+	std::vector<std::array<Geometry::Point2d,3>> triangles; triangles.reserve(points.size()-2);
 	std::vector<char> directions; directions.reserve(points.size()-2);
-	std::vector<Point2d> new_points; new_points.reserve(points.size()-1);
+	std::vector<Geometry::Point2d> new_points; new_points.reserve(points.size()-1);
 	// Evaluate triangles from points
 	while(points.size() > 2){
 		// Collect angles of point-to-neighbours vectors (exclude first & last point)
 		directions.clear();
 		double sum_directions = 0;
 		for(i = 2; i < points.size(); ++i){
-			const double z = normal_z(points[i-2], points[i-1], points[i]);
+			const double z = Geometry::normal_z(points[i-2], points[i-1], points[i]);
 			directions.push_back(Math::sign(z));
 			sum_directions += z;
 		}
@@ -79,10 +65,10 @@ static int geometry_ear_clipping(lua_State* L){
 			// Pick ears/edge triangles from points
 			new_points = {points.front()};
 			for(size_t first = 0, next = 1, next_end = points.size()-1; next != next_end; ++next){
-				const Point2d& t1 = points[first], t2 = points[next], t3 = points[next+1];
+				const Geometry::Point2d& t1 = points[first], t2 = points[next], t3 = points[next+1];
 				const char& direction = directions[next-1];	// Remember: directions doesn't include the first point!!!
 				// Point is ear without intersection
-				if(direction == all_direction && std::none_of(points.cbegin(), points.cend(), std::bind(in_triangle, std::placeholders::_1, t1, t2, t3)))
+				if(direction == all_direction && std::none_of(points.cbegin(), points.cend(), std::bind(Geometry::in_triangle, std::placeholders::_1, t1, t2, t3)))
 					triangles.push_back({t1, t2, t3});
 				// Point is valley or ear with intersection
 				else if(direction != 0){
@@ -109,7 +95,7 @@ static int geometry_ear_clipping(lua_State* L){
 
 static int geometry_curve_flatten(lua_State* L){
 	// Get arguments
-	const std::array<Point2d,4> points{{
+	const std::array<Geometry::Point2d,4> points{{
 		{luaL_checknumber(L, 1), luaL_checknumber(L, 2)},
 		{luaL_checknumber(L, 3), luaL_checknumber(L, 4)},
 		{luaL_checknumber(L, 5), luaL_checknumber(L, 6)},
@@ -119,9 +105,9 @@ static int geometry_curve_flatten(lua_State* L){
 	if(tolerance <= 0)
 		return luaL_error(L, "Tolerance must be greater zero!");
 	// Helper functions
-	auto curve_split = [](const std::array<Point2d,4>& points) -> std::array<Point2d,8>{
-		static const Point2d half{0.5, 0.5};
-		const Point2d p01 = (points[0] + points[1]) * half,
+	auto curve_split = [](const std::array<Geometry::Point2d,4>& points) -> std::array<Geometry::Point2d,8>{
+		static const Geometry::Point2d half{0.5, 0.5};
+		const Geometry::Point2d p01 = (points[0] + points[1]) * half,
 			p12 = (points[1] + points[2]) * half,
 			p23 = (points[2] + points[3]) * half,
 			p012 = (p01 + p12) * half,
@@ -129,21 +115,21 @@ static int geometry_curve_flatten(lua_State* L){
 			p0123 = (p012 + p123) * half;
 		return {points[0], p01, p012, p0123, p0123, p123, p23, points[3]};
 	};
-	auto curve_is_flat = [tolerance](const std::array<Point2d,4>& points){
-		std::array<Point2d,3> vecs{{
+	auto curve_is_flat = [tolerance](const std::array<Geometry::Point2d,4>& points){
+		std::array<Geometry::Point2d,3> vecs{{
 			points[1] - points[0],
 			points[2] - points[1],
 			points[3] - points[2]
 		}};
-		const auto vecs_end = std::remove(vecs.begin(), vecs.end(), Point2d{0,0});
+		const auto vecs_end = std::remove(vecs.begin(), vecs.end(), Geometry::Point2d{0,0});
 		if(vecs.cbegin()+2 <= vecs_end)
 			for(auto it = vecs.cbegin()+1; it != vecs_end; ++it)
-				if(std::abs(normal_z(*(it-1), *it)) > tolerance)
+				if(std::abs(Geometry::normal_z(*(it-1), *it)) > tolerance)
 					return false;
 		return true;
 	};
-	std::function<void(const std::array<Point2d,4>&, std::vector<Point2d>&)> curve_to_lines;
-	curve_to_lines = [&curve_to_lines,&curve_split,&curve_is_flat](const std::array<Point2d,4>& points, std::vector<Point2d>& out){
+	std::function<void(const std::array<Geometry::Point2d,4>&, std::vector<Geometry::Point2d>&)> curve_to_lines;
+	curve_to_lines = [&curve_to_lines,&curve_split,&curve_is_flat](const std::array<Geometry::Point2d,4>& points, std::vector<Geometry::Point2d>& out){
 		if(curve_is_flat(points))
 			out.push_back(points.back());
 		else{
@@ -153,7 +139,7 @@ static int geometry_curve_flatten(lua_State* L){
 		}
 	};
 	// Convert curve to lines
-	std::vector<Point2d> lines{points.front()};
+	std::vector<Geometry::Point2d> lines{points.front()};
 	curve_to_lines(points, lines);
 	// Send line points to Lua
         lua_createtable(L, lines.size() << 1, 0);
@@ -167,6 +153,7 @@ static int geometry_curve_flatten(lua_State* L){
 
 int luaopen_geometry(lua_State* L){
 	static const luaL_Reg l[] = {
+		{"arccurve", geometry_arc_curve},
 		{"earclipping", geometry_ear_clipping},
 		{"curveflatten", geometry_curve_flatten},
 		{NULL, NULL}
