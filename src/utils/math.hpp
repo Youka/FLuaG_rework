@@ -14,9 +14,26 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #pragma once
 
+#include <cmath>
+
 namespace Math{
 	template<typename T>
-	inline char sign(T x){
+	inline char sign(const T x){
 		return x < 0 ? -1 : (x > 0 ? 1 : 0);
+	}
+
+	inline int fac(int n){
+		int k = 1;
+		while(n > 1)
+			k *= n--;
+		return k;
+	}
+
+	inline double bin_coeff(const int i, const int n){
+		return fac(n) / (fac(i) * fac(n-i));
+	}
+
+	inline double bernstein(const int i, const int n, const double t){
+		return bin_coeff(i, n) * std::pow(t, i) * std::pow(1-t, n-i);
 	}
 }

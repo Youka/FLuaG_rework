@@ -15,7 +15,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "libs.h"
 #include "../utils/lua.h"
 #include "../utils/math.hpp"
-#include <cmath>
 #include <complex>
 #include <algorithm>
 
@@ -297,6 +296,39 @@ static int math_polar(lua_State* L){
 	return 1;
 }
 
+static int math_gauss(lua_State* L){
+	const double x = luaL_checknumber(L, 1),
+		sigma = luaL_checknumber(L, 2);
+	constexpr static const double sqrtpi2 = std::sqrt(2 * M_PI);
+	lua_pushnumber(L, 1 / (sigma * sqrtpi2) * std::exp(-0.5 * std::pow(x/sigma, 2)));
+	return 1;
+}
+
+static int math_fac(lua_State* L){
+	lua_pushinteger(L, Math::fac(luaL_checkinteger(L, 1)));
+	return 1;
+}
+
+static int math_bezier(lua_State* L){
+	const double pct = luaL_checknumber(L, 1),
+		pct_inv = 1 - pct;
+	const int top = lua_gettop(L);
+	switch(top-1){
+		case 0: lua_pushnil(L); break;
+		case 1: luaL_checktype(L, 2, LUA_TNUMBER); break;
+		case 2: lua_pushnumber(L, pct_inv * luaL_checknumber(L, 2) + pct * luaL_checknumber(L, 3)); break;
+		case 3: lua_pushnumber(L, pct_inv * pct_inv * luaL_checknumber(L, 2) + pct_inv * pct * luaL_checknumber(L, 3) + pct * pct * luaL_checknumber(L, 4)); break;
+		case 4: lua_pushnumber(L, pct_inv * pct_inv * pct_inv * luaL_checknumber(L, 2) + pct_inv * pct_inv * pct * luaL_checknumber(L, 3) + pct_inv * pct * pct * luaL_checknumber(L, 4) + pct * pct * pct * luaL_checknumber(L, 5)); break;
+		default:{
+				double result = 0;
+				for(int i = 0, n = top-2; i <= n; ++i)
+					result += luaL_checknumber(L, 2+i) * Math::bernstein(i, n, pct);
+				lua_pushnumber(L, result);
+			}break;
+	}
+	return 1;
+}
+
 int luaopen_mathx(lua_State* L){
 	static const luaL_Reg l[] = {
 		{"trunc", math_trunc},
@@ -313,6 +345,9 @@ int luaopen_mathx(lua_State* L){
 		{"classify", math_classify},
 		{"complex", math_complex_create},
 		{"polar", math_polar},
+		{"gauss", math_gauss},
+		{"fac", math_fac},
+		{"bezier", math_bezier},
 		{NULL, NULL}
 	};
 	lua_getglobal(L, "math");
