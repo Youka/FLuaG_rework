@@ -40,6 +40,156 @@ namespace Math{
 	inline double bernstein(const int i, const int n, const double t){
 		return bin_coeff(i, n) * std::pow(t, i) * std::pow(1-t, n-i);
 	}
+
+	template<typename T>
+	class Matrix4x4{
+		private:
+			// Raw matrix data
+			std::array<T,16> m_data;
+		public:
+			// Ctors
+			Matrix4x4(){this->identity();}
+			Matrix4x4(const std::array<T,16>& data) : m_data(data){}
+			Matrix4x4(const T* data){std::copy(data, data+16, this->m_data.begin());}
+			Matrix4x4(const T x11, const T x12, const T x13, const T x14,
+				const T x21, const T x22, const T x23, const T x24,
+				const T x31, const T x32, const T x33, const T x34,
+				const T x41, const T x42, const T x43, const T x44) : m_data({x11, x12, x13, x14,
+											x21, x22, x23, x24,
+											x31, x32, x33, x34,
+											x41, x42, x43, x44}){}
+			// Copy
+			Matrix4x4(const Matrix4x4& other){this->m_data = other.m_data;}
+			Matrix4x4& operator=(const Matrix4x4& other){this->m_data = other.m_data; return *this;}
+			// No move
+			// Dtor
+			~Matrix4x4() = default;
+			// Data access
+			T& operator[](const unsigned i){return this->m_data[i];}
+			const T& operator[](const unsigned i) const{return this->m_data[i];}
+			// Unary methods
+			Matrix4x4& identity(){
+				this->m_data = {
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 1
+				};
+				return *this;
+			}
+			bool invert(){
+				T inv_matrix[16] = {
+				/* 11 */	this->m_data[5]*this->m_data[10]*this->m_data[15] + this->m_data[6]*this->m_data[11]*this->m_data[13] + this->m_data[7]*this->m_data[9]*this->m_data[14] - this->m_data[5]*this->m_data[11]*this->m_data[14] - this->m_data[6]*this->m_data[9]*this->m_data[15] - this->m_data[7]*this->m_data[10]*this->m_data[13],
+				/* 12 */	this->m_data[1]*this->m_data[11]*this->m_data[14] + this->m_data[2]*this->m_data[9]*this->m_data[15] + this->m_data[3]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[10]*this->m_data[15] - this->m_data[2]*this->m_data[11]*this->m_data[13] - this->m_data[3]*this->m_data[9]*this->m_data[14],
+				/* 13 */	this->m_data[1]*this->m_data[6]*this->m_data[15] + this->m_data[2]*this->m_data[7]*this->m_data[13] + this->m_data[3]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[7]*this->m_data[14] - this->m_data[2]*this->m_data[5]*this->m_data[15] - this->m_data[3]*this->m_data[6]*this->m_data[13],
+				/* 14 */	this->m_data[1]*this->m_data[7]*this->m_data[10] + this->m_data[2]*this->m_data[5]*this->m_data[11] + this->m_data[3]*this->m_data[6]*this->m_data[9] - this->m_data[1]*this->m_data[6]*this->m_data[11] - this->m_data[2]*this->m_data[7]*this->m_data[9] - this->m_data[3]*this->m_data[5]*this->m_data[10],
+				/* 21 */	this->m_data[4]*this->m_data[11]*this->m_data[14] + this->m_data[6]*this->m_data[8]*this->m_data[15] + this->m_data[7]*this->m_data[10]*this->m_data[12] - this->m_data[4]*this->m_data[10]*this->m_data[15] - this->m_data[6]*this->m_data[11]*this->m_data[12] - this->m_data[7]*this->m_data[8]*this->m_data[14],
+				/* 22 */	this->m_data[0]*this->m_data[10]*this->m_data[15] + this->m_data[2]*this->m_data[11]*this->m_data[12] + this->m_data[3]*this->m_data[8]*this->m_data[14] - this->m_data[0]*this->m_data[11]*this->m_data[14] - this->m_data[2]*this->m_data[8]*this->m_data[15] - this->m_data[3]*this->m_data[10]*this->m_data[12],
+				/* 23 */	this->m_data[0]*this->m_data[7]*this->m_data[14] + this->m_data[2]*this->m_data[4]*this->m_data[15] + this->m_data[3]*this->m_data[6]*this->m_data[12] - this->m_data[0]*this->m_data[6]*this->m_data[15] - this->m_data[2]*this->m_data[7]*this->m_data[12] - this->m_data[3]*this->m_data[4]*this->m_data[14],
+				/* 24 */	this->m_data[0]*this->m_data[6]*this->m_data[11] + this->m_data[2]*this->m_data[7]*this->m_data[8] + this->m_data[3]*this->m_data[4]*this->m_data[10] - this->m_data[0]*this->m_data[7]*this->m_data[10] - this->m_data[2]*this->m_data[4]*this->m_data[11] - this->m_data[3]*this->m_data[6]*this->m_data[8],
+				/* 31 */	this->m_data[4]*this->m_data[9]*this->m_data[15] + this->m_data[5]*this->m_data[11]*this->m_data[12] + this->m_data[7]*this->m_data[8]*this->m_data[13] - this->m_data[4]*this->m_data[11]*this->m_data[13] - this->m_data[5]*this->m_data[8]*this->m_data[15] - this->m_data[7]*this->m_data[9]*this->m_data[12],
+				/* 32 */	this->m_data[0]*this->m_data[11]*this->m_data[13] + this->m_data[1]*this->m_data[8]*this->m_data[15] + this->m_data[3]*this->m_data[9]*this->m_data[12] - this->m_data[0]*this->m_data[9]*this->m_data[15] - this->m_data[1]*this->m_data[11]*this->m_data[12] - this->m_data[3]*this->m_data[8]*this->m_data[13],
+				/* 33 */	this->m_data[0]*this->m_data[5]*this->m_data[15] + this->m_data[1]*this->m_data[7]*this->m_data[12] + this->m_data[3]*this->m_data[4]*this->m_data[13] - this->m_data[0]*this->m_data[7]*this->m_data[13] - this->m_data[1]*this->m_data[4]*this->m_data[15] - this->m_data[3]*this->m_data[5]*this->m_data[12],
+				/* 34 */	this->m_data[0]*this->m_data[7]*this->m_data[9] + this->m_data[1]*this->m_data[4]*this->m_data[11] + this->m_data[3]*this->m_data[5]*this->m_data[8] - this->m_data[0]*this->m_data[5]*this->m_data[11] - this->m_data[1]*this->m_data[7]*this->m_data[8] - this->m_data[3]*this->m_data[4]*this->m_data[9],
+				/* 41 */	this->m_data[4]*this->m_data[10]*this->m_data[13] + this->m_data[5]*this->m_data[8]*this->m_data[14] + this->m_data[6]*this->m_data[9]*this->m_data[12] - this->m_data[4]*this->m_data[9]*this->m_data[14] - this->m_data[5]*this->m_data[10]*this->m_data[12] - this->m_data[6]*this->m_data[8]*this->m_data[13],
+				/* 42 */	this->m_data[0]*this->m_data[9]*this->m_data[14] + this->m_data[1]*this->m_data[10]*this->m_data[12] + this->m_data[2]*this->m_data[8]*this->m_data[13] - this->m_data[0]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[8]*this->m_data[14] - this->m_data[2]*this->m_data[9]*this->m_data[12],
+				/* 43 */	this->m_data[0]*this->m_data[6]*this->m_data[13] + this->m_data[1]*this->m_data[4]*this->m_data[14] + this->m_data[2]*this->m_data[5]*this->m_data[12] - this->m_data[0]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[6]*this->m_data[12] - this->m_data[2]*this->m_data[4]*this->m_data[13],
+				/* 44 */	this->m_data[0]*this->m_data[5]*this->m_data[10] + this->m_data[1]*this->m_data[6]*this->m_data[8] + this->m_data[2]*this->m_data[4]*this->m_data[9] - this->m_data[0]*this->m_data[6]*this->m_data[9] - this->m_data[1]*this->m_data[4]*this->m_data[10] - this->m_data[2]*this->m_data[5]*this->m_data[8]
+				},
+				delta = this->m_data[0] * inv_matrix[0] +
+					this->m_data[1] * inv_matrix[4] +
+					this->m_data[2] * inv_matrix[8] +
+					this->m_data[3] * inv_matrix[12];
+				if(delta != 0){
+					delta = 1 / delta,
+					std::transform(inv_matrix, inv_matrix+16, this->m_data.begin(), [delta](double& inv_field){return delta * inv_field;});
+					return true;
+				}
+				return false;
+			}
+			// Binary methods
+			Matrix4x4 operator*(const Matrix4x4& other) const{
+				return {
+					this->m_data[0] * other[0] + this->m_data[1] * other[4] + this->m_data[2] * other[8] + this->m_data[3] * other[12],
+					this->m_data[0] * other[1] + this->m_data[1] * other[5] + this->m_data[2] * other[9] + this->m_data[3] * other[13],
+					this->m_data[0] * other[2] + this->m_data[1] * other[6] + this->m_data[2] * other[10] + this->m_data[3] * other[14],
+					this->m_data[0] * other[3] + this->m_data[1] * other[7] + this->m_data[2] * other[11] + this->m_data[3] * other[15],
+					this->m_data[4] * other[0] + this->m_data[5] * other[4] + this->m_data[6] * other[8] + this->m_data[7] * other[12],
+					this->m_data[4] * other[1] + this->m_data[5] * other[5] + this->m_data[6] * other[9] + this->m_data[7] * other[13],
+					this->m_data[4] * other[2] + this->m_data[5] * other[6] + this->m_data[6] * other[10] + this->m_data[7] * other[14],
+					this->m_data[4] * other[3] + this->m_data[5] * other[7] + this->m_data[6] * other[11] + this->m_data[7] * other[15],
+					this->m_data[8] * other[0] + this->m_data[9] * other[4] + this->m_data[10] * other[8] + this->m_data[11] * other[12],
+					this->m_data[8] * other[1] + this->m_data[9] * other[5] + this->m_data[10] * other[9] + this->m_data[11] * other[13],
+					this->m_data[8] * other[2] + this->m_data[9] * other[6] + this->m_data[10] * other[10] + this->m_data[11] * other[14],
+					this->m_data[8] * other[3] + this->m_data[9] * other[7] + this->m_data[10] * other[11] + this->m_data[11] * other[15],
+					this->m_data[12] * other[0] + this->m_data[13] * other[4] + this->m_data[14] * other[8] + this->m_data[15] * other[12],
+					this->m_data[12] * other[1] + this->m_data[13] * other[5] + this->m_data[14] * other[9] + this->m_data[15] * other[13],
+					this->m_data[12] * other[2] + this->m_data[13] * other[6] + this->m_data[14] * other[10] + this->m_data[15] * other[14],
+					this->m_data[12] * other[3] + this->m_data[13] * other[7] + this->m_data[14] * other[11] + this->m_data[15] * other[15]
+				};
+			}
+			enum class Order{APPEND, PREPEND};
+			Matrix4x4& multiply(const Matrix4x4& other, const Order order = Order::PREPEND){
+				return *this = (order == Order::PREPEND ? *this * other : other * *this);
+			}
+			Matrix4x4& translate(const T x, const T y, const T z, const Order order = Order::PREPEND){
+				return this->multiply({
+						1, 0, 0, x,
+						0, 1, 0, y,
+						0, 0, 1, z,
+						0, 0, 0, 1
+					}, order);
+			}
+			Matrix4x4& scale(const T x, const T y, const T z, const Order order = Order::PREPEND){
+				return this->multiply({
+						x, 0, 0, 0,
+						0, y, 0, 0,
+						0, 0, z, 0,
+						0, 0, 0, 1
+					}, order);
+			}
+			enum class Axis{X, Y, Z};
+			Matrix4x4& rotate(const T angle, const Axis axis, const Order order = Order::PREPEND){
+				const auto sin = std::sin(angle),
+					cos = std::cos(angle);
+				switch(axis){
+					case Axis::X:
+						return this->multiply({
+								1, 0, 0, 0,
+								0, cos, -sin, 0,
+								0, sin, cos, 0,
+								0, 0, 0, 1
+							}, order);
+					case Axis::Y:
+						return this->multiply({
+								cos, 0, sin, 0,
+								0, 1, 0, 0,
+								-sin, 0, cos, 0,
+								0, 0, 0, 1
+							}, order);
+					case Axis::Z:
+						return this->multiply({
+								cos, -sin, 0, 0,
+								sin, cos, 0, 0,
+								0, 0, 1, 0,
+								0, 0, 0, 1
+							}, order);
+					default: return *this;
+				}
+			}
+			// Transformations
+			std::array<T,4> transform(const T* vec){
+				return {
+					this->m_data[0] * vec[0] + this->m_data[1] * vec[1] + this->m_data[2] * vec[2] + this->m_data[3] * vec[3],
+					this->m_data[4] * vec[0] + this->m_data[5] * vec[1] + this->m_data[6] * vec[2] + this->m_data[7] * vec[3],
+					this->m_data[8] * vec[0] + this->m_data[9] * vec[1] + this->m_data[10] * vec[2] + this->m_data[11] * vec[3],
+					this->m_data[12] * vec[0] + this->m_data[13] * vec[1] + this->m_data[14] * vec[2] + this->m_data[15] * vec[3]
+				};
+			}
+			std::array<T,4> transform(const std::array<T,4>& vec){
+				return this->transform(vec.cbegin());
+			}
+	};
 }
 
 namespace Geometry{
@@ -162,7 +312,7 @@ namespace Geometry{
 					// Pick ears/edge triangles from points
 					new_points = {points.front()};
 					for(size_t first = 0, next = 1, next_end = points.size()-1; next != next_end; ++next){
-						const Point2d& t1 = points[first], t2 = points[next], t3 = points[next+1];
+						const Point2d& t1 = points[first], &t2 = points[next], &t3 = points[next+1];
 						const char& direction = directions[next-1];	// Remember: directions don't include the first point!!!
 						// Point is ear without intersection
 						if(direction == all_direction && std::none_of(points.cbegin(), points.cend(), std::bind(in_triangle, std::placeholders::_1, t1, t2, t3)))

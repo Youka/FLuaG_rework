@@ -137,11 +137,123 @@ static int geometry_curve_flatten(lua_State* L){
 }
 
 #define LUA_MATRIX "matrix"
-static int geometry_matrix_create(lua_State* L){
+using Matrix = Math::Matrix4x4<double>;
+static void lua_pushmatrix(lua_State* L, const Matrix& matrix);
 
-	// TODO
-
+static int geometry_matrix_free(lua_State* L){
+	delete *static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX));
 	return 0;
+}
+
+static int geometry_matrix_mul(lua_State* L){
+	lua_pushmatrix(L, **static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)) * **static_cast<Matrix**>(luaL_checkudata(L, 2, LUA_MATRIX)));
+	return 1;
+}
+
+static int geometry_matrix_multiply(lua_State* L){
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->multiply(**static_cast<Matrix**>(luaL_checkudata(L, 2, LUA_MATRIX)));
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int geometry_matrix_translate(lua_State* L){
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->translate(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int geometry_matrix_scale(lua_State* L){
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->scale(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int geometry_matrix_rotate(lua_State* L){
+	Matrix::Axis axis;
+	static const char* option_str[] = {"x", "y", "z", nullptr};
+	switch(luaL_checkoption(L, 3, nullptr, option_str)){
+		case 0: axis = Matrix::Axis::X; break;
+		case 1: axis = Matrix::Axis::Y; break;
+		case 2: axis = Matrix::Axis::Z; break;
+	}
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->rotate(luaL_checknumber(L, 2), axis);
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int geometry_matrix_identity(lua_State* L){
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->identity();
+	lua_settop(L, 1);
+	return 1;
+}
+
+static int geometry_matrix_invert(lua_State* L){
+	lua_pushboolean(L, (*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->invert());
+	return 1;
+}
+
+static int geometry_matrix_transform(lua_State* L){
+	const auto vec = (*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->transform({luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_optnumber(L, 4, 0), luaL_optnumber(L, 5, 1)});
+	lua_pushnumber(L, vec[0]);
+	lua_pushnumber(L, vec[1]);
+	lua_pushnumber(L, vec[2]);
+	lua_pushnumber(L, vec[3]);
+	return 4;
+}
+
+static int geometry_matrix_data(lua_State* L){
+	Matrix& matrix = **static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX));
+	if(lua_gettop(L) == 1){
+		lua_pushnumber(L, matrix[0]); lua_pushnumber(L, matrix[1]); lua_pushnumber(L, matrix[2]); lua_pushnumber(L, matrix[3]);
+		lua_pushnumber(L, matrix[4]); lua_pushnumber(L, matrix[5]); lua_pushnumber(L, matrix[6]); lua_pushnumber(L, matrix[7]);
+		lua_pushnumber(L, matrix[8]); lua_pushnumber(L, matrix[9]); lua_pushnumber(L, matrix[10]); lua_pushnumber(L, matrix[11]);
+		lua_pushnumber(L, matrix[12]); lua_pushnumber(L, matrix[13]); lua_pushnumber(L, matrix[14]); lua_pushnumber(L, matrix[15]);
+		return 16;
+	}else{
+		matrix[0] = luaL_checknumber(L, 2); matrix[0] = luaL_checknumber(L, 3); matrix[0] = luaL_checknumber(L, 4); matrix[0] = luaL_checknumber(L, 5);
+		matrix[0] = luaL_checknumber(L, 6); matrix[0] = luaL_checknumber(L, 7); matrix[0] = luaL_checknumber(L, 8); matrix[0] = luaL_checknumber(L, 9);
+		matrix[0] = luaL_checknumber(L, 10); matrix[0] = luaL_checknumber(L, 11); matrix[0] = luaL_checknumber(L, 12); matrix[0] = luaL_checknumber(L, 13);
+		matrix[0] = luaL_checknumber(L, 14); matrix[0] = luaL_checknumber(L, 15); matrix[0] = luaL_checknumber(L, 16); matrix[0] = luaL_checknumber(L, 17);
+		return 0;
+	}
+}
+
+void lua_pushmatrix(lua_State* L, const Matrix& matrix){ // static definition on declaration
+	*static_cast<Matrix**>(lua_newuserdata(L, sizeof(Matrix*))) = new Matrix(matrix);
+	if(luaL_newmetatable(L, LUA_MATRIX)){
+		static const luaL_Reg l[] = {
+			{"__gc", geometry_matrix_free},
+			{"__mul", geometry_matrix_mul},
+			{"multiply", geometry_matrix_multiply},
+			{"translate", geometry_matrix_translate},
+			{"scale", geometry_matrix_scale},
+			{"rotate", geometry_matrix_rotate},
+			{"identity", geometry_matrix_identity},
+			{"invert", geometry_matrix_invert},
+			{"transform", geometry_matrix_transform},
+			{"data", geometry_matrix_data},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
+		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
+	}
+	lua_setmetatable(L, -2);
+}
+
+static int geometry_matrix_create(lua_State* L){
+	switch(lua_gettop(L)){
+		case 0:
+			lua_pushmatrix(L, Matrix());
+			break;
+		case 16: lua_pushmatrix(L, Matrix(luaL_checknumber(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4),
+					luaL_checknumber(L, 5), luaL_checknumber(L, 6), luaL_checknumber(L, 7), luaL_checknumber(L, 8),
+					luaL_checknumber(L, 9), luaL_checknumber(L, 10), luaL_checknumber(L, 11), luaL_checknumber(L, 12),
+					luaL_checknumber(L, 13), luaL_checknumber(L, 14), luaL_checknumber(L, 15), luaL_checknumber(L, 16))
+				);
+			break;
+		default: return luaL_error(L, "Invalid matrix arguments!");
+	}
+	return 1;
 }
 
 int luaopen_geometry(lua_State* L){

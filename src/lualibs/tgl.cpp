@@ -979,8 +979,7 @@ int luaopen_tgl(lua_State* L){
 	if(!window)
 		return luaL_error(L, "Couldn't create GL context!");
 	// Create userdata for GL context
-	GLFWwindow** udata = static_cast<GLFWwindow**>(lua_newuserdata(L, sizeof(GLFWwindow*)));
-	*udata = window;
+	*static_cast<GLFWwindow**>(lua_newuserdata(L, sizeof(GLFWwindow*))) = window;
 	// Fetch/create Lua tgl context metatable
 	if(luaL_newmetatable(L, LUA_TGL_CONTEXT)){
 		static const luaL_Reg l[] = {
