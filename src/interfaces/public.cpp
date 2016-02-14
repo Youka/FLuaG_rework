@@ -51,7 +51,7 @@ int fluag_load_script(fluag_h F, const char* script, char* warning){
 
 void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames){
 	if(F)
-		static_cast<FLuaG::Script*>(F)->SetVideo({width, height, has_alpha, fps, frames});
+		static_cast<FLuaG::Script*>(F)->SetVideo({width, height, static_cast<bool>(has_alpha), fps, frames});
 }
 
 void fluag_set_userdata(fluag_h F, const char* userdata){

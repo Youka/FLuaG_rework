@@ -1,8 +1,7 @@
 # Include script helpers
-include(FindLua)
+include(FindLua51)
 include(FindOpenGL)
 include(FindGLEW)
-include(FindZLIB)
 include(FindPNG)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
@@ -33,7 +32,6 @@ set(DEPEND_GLEW_INC "${GLEW_INCLUDE_DIRS}" CACHE PATH "GLEW headers directory pa
 set(DEPEND_GLEW_LIB "${GLEW_LIBRARIES}" CACHE FILEPATH "GLEW library path")
 set(DEPEND_GLFW_INC "${GLFW_INCLUDE_DIR}" CACHE PATH "GLFW headers directory path")
 set(DEPEND_GLFW_LIB "${GLFW_LIBRARIES}" CACHE FILEPATH "GLFW library path")
-set(DEPEND_ZLIB_LIB "${ZLIB_LIBRARIES}" CACHE FILEPATH "Zlib library path")
 set(DEPEND_PNG_INC "${PNG_INCLUDE_DIRS}" CACHE PATH "Libpng headers directory path")
 set(DEPEND_PNG_LIB "${PNG_LIBRARIES}" CACHE FILEPATH "Libpng library path")
 if(CMAKE_BUILD_TYPE STREQUAL "")
@@ -74,15 +72,6 @@ endif()
 add_compile_options(${COMPILE_FEATURES})
 message(STATUS "Additional compiler features: ${COMPILE_FEATURES}")
 
-# Set link time optimizations
-if(MSVC)
-	set(LINK_TIME_OPTIMIZATIONS /LTCG)
-elseif(NOT(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo))
-	set(LINK_TIME_OPTIMIZATIONS -s)
-endif()
-add_linker_flags(${LINK_TIME_OPTIMIZATIONS})
-message(STATUS "Link time optimizations: ${LINK_TIME_OPTIMIZATIONS}")
-
 # Set standard libraries link type (static vs dynamic)
 if(${BUILD_STD_STATIC})
 	if(CMAKE_COMPILER_IS_GNUCC)
@@ -114,7 +103,7 @@ if(NOT WIN32)
 endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC})
-target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB} ${DEPEND_ZLIB_LIB})
+target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB})
 
 # Setup library installation
 install(TARGETS fluag	# Runtime

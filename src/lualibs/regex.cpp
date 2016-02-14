@@ -34,7 +34,7 @@ static int regex_free(lua_State* L){
 static int regex_replace(lua_State* L){
 	const RegexArgs* args = *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	try{
-		lua_pushstring(L, std::regex_replace(luaL_checkstring(L, 2), args->expr, luaL_checkstring(L, 3), args->flag).c_str());
+		lua_pushstring(L, std::regex_replace(std::string(luaL_checkstring(L, 2)), args->expr, std::string(luaL_checkstring(L, 3)), args->flag).c_str());
 	}catch(const std::regex_error& e){
 		return luaL_error(L, e.what());
 	}

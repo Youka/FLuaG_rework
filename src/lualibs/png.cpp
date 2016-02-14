@@ -39,7 +39,7 @@ static int png_decode(std::istream& in, lua_State* L){
 	// Set PNG source reader
 	png_set_read_fn(png.get(), &in, [](png_structp png, png_bytep out, png_size_t out_size){
 		if(!static_cast<std::istream*>(png_get_io_ptr(png))->read(reinterpret_cast<char*>(out), out_size))
-			png_longjmp(png, 1);
+			longjmp(png_jmpbuf(png), 1);
 	});
 	png_set_sig_bytes(png.get(), PNG_SIG_BYTES);
 	// Read PNG header informations
@@ -98,7 +98,7 @@ static int png_encode(std::ostream& out, lua_State* L){
 	// Set PNG target writer
 	png_set_write_fn(png.get(), &out, [](png_structp png, png_bytep in, png_size_t in_size){
 		if(!static_cast<std::ostream*>(png_get_io_ptr(png))->write(reinterpret_cast<char*>(in), in_size))
-			png_longjmp(png, 1);
+			longjmp(png_jmpbuf(png), 1);
 	}, nullptr);
         // Write PNG header informations
 	png_set_IHDR(png.get(), png_info, width, height, 8, has_alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);

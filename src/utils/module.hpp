@@ -39,13 +39,13 @@ namespace Module{
 		}
 #else
 		Dl_info dli;
-		if(dladdr(dir, &dli))
+		if(dladdr(reinterpret_cast<const void*>(&dir), &dli))
 			path = dli.dli_fname;
 #endif
 		// Shorten filename to directory
 		if(!path.empty()){
 			const std::string::size_type separator = path.find_last_of("\\/");
-			if(separator != std::wstring::npos)
+			if(separator != std::string::npos)
 				path.resize(separator+1);
 			else
 				path.clear();

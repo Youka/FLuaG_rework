@@ -169,7 +169,7 @@ static int geometry_matrix_scale(lua_State* L){
 }
 
 static int geometry_matrix_rotate(lua_State* L){
-	Matrix::Axis axis;
+	Matrix::Axis axis = Matrix::Axis::X;
 	static const char* option_str[] = {"x", "y", "z", nullptr};
 	switch(luaL_checkoption(L, 3, nullptr, option_str)){
 		case 0: axis = Matrix::Axis::X; break;

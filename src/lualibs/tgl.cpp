@@ -15,8 +15,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "libs.h"
 #include "../utils/lua.h"
 #define GLEW_STATIC
-#include <glew.h>
-#include <glfw3.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <mutex>
 #include <vector>
 #include <algorithm>
@@ -330,7 +330,7 @@ static int tgl_vao_create(lua_State* L){
 			lua_getfield(L, -2, "size");
 			if(!lua_isnumber(L, -2) || !lua_isnumber(L, -1))
 				return luaL_error(L, "Properties 'location' and 'size' have to be numbers!");
-			props[prop_i-1] = {lua_tointeger(L, -2), lua_tointeger(L, -1)};
+			props[prop_i-1] = {static_cast<int>(lua_tointeger(L, -2)), static_cast<int>(lua_tointeger(L, -1))};
 			lua_pop(L, 2);
 		}else
 			return luaL_error(L, "Properties have to be tables!");
