@@ -45,22 +45,25 @@ namespace VS{
 			const VSFrameRef* src = vsapi->getFrameFilter(n, data->node.get(), frame_ctx);
 			std::unique_ptr<VSFrameRef, std::function<void(VSFrameRef*)>> dst(vsapi->copyFrame(src, core), [vsapi](VSFrameRef* frame){vsapi->freeFrame(frame);});
 			vsapi->freeFrame(src);
-			// Align frame bottom-up
-			unsigned char* const fdata = vsapi->getWritePtr(dst.get(), 0);
-			const int stride = vsapi->getStride(dst.get(), 0);
-			if(stride < 0)
-				ImageOp::flip(fdata, data->vi->height, -stride);
+			// Merge frame planes
+			const bool has_alpha = data->vi->format->id == pfCompatBGR32;
+			const size_t plane_size = data->vi->width * data->vi->height;
+			const std::shared_ptr<unsigned char> fdata = has_alpha ?
+				ImageOp::interlace_rgba(vsapi->getReadPtr(dst.get(), 0), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 2), vsapi->getReadPtr(dst.get(), 3), plane_size) :
+				ImageOp::interlace_rgb(vsapi->getReadPtr(dst.get(), 0), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 2), plane_size);
 			// Render on frame
 			try{
-				data->F.ProcessFrame(fdata, ::abs(stride), n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
+				data->F.ProcessFrame(fdata.get(), has_alpha ? vsapi->getStride(dst.get(), 0) << 2 : vsapi->getStride(dst.get(), 0) * 3, n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
 				// Return new frame
 				return dst.release();
 			}catch(const FLuaG::exception& e){
 				vsapi->setFilterError(e.what(), frame_ctx);
 			}
-			// Realign frame to origin
-			if(stride < 0)
-				ImageOp::flip(fdata, data->vi->height, -stride);
+			// Unmerge frame planes
+			if(has_alpha)
+				ImageOp::deinterlace_rgba(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), vsapi->getWritePtr(dst.get(), 3), plane_size);
+			else
+				ImageOp::deinterlace_rgb(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), plane_size);
 		}
 		return nullptr;
 	}
@@ -85,8 +88,9 @@ namespace VS{
 			return;
 		}
 		// Exract further filter arguments
+		int err;
 		const char* filename = vsapi->propGetData(in, "script", 0, nullptr),
-			*userdata = vsapi->propGetData(in, "userdata", 0, nullptr);
+			*userdata = vsapi->propGetData(in, "userdata", 0, &err);    // Error pointer required to surpress error raise even with optional parameter
 		// Set userdata/script to clip
 		try{
 			assert(inst_data->vi->width >= 0 && inst_data->vi->height >= 0 && inst_data->vi->numFrames >= 0);
@@ -101,7 +105,7 @@ namespace VS{
 				inst_data->F.SetUserdata(userdata);
 			inst_data->F.LoadFile(filename);
 			// Create filter object and pass to frameserver
-			vsapi->createFilter(in, out, PROJECT_NAME, init_filter, get_frame, free_filter, fmParallel, 0, inst_data.release(), core);
+			vsapi->createFilter(in, out, PROJECT_NAME, init_filter, get_frame, free_filter, fmParallelRequests, 0, inst_data.release(), core);
 		}catch(const std::bad_alloc){
 			vsapi->setError(out, "Not enough memory!");
 		}catch(const FLuaG::exception& e){

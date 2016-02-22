@@ -28,4 +28,32 @@ namespace ImageOp{
 			std::copy(data_tail, data_tail+stride, tmp.get()),
 			data_tail = std::copy(data, data+stride, data_tail) - (stride << 1);
 	}
+
+	// Interlace RGB(A) planes
+	inline std::shared_ptr<unsigned char> interlace_rgb(const unsigned char* r, const unsigned char* g, const unsigned char* b, const size_t plane_size){
+		std::shared_ptr<unsigned char> data(new unsigned char[plane_size * 3]);
+
+		// TODO
+
+		return data;
+	}
+	inline std::shared_ptr<unsigned char> interlace_rgba(const unsigned char* r, const unsigned char* g, const unsigned char* b, const unsigned char* a, const size_t plane_size){
+		std::shared_ptr<unsigned char> data(new unsigned char[plane_size << 2]);
+
+		// TODO
+
+		return data;
+	}
+
+	// Deinterlace RGB(A) planes
+	inline void deinterlace_rgb(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, const size_t plane_size){
+
+		// TODO
+
+	}
+	inline void deinterlace_rgba(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, unsigned char* a, const size_t plane_size){
+
+		// TODO
+
+	}
 }
