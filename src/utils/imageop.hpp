@@ -31,29 +31,41 @@ namespace ImageOp{
 
 	// Interlace RGB(A) planes
 	inline std::shared_ptr<unsigned char> interlace_rgb(const unsigned char* r, const unsigned char* g, const unsigned char* b, const size_t plane_size){
-		std::shared_ptr<unsigned char> data(new unsigned char[plane_size * 3]);
-
-		// TODO
-
+		const size_t data_size = plane_size * 3;
+		std::shared_ptr<unsigned char> data(new unsigned char[data_size]);
+		const unsigned char* const data_end = data.get() + data_size;
+		for(
+			unsigned char* pdata = data.get();
+			pdata != data_end;
+			*pdata++ = *r++, *pdata++ = *g++, *pdata++ = *b++
+		);
 		return data;
 	}
 	inline std::shared_ptr<unsigned char> interlace_rgba(const unsigned char* r, const unsigned char* g, const unsigned char* b, const unsigned char* a, const size_t plane_size){
-		std::shared_ptr<unsigned char> data(new unsigned char[plane_size << 2]);
-
-		// TODO
-
+		const size_t data_size = plane_size << 2;
+		std::shared_ptr<unsigned char> data(new unsigned char[data_size]);
+		const unsigned char* const data_end = data.get() + data_size;
+		for(
+			unsigned char* pdata = data.get();
+			pdata != data_end;
+			*pdata++ = *r++, *pdata++ = *g++, *pdata++ = *b++, *pdata++ = *a++
+		);
 		return data;
 	}
 
 	// Deinterlace RGB(A) planes
 	inline void deinterlace_rgb(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, const size_t plane_size){
-
-		// TODO
-
+		for(
+			const unsigned char* const data_end = data + plane_size * 3;
+			data != data_end;
+			*r++ = *data++, *g++ = *data++, *b++ = *data++
+		);
 	}
 	inline void deinterlace_rgba(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, unsigned char* a, const size_t plane_size){
-
-		// TODO
-
+		for(
+			const unsigned char* const data_end = data + (plane_size << 2);
+			data != data_end;
+			*r++ = *data++, *g++ = *data++, *b++ = *data++, *a++ = *data++
+		);
 	}
 }

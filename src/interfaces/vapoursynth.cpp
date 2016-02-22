@@ -50,20 +50,20 @@ namespace VS{
 			const size_t plane_size = data->vi->width * data->vi->height;
 			const std::shared_ptr<unsigned char> fdata = has_alpha ?
 				ImageOp::interlace_rgba(vsapi->getReadPtr(dst.get(), 0), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 2), vsapi->getReadPtr(dst.get(), 3), plane_size) :
-				ImageOp::interlace_rgb(vsapi->getReadPtr(dst.get(), 0), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 2), plane_size);
+				ImageOp::interlace_rgb(vsapi->getReadPtr(dst.get(), 2), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 0), plane_size);
 			// Render on frame
 			try{
 				data->F.ProcessFrame(fdata.get(), has_alpha ? vsapi->getStride(dst.get(), 0) << 2 : vsapi->getStride(dst.get(), 0) * 3, n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
+				// Unmerge frame planes
+				if(has_alpha)
+					ImageOp::deinterlace_rgba(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), vsapi->getWritePtr(dst.get(), 3), plane_size);
+				else
+					ImageOp::deinterlace_rgb(fdata.get(), vsapi->getWritePtr(dst.get(), 2), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 0), plane_size);
 				// Return new frame
 				return dst.release();
 			}catch(const FLuaG::exception& e){
 				vsapi->setFilterError(e.what(), frame_ctx);
 			}
-			// Unmerge frame planes
-			if(has_alpha)
-				ImageOp::deinterlace_rgba(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), vsapi->getWritePtr(dst.get(), 3), plane_size);
-			else
-				ImageOp::deinterlace_rgb(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), plane_size);
 		}
 		return nullptr;
 	}
