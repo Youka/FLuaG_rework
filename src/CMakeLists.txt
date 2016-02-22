@@ -5,7 +5,7 @@ include(FindGLEW)
 include(FindPNG)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/FindSIMD.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/CheckSIMD.cmake)
 
 # Check for available compilers (has to happen after project definition for compiler flags)
 if(NOT(CMAKE_COMPILER_IS_GNUCC OR MSVC_VERSION GREATER 1600))
@@ -104,6 +104,9 @@ endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC})
 target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB})
+if(${BUILD_FORCE_SINGLE_THREAD})
+	target_link_libraries(fluag -pthread)
+endif()
 
 # Setup library installation
 install(TARGETS fluag	# Runtime
