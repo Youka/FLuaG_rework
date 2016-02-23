@@ -104,7 +104,7 @@ endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC})
 target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB})
-if(${BUILD_FORCE_SINGLE_THREAD})
+if(NOT MSVC)
 	target_link_libraries(fluag -pthread)
 endif()
 
