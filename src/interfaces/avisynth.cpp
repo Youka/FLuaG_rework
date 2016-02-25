@@ -21,6 +21,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../main/FLuaG.hpp"
 #include "../utils/imageop.hpp"
 #include "../utils/textconv.hpp"
+#include <cassert>
 
 namespace AVS{
 	// Avisynth library handle (defined in plugin initialization)

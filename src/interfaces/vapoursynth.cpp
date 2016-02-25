@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <config.h>
 #include "../main/FLuaG.hpp"
 #include "../utils/imageop.hpp"
+#include <cassert>
 
 namespace VS{
 	// Filter instance data
@@ -51,9 +52,14 @@ namespace VS{
 			const std::shared_ptr<unsigned char> fdata = has_alpha ?
 				ImageOp::interlace_rgba(vsapi->getReadPtr(dst.get(), 0), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 2), vsapi->getReadPtr(dst.get(), 3), plane_size) :
 				ImageOp::interlace_rgb(vsapi->getReadPtr(dst.get(), 2), vsapi->getReadPtr(dst.get(), 1), vsapi->getReadPtr(dst.get(), 0), plane_size);
+			// Align frame bottom-up
+			const unsigned stride = has_alpha ? vsapi->getStride(dst.get(), 0) << 2 : vsapi->getStride(dst.get(), 0) * 3;
+			ImageOp::flip(fdata.get(), data->vi->height, stride);
 			// Render on frame
 			try{
-				data->F.ProcessFrame(fdata.get(), has_alpha ? vsapi->getStride(dst.get(), 0) << 2 : vsapi->getStride(dst.get(), 0) * 3, n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
+				data->F.ProcessFrame(fdata.get(), stride, n * (data->vi->fpsDen * 1000.0 / data->vi->fpsNum));
+				// Realign frame to origin
+				ImageOp::flip(fdata.get(), data->vi->height, stride);
 				// Unmerge frame planes
 				if(has_alpha)
 					ImageOp::deinterlace_rgba(fdata.get(), vsapi->getWritePtr(dst.get(), 0), vsapi->getWritePtr(dst.get(), 1), vsapi->getWritePtr(dst.get(), 2), vsapi->getWritePtr(dst.get(), 3), plane_size);
