@@ -245,10 +245,10 @@ static int table_fill(lua_State* L){
 		i = luaL_optinteger(L, 4, 1);
         // Fill table range with value
 	if(i >= 1 && n > 0)
-                for(n += i; i < n; ++i){
+		for(n += i; i < n; ++i){
 			lua_pushvalue(L, 2);
 			lua_rawseti(L, 1, i);
-                }
+		}
 	return 0;
 }
 
@@ -323,10 +323,10 @@ static int table_removen(lua_State* L){
 	// Remove values
 	if(i >= 1 && n > 0){
 		const size_t tn = lua_rawlen(L, 1);
-                for(size_t j = i+n; j <= tn; ++j){
+		for(size_t j = i+n; j <= tn; ++j){
 			lua_rawgeti(L, 1, j);
 			lua_rawseti(L, 1, i++);
-                }
+		}
 		while(static_cast<size_t>(i) <= tn){
 			lua_pushnil(L);
 			lua_rawseti(L, 1, i++);

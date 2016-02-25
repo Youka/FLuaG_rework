@@ -78,7 +78,7 @@ namespace Math{
 				return *this;
 			}
 			bool invert(){
-				T inv_matrix[16] = {
+				std::array<T,16> inv_matrix = {
 				/* 11 */	this->m_data[5]*this->m_data[10]*this->m_data[15] + this->m_data[6]*this->m_data[11]*this->m_data[13] + this->m_data[7]*this->m_data[9]*this->m_data[14] - this->m_data[5]*this->m_data[11]*this->m_data[14] - this->m_data[6]*this->m_data[9]*this->m_data[15] - this->m_data[7]*this->m_data[10]*this->m_data[13],
 				/* 12 */	this->m_data[1]*this->m_data[11]*this->m_data[14] + this->m_data[2]*this->m_data[9]*this->m_data[15] + this->m_data[3]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[10]*this->m_data[15] - this->m_data[2]*this->m_data[11]*this->m_data[13] - this->m_data[3]*this->m_data[9]*this->m_data[14],
 				/* 13 */	this->m_data[1]*this->m_data[6]*this->m_data[15] + this->m_data[2]*this->m_data[7]*this->m_data[13] + this->m_data[3]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[7]*this->m_data[14] - this->m_data[2]*this->m_data[5]*this->m_data[15] - this->m_data[3]*this->m_data[6]*this->m_data[13],
@@ -95,14 +95,14 @@ namespace Math{
 				/* 42 */	this->m_data[0]*this->m_data[9]*this->m_data[14] + this->m_data[1]*this->m_data[10]*this->m_data[12] + this->m_data[2]*this->m_data[8]*this->m_data[13] - this->m_data[0]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[8]*this->m_data[14] - this->m_data[2]*this->m_data[9]*this->m_data[12],
 				/* 43 */	this->m_data[0]*this->m_data[6]*this->m_data[13] + this->m_data[1]*this->m_data[4]*this->m_data[14] + this->m_data[2]*this->m_data[5]*this->m_data[12] - this->m_data[0]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[6]*this->m_data[12] - this->m_data[2]*this->m_data[4]*this->m_data[13],
 				/* 44 */	this->m_data[0]*this->m_data[5]*this->m_data[10] + this->m_data[1]*this->m_data[6]*this->m_data[8] + this->m_data[2]*this->m_data[4]*this->m_data[9] - this->m_data[0]*this->m_data[6]*this->m_data[9] - this->m_data[1]*this->m_data[4]*this->m_data[10] - this->m_data[2]*this->m_data[5]*this->m_data[8]
-				},
-				delta = this->m_data[0] * inv_matrix[0] +
+				};
+				T delta = this->m_data[0] * inv_matrix[0] +
 					this->m_data[1] * inv_matrix[4] +
 					this->m_data[2] * inv_matrix[8] +
 					this->m_data[3] * inv_matrix[12];
 				if(delta != 0){
 					delta = 1 / delta,
-					std::transform(inv_matrix, inv_matrix+16, this->m_data.begin(), [delta](double& inv_field){return delta * inv_field;});
+					std::transform(inv_matrix.cbegin(), inv_matrix.cend(), this->m_data.begin(), std::bind(std::multiplies<T>(), delta, std::placeholders::_1));
 					return true;
 				}
 				return false;
@@ -273,8 +273,8 @@ namespace Geometry{
 				const Point2d rel_control1 = rel_start + rotate(rel_start_end, direction * current_angle * -0.5),
 					rel_control2 = rel_end + rotate(-rel_start_end, direction * current_angle * 0.5);
 				// Insert arc to output
-                                curves.push_back({center + rel_start, center + rel_control1, center + rel_control2, center + rel_end});
-                                // Prepare next arc
+				curves.push_back({center + rel_start, center + rel_control1, center + rel_control2, center + rel_end});
+				// Prepare next arc
 				rel_start = rel_end;
 			}
 		}

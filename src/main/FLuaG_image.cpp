@@ -33,7 +33,7 @@ static int image_data_delete(lua_State* L){
 }
 
 static int image_data_size(lua_State* L){
-	ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
+	const ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	lua_pushinteger(L, udata->height * udata->rowsize);
 	return 1;
 }

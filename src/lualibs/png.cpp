@@ -100,7 +100,7 @@ static int png_encode(std::ostream& out, lua_State* L){
 		if(!static_cast<std::ostream*>(png_get_io_ptr(png))->write(reinterpret_cast<char*>(in), in_size))
 			longjmp(png_jmpbuf(png), 1);
 	}, nullptr);
-        // Write PNG header informations
+	// Write PNG header informations
 	png_set_IHDR(png.get(), png_info, width, height, 8, has_alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 	png_write_info(png.get(), png_info);
 	// Write PNG image

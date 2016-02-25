@@ -538,7 +538,7 @@ static int tgl_texture_create(lua_State* L){
 	glGenTextures(1, &tex);
 	// Fill texture
 	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format,  GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	if(glHasError()){
 		glDeleteTextures(1, &tex);
 		return luaL_error(L, "Invalid texture value!");
