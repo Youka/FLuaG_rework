@@ -6,7 +6,7 @@ include(FindPNG)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/CheckSIMD.cmake)
-find_package(Boost 1.54 COMPONENTS filesystem)
+find_package(Boost 1.55.0 COMPONENTS filesystem)
 
 # Check for available compilers (has to happen after project definition for compiler flags)
 if(NOT(CMAKE_COMPILER_IS_GNUCC OR MSVC_VERSION GREATER 1600))
