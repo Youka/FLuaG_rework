@@ -13,6 +13,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
+#include "../utils/lua.h"
 #include <boost/filesystem.hpp>
 
 using namespace boost;
@@ -62,7 +63,12 @@ static int filesystem_link(lua_State* L){
 
 static int filesystem_symlink(lua_State* L){
 	try{
-		filesystem::create_symlink(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
+		if(lua_gettop(L) > 1)
+			filesystem::create_symlink(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
+		else{
+			lua_pushstring(L, filesystem::read_symlink(luaL_checkstring(L, 1)).c_str());
+			return 1;
+		}
 	}catch(const filesystem::filesystem_error& e){
 		return luaL_error(L, e.what());
 	}
@@ -103,7 +109,7 @@ static int filesystem_equal(lua_State* L){
 	return 0;
 }
 
-static int filesystem_filesize(lua_State* L){
+static int filesystem_size(lua_State* L){
 	try{
 		lua_pushinteger(L, filesystem::file_size(luaL_checkstring(L, 1)));
 		return 1;
@@ -125,19 +131,20 @@ static int filesystem_lastmod(lua_State* L){
 
 static int filesystem_perm(lua_State* L){
 	static const char* option_str[] = {"add", "remove", "owner_read", "owner_write", "owner_exe", "owner_all", "group_read", "group_write", "group_exe", "group_all", "others_read", "others_write", "others_exe", "others_all", nullptr};
-	static const filesystem::perms option_enum[] = {filesystem::perms::add_perms, filesystem::perms::remove_perms, filesystem::perms::owner_read, filesystem::perms::owner_write, filesystem::perms::owner_exe, filesystem::perms::owner_all, filesystem::perms::group_read, filesystem::perms::group_write, filesystem::perms::group_exe, filesystem::perms::group_all, filesystem::perms::others_read, filesystem::perms::others_write, filesystem::perms::others_exe, filesystem::perms::others_all};
+	using perms = filesystem::perms;
+	static const perms option_enum[] = {perms::add_perms, perms::remove_perms, perms::owner_read, perms::owner_write, perms::owner_exe, perms::owner_all, perms::group_read, perms::group_write, perms::group_exe, perms::group_all, perms::others_read, perms::others_write, perms::others_exe, perms::others_all};
 	const int top = lua_gettop(L);
 	try{
 		if(top > 1){
-			filesystem::perms perms = filesystem::no_perms;
+			perms p = filesystem::no_perms;
 			for(int i = 2; i <= top; ++i)
-				perms |= option_enum[luaL_checkoption(L, i, nullptr, option_str)];
-			filesystem::permissions(luaL_checkstring(L, 1), perms);
+				p |= option_enum[luaL_checkoption(L, i, nullptr, option_str)];
+			filesystem::permissions(luaL_checkstring(L, 1), p);
 		}else{
-			const filesystem::perms perms = filesystem::status(luaL_checkstring(L, 1)).permissions();
+			const perms p = filesystem::status(luaL_checkstring(L, 1)).permissions();
 			static const int n = sizeof(option_enum)/sizeof(option_enum[0]);
 			for(int i = 0; i < n; ++i)
-				if(perms & option_enum[i])
+				if(p & option_enum[i])
 					lua_pushstring(L, option_str[i]);
 			return lua_gettop(L)-1;
 		}
@@ -147,54 +154,103 @@ static int filesystem_perm(lua_State* L){
 	return 0;
 }
 
-/*static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_remove(lua_State* L){
+	try{
+		if(luaL_optboolean(L, 2, false))
+			lua_pushinteger(L, filesystem::remove_all(luaL_checkstring(L, 1)));
+		else
+			lua_pushboolean(L, filesystem::remove(luaL_checkstring(L, 1)));
+		return 1;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_rename(lua_State* L){
+	try{
+		filesystem::rename(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_space(lua_State* L){
+	try{
+		const filesystem::space_info sinfo = filesystem::space(luaL_checkstring(L, 1));
+        lua_pushinteger(L, sinfo.capacity);
+        lua_pushinteger(L, sinfo.free);
+        lua_pushinteger(L, sinfo.available);
+		return 3;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_type(lua_State* L){
+	try{
+		static const char* types_str[] = {"status_error", "file_not_found", "regular_file", "directory_file", "symlink_file", "block_file", "character_file", "fifo_file", "socket_file", "type_unknown"};
+		using ftype = filesystem::file_type;
+		static const ftype types_enum[] = {ftype::status_error, ftype::file_not_found, ftype::regular_file, ftype::directory_file, ftype::symlink_file,
+														ftype::block_file, ftype::character_file, ftype::fifo_file, ftype::socket_file, ftype::type_unknown};
+		static const int n = sizeof(types_enum)/sizeof(types_enum[0]);
+		const ftype ft = filesystem::status(luaL_checkstring(L, 1)).type();
+		for(int i = 0; i < n; ++i)
+			if(ft == types_enum[i]){
+				lua_pushstring(L, types_str[i]);
+				return 1;
+			}
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_sysabsolute(lua_State* L){
+	try{
+		lua_pushstring(L, filesystem::system_complete(luaL_checkstring(L, 1)).c_str());
+		return 1;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_tmpdir(lua_State* L){
+	try{
+		lua_pushstring(L, filesystem::temp_directory_path().c_str());
+		return 1;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
 }
 
-static int filesystem_(lua_State* L){
-
-	// TODO
-
+static int filesystem_unique(lua_State* L){
+	try{
+		lua_pushstring(L, filesystem::unique_path(luaL_checkstring(L, 1)).c_str());
+		return 1;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
 	return 0;
-}*/
+}
+
+static int filesystem_dir(lua_State* L){
+	try{
+		lua_newtable(L);
+		int i = 0;
+		for(filesystem::directory_iterator diter(luaL_checkstring(L, 1)), diter_end; diter != diter_end; diter++){
+			lua_pushstring(L, (*diter).path().c_str()); lua_rawseti(L, -2, ++i);
+		}
+		return 1;
+	}catch(const filesystem::filesystem_error& e){
+		return luaL_error(L, e.what());
+	}
+	return 0;
+}
 
 int luaopen_filesystem(lua_State* L){
 	static const luaL_Reg l[] = {
@@ -207,16 +263,17 @@ int luaopen_filesystem(lua_State* L){
 		{"cd", filesystem_cd},
 		{"exists", filesystem_exists},
 		{"equal", filesystem_equal},
-		{"filesize", filesystem_filesize},
+		{"size", filesystem_size},
 		{"lastmod", filesystem_lastmod},
 		{"perm", filesystem_perm},
-		/*{"", filesystem_},
-		{"", filesystem_},
-		{"", filesystem_},
-		{"", filesystem_},
-		{"", filesystem_},
-		{"", filesystem_},
-		{"", filesystem_},*/
+		{"remove", filesystem_remove},
+		{"rename", filesystem_rename},
+		{"space", filesystem_space},
+		{"type", filesystem_type},
+		{"sysabsolute", filesystem_sysabsolute},
+		{"tmpdir", filesystem_tmpdir},
+		{"unique", filesystem_unique},
+		{"dir", filesystem_dir},
 		{NULL, NULL}
 	};
 	luaL_newlib(L, l);
