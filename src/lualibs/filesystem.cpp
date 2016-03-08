@@ -19,13 +19,13 @@ Permission is granted to anyone to use this software for any purpose, including 
 using namespace boost;
 
 static int filesystem_absolute(lua_State* L){
-	lua_pushstring(L, filesystem::absolute(luaL_checkstring(L, 1)).c_str());
+	lua_pushstring(L, filesystem::absolute(luaL_checkstring(L, 1)).string().c_str());
 	return 1;
 }
 
 static int filesystem_canonical(lua_State* L){
 	try{
-		lua_pushstring(L, filesystem::canonical(luaL_checkstring(L, 1)).c_str());
+		lua_pushstring(L, filesystem::canonical(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
 	}catch(const filesystem::filesystem_error& e){
 		return luaL_error(L, e.what());
@@ -66,7 +66,7 @@ static int filesystem_symlink(lua_State* L){
 		if(lua_gettop(L) > 1)
 			filesystem::create_symlink(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
 		else{
-			lua_pushstring(L, filesystem::read_symlink(luaL_checkstring(L, 1)).c_str());
+			lua_pushstring(L, filesystem::read_symlink(luaL_checkstring(L, 1)).string().c_str());
 			return 1;
 		}
 	}catch(const filesystem::filesystem_error& e){
@@ -80,7 +80,7 @@ static int filesystem_cd(lua_State* L){
 		if(lua_gettop(L) > 0)
 			filesystem::current_path(luaL_checkstring(L, 1));
 		else{
-			lua_pushstring(L, filesystem::current_path().c_str());
+			lua_pushstring(L, filesystem::current_path().string().c_str());
 			return 1;
 		}
 	}catch(const filesystem::filesystem_error& e){
@@ -210,7 +210,7 @@ static int filesystem_type(lua_State* L){
 
 static int filesystem_sysabsolute(lua_State* L){
 	try{
-		lua_pushstring(L, filesystem::system_complete(luaL_checkstring(L, 1)).c_str());
+		lua_pushstring(L, filesystem::system_complete(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
 	}catch(const filesystem::filesystem_error& e){
 		return luaL_error(L, e.what());
@@ -220,7 +220,7 @@ static int filesystem_sysabsolute(lua_State* L){
 
 static int filesystem_tmpdir(lua_State* L){
 	try{
-		lua_pushstring(L, filesystem::temp_directory_path().c_str());
+		lua_pushstring(L, filesystem::temp_directory_path().string().c_str());
 		return 1;
 	}catch(const filesystem::filesystem_error& e){
 		return luaL_error(L, e.what());
@@ -230,7 +230,7 @@ static int filesystem_tmpdir(lua_State* L){
 
 static int filesystem_unique(lua_State* L){
 	try{
-		lua_pushstring(L, filesystem::unique_path(luaL_checkstring(L, 1)).c_str());
+		lua_pushstring(L, filesystem::unique_path(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
 	}catch(const filesystem::filesystem_error& e){
 		return luaL_error(L, e.what());
@@ -243,7 +243,7 @@ static int filesystem_dir(lua_State* L){
 		lua_newtable(L);
 		int i = 0;
 		for(filesystem::directory_iterator diter(luaL_checkstring(L, 1)), diter_end; diter != diter_end; diter++){
-			lua_pushstring(L, (*diter).path().c_str()); lua_rawseti(L, -2, ++i);
+			lua_pushstring(L, (*diter).path().string().c_str()); lua_rawseti(L, -2, ++i);
 		}
 		return 1;
 	}catch(const filesystem::filesystem_error& e){
