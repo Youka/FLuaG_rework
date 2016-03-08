@@ -1,5 +1,7 @@
 # Prepared build files
 build/
+build_win/
+build_linux/
 
 # Private files/shortcuts
 private/
