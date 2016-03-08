@@ -14,15 +14,15 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include "libs.h"
 #include "../utils/lua.h"
-#include <regex>
+#include <boost/regex.hpp>
 
 // Unique name for Lua metatable
 #define LUA_REGEX "regex"
 
 // Userdata container
 struct RegexArgs{
-	const std::regex expr;
-	const std::regex_constants::match_flag_type flag;
+	const boost::regex expr;
+	const boost::regex_constants::match_flag_type flag;
 };
 
 // Regex metatable methods
@@ -34,8 +34,8 @@ static int regex_free(lua_State* L){
 static int regex_replace(lua_State* L){
 	const RegexArgs* args = *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	try{
-		lua_pushstring(L, std::regex_replace(std::string(luaL_checkstring(L, 2)), args->expr, std::string(luaL_checkstring(L, 3)), args->flag).c_str());
-	}catch(const std::regex_error& e){
+		lua_pushstring(L, boost::regex_replace(std::string(luaL_checkstring(L, 2)), args->expr, std::string(luaL_checkstring(L, 3)), args->flag).c_str());
+	}catch(const boost::regex_error& e){
 		return luaL_error(L, e.what());
 	}
 	return 1;
@@ -44,10 +44,10 @@ static int regex_replace(lua_State* L){
 static int regex_match(lua_State* L){
 	const RegexArgs* args = *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	const std::string str = luaL_checkstring(L, 2);
-	std::sregex_iterator it(str.cbegin(), str.cend(), args->expr, args->flag), it_end;
+	boost::sregex_iterator it(str.cbegin(), str.cend(), args->expr, args->flag), it_end;
 	lua_createtable(L, std::distance(it, it_end), 0);
 	for(int i = 1; it != it_end; ++it, ++i){
-		const std::smatch& matches = *it;
+		const boost::smatch& matches = *it;
 		lua_createtable(L, matches.size(), 0);
 		for(size_t sub_i = 1; sub_i <= matches.size(); ++sub_i){
 			lua_createtable(L, 0, 2);
@@ -65,8 +65,8 @@ static int regex_create(lua_State* L){
 	// Get main argument
 	const char* expr = luaL_checkstring(L, 1);
 	// Get optional arguments
-	std::regex_constants::syntax_option_type syntax = std::regex_constants::ECMAScript;
-	std::regex_constants::match_flag_type flag = std::regex_constants::match_default;
+	boost::regex_constants::syntax_option_type syntax = boost::regex_constants::ECMAScript;
+	boost::regex_constants::match_flag_type flag = boost::regex_constants::match_default;
 	if(lua_istable(L, 2)){
 		const size_t n = lua_rawlen(L, 2);
 		for(size_t i = 1; i <= n; ++i){
@@ -74,24 +74,24 @@ static int regex_create(lua_State* L){
 			if(lua_isstring(L, -1)){
 				const std::string option = lua_tostring(L, -1);
 				if(option == "icase")
-					syntax |= std::regex_constants::icase;
+					syntax |= boost::regex_constants::icase;
 				else if(option == "nosubs")
-					syntax |= std::regex_constants::nosubs;
+					syntax |= boost::regex_constants::nosubs;
 				else if(option == "optimize")
-					syntax |= std::regex_constants::optimize;
+					syntax |= boost::regex_constants::optimize;
 				else if(option == "collate")
-					syntax |= std::regex_constants::collate;
+					syntax |= boost::regex_constants::collate;
 				else if(option == "noempty")
-					flag |= std::regex_constants::match_not_null;
+					flag |= boost::regex_constants::match_not_null;
 			}
 		}
 		lua_pop(L, n);
 	}
 	// Create regex userdata
 	try{
-		std::regex reg(expr, syntax);
+		boost::regex reg(expr, syntax);
 		*static_cast<RegexArgs**>(lua_newuserdata(L, sizeof(RegexArgs*))) = new RegexArgs{std::move(reg), flag};
-	}catch(const std::regex_error& e){
+	}catch(const boost::regex_error& e){
 		return luaL_error(L, e.what());
 	}
 	if(luaL_newmetatable(L, LUA_REGEX)){
