@@ -13,22 +13,46 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
-#ifndef _WIN32
+#ifdef _WIN32
+	#include "../utils/lua.h"
+	#include "../utils/textconv.hpp"
+	#include <wingdi.h>
+#else
 	#include <fontconfig/fontconfig.h>
 	#include <memory>
 #endif
 
+#ifdef _WIN32
+static int CALLBACK enumfontcallback(const LOGFONTW* lf, const TEXTMETRICW*, const DWORD fonttype, LPARAM lParam){
+	// Push font properties to Lua table
+	lua_State* L = reinterpret_cast<lua_State*>(lParam);
+	lua_createtable(L, 0, 4);
+	lua_pushstring(L, Utf8::from_utf16(lf->lfFaceName).c_str()); lua_setfield(L, -2, "family");
+	lua_pushstring(L, Utf8::from_utf16(reinterpret_cast<const ENUMLOGFONTEXW*>(lf)->elfStyle).c_str()); lua_setfield(L, -2, "style");
+	lua_pushboolean(L, fonttype & TRUETYPE_FONTTYPE); lua_setfield(L, -2, "outline");
+	lua_pushstring(L, Utf8::from_utf16(reinterpret_cast<const ENUMLOGFONTEXW*>(lf)->elfScript).c_str()); lua_setfield(L, -2, "script");
+	lua_rawseti(L, -2, 1+lua_rawlen(L, -2));
+	// Continue font enumeration until end
+	return 1;
+}
+#endif
+
 static int font_list(lua_State* L){
 #ifdef _WIN32
-
-	// TODO
-
-	return 0;
+	lua_newtable(L);
+	const HDC hdc = CreateCompatibleDC(NULL);
+	LOGFONTW lf = {0};
+	lf.lfCharSet = DEFAULT_CHARSET;
+	EnumFontFamiliesExW(hdc, &lf, enumfontcallback, reinterpret_cast<LPARAM>(L), 0);
+	DeleteDC(hdc);
+	return 1;
 #else
+	// Get font list from FontConfig
 	FcConfig* fc = FcInitLoadConfigAndFonts();
 	std::unique_ptr<FcPattern, void(*)(FcPattern*)> pattern(FcPatternCreate(), FcPatternDestroy);
 	std::unique_ptr<FcObjectSet, void(*)(FcObjectSet*)> objset(FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_OUTLINE, nullptr), FcObjectSetDestroy);
 	std::unique_ptr<FcFontSet, void(*)(FcFontSet*)> fontlist(FcFontList(fc, pattern.get(), objset.get()), FcFontSetDestroy);
+	// Send font properties to Lua
 	if(fontlist){
 		lua_createtable(L, fontlist->nfont, 0);
 		for(int i = 0; i < fontlist->nfont; ++i){
