@@ -1,6 +1,6 @@
 /*
 Project: FLuaG
-File: utf8.cpp
+File: utf8x.cpp
 
 Copyright (c) 2015, Christoph "Youka" Spanknebel
 
@@ -78,7 +78,7 @@ static int utf8_len(lua_State* L){
 	return 1;
 }
 
-int luaopen_utf8(lua_State* L){
+int luaopen_utf8x(lua_State* L){
 	static const luaL_Reg l[] = {
 		{"charrange", utf8_charrange},
 		{"chars", utf8_chars},

@@ -40,7 +40,7 @@ namespace FLuaG{
 					{"png", luaopen_png},
 					{"tgl", luaopen_tgl},
 					{"font", luaopen_font},
-					{"utf8", luaopen_utf8},
+					{"utf8x", luaopen_utf8x},
 					{NULL, NULL}
 				};
 				luaL_setfuncs(LSTATE, l, 0);

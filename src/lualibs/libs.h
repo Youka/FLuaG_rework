@@ -24,4 +24,4 @@ int luaopen_filesystem(lua_State* L);
 int luaopen_png(lua_State* L);
 int luaopen_tgl(lua_State* L);
 int luaopen_font(lua_State* L);
-int luaopen_utf8(lua_State* L);
+int luaopen_utf8x(lua_State* L);
