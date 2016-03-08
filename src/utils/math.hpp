@@ -20,6 +20,11 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <algorithm>
 #include <functional>
 
+// Useful math defines (not standard)
+#define M_PI		3.14159265358979323846
+#define M_PI_2		1.57079632679489661923
+#define M_SQRT2		1.41421356237309504880
+
 namespace Math{
 	template<typename T>
 	inline char sign(const T x){
