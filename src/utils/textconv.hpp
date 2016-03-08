@@ -16,7 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include <string>
 #include <windef.h>
-#include <Stringapiset.h>
+#include <stringapiset.h>
 
 namespace Utf8{
 	// Utf-8 to utf-16 string conversion (native windows)

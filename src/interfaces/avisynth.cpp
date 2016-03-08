@@ -79,7 +79,7 @@ namespace AVS{
 			F->SetVideo({
 				static_cast<unsigned short>(vinfo->width),
 				static_cast<unsigned short>(vinfo->height),
-				avs_is_rgb32(vinfo),
+				static_cast<bool>(avs_is_rgb32(vinfo)),
 				static_cast<double>(vinfo->fps_numerator) / vinfo->fps_denominator,
 				static_cast<unsigned long>(vinfo->num_frames)
 			});
