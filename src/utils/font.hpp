@@ -257,6 +257,45 @@ namespace Font{
 				}
 #endif
 			}
+			Font(const Font& other){
+				this->copy(other);
+			}
+			Font& operator=(const Font& other){
+				this->~Font();
+				this->copy(other);
+				return *this;
+			}
+			Font(Font&& other){
+				this->move(std::forward<Font>(other));
+			}
+			Font& operator=(Font&& other){
+				this->~Font();
+				this->move(std::forward<Font>(other));
+				return *this;
+			}
+			// Observers
+			operator bool() const{
+#ifdef _WIN32
+				return this->dc;
+#else
+				return this->ctx;
+#endif
+			}
+			std::string get_family() const{
+#ifdef _WIN32
+				return Utf8::from_utf16(this->get_family_unicode());
+#else
+				return pango_font_description_get_family(pango_layout_get_font_description(this->layout));
+#endif
+			}
+#ifdef _WIN32
+			std::wstring get_family_unicode() const{
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return lf.lfFaceName;
+			}
+#endif
+
 
 			// TODO
 
