@@ -27,7 +27,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 
 #define FONT_UPSCALE 64.0
-#define FONT_DOWNSCALE (1.0/FONT_UPSCALE)
 
 namespace Font{
 	// Simple local exception
@@ -273,7 +272,7 @@ namespace Font{
 				this->move(std::forward<Font>(other));
 				return *this;
 			}
-			// Observers
+			// Getters
 			operator bool() const{
 #ifdef _WIN32
 				return this->dc;
@@ -295,9 +294,113 @@ namespace Font{
 				return lf.lfFaceName;
 			}
 #endif
+			float get_size() const{
+#ifdef _WIN32
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return static_cast<float>(lf.lfHeight) / FONT_UPSCALE;
+#else
+				return static_cast<float>(pango_font_description_get_size(pango_layout_get_font_description(this->layout))) / FONT_UPSCALE / PANGO_SCALE;
+#endif
+			}
+			bool get_bold() const{
+#ifdef _WIN32
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return lf.lfWeight == FW_BOLD;
+#else
+				return pango_font_description_get_weight(pango_layout_get_font_description(this->layout)) == PANGO_WEIGHT_BOLD;
+#endif
+			}
+			bool get_italic() const{
+#ifdef _WIN32
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return lf.lfItalic;
+#else
+				return pango_font_description_get_style(pango_layout_get_font_description(this->layout)) == PANGO_STYLE_ITALIC;
+#endif
+			}
+			bool get_underline() const{
+#ifdef _WIN32
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return lf.lfUnderline;
+#else
+				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_UNDERLINE))->value == PANGO_UNDERLINE_SINGLE;
+#endif
+			}
+			bool get_strikeout() const{
+#ifdef _WIN32
+				LOGFONTW lf;
+				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
+				return lf.lfStrikeOut;
+#else
+				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_STRIKETHROUGH))->value;
+#endif
+			}
+			double get_spacing() const{
+#ifdef _WIN32
+				return this->spacing;
+#else
+				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				return static_cast<double>(reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_LETTER_SPACING))->value) / FONT_UPSCALE / PANGO_SCALE;
+#endif
+			}
+			bool get_rtl() const{
+#ifdef _WIN32
+				return GetTextAlign(this->dc) == TA_RTLREADING;
+#else
+				return pango_layout_get_auto_dir(this->layout);
+#endif
+			}
+			// Font/Text informations
+			struct Metrics{
+				double height, ascent, descent, internal_leading, external_leading;
+			};
+			Metrics metrics() const{
+#ifdef _WIN32
+				TEXTMETRICW metrics;
+				GetTextMetricsW(this->dc, &metrics);
+				return {
+					static_cast<double>(metrics.tmHeight) / FONT_UPSCALE,
+					static_cast<double>(metrics.tmAscent) / FONT_UPSCALE,
+					static_cast<double>(metrics.tmDescent) / FONT_UPSCALE,
+					static_cast<double>(metrics.tmInternalLeading) / FONT_UPSCALE,
+					static_cast<double>(metrics.tmExternalLeading) / FONT_UPSCALE
+				};
+#else
+				Metrics result;
+				std::unique_ptr<PangoFontMetrics, void(*)(PangoFontMetrics*)> metrics(pango_context_get_metrics(pango_layout_get_context(this->layout), pango_layout_get_font_description(this->layout), nullptr), pango_font_metrics_unref);
+				result.ascent = static_cast<double>(pango_font_metrics_get_ascent(metrics.get())) / FONT_UPSCALE / PANGO_SCALE;
+				result.descent = static_cast<double>(pango_font_metrics_get_descent(metrics.get())) / FONT_UPSCALE / PANGO_SCALE;
+				result.height = result.ascent + result.descent;
+				result.internal_leading = 0; // HEIGHT - ASCENT - DESCENT
+				result.external_leading = static_cast<double>(pango_layout_get_spacing(this->layout)) / FONT_UPSCALE / PANGO_SCALE;
+				return result;
+#endif
+			}
+			double text_width(const std::string& text) const{
+#ifdef _WIN32
+				return this->text_width(Utf8::to_utf16(text));
+#else
+				pango_layout_set_text(this->layout, text.data(), text.length());
+				PangoRectangle rect;
+				pango_layout_get_pixel_extents(this->layout, nullptr, &rect);
+				return static_cast<double>(rect.width) / FONT_UPSCALE;
+#endif
+			}
+#ifdef _WIN32
+			double text_width(const std::wstring& text) const{
+				SIZE sz;
+				GetTextExtentPoint32W(this->dc, text.data(), text.length(), &sz);
+				return static_cast<double>(sz.cx) / FONT_UPSCALE + text.length() * this->spacing;
+			}
+#endif
 
-
-			// TODO
+			// TODO: text-to-path
 
 	};
 }

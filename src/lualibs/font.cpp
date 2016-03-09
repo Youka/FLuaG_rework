@@ -39,6 +39,9 @@ static int font_list(lua_State* L){
 int luaopen_font(lua_State* L){
 	static const luaL_Reg l[] = {
 		{"list", font_list},
+
+		// TODO: font class
+
 		{NULL, NULL}
 	};
 	luaL_newlib(L, l);
