@@ -27,8 +27,8 @@ static bool glHasError(){
 	// No errors?
 	if(glGetError() == GL_NO_ERROR)
 		return false;
-	// Clear remaining errors
-	while(glGetError() != GL_NO_ERROR);
+	// Clear remaining errors (with limit to prevent endless loop by context errors)
+	for(unsigned short i = 0; glGetError() != GL_NO_ERROR && i < std::numeric_limits<decltype(i)>::max(); ++i);
 	// Had error(s)!
 	return true;
 }
