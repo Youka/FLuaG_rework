@@ -183,7 +183,7 @@ namespace Math{
 				}
 			}
 			// Transformations
-			std::array<T,4> transform(const T* vec){
+			std::array<T,4> transform(const T* vec) const{
 				return {
 					this->m_data[0] * vec[0] + this->m_data[1] * vec[1] + this->m_data[2] * vec[2] + this->m_data[3] * vec[3],
 					this->m_data[4] * vec[0] + this->m_data[5] * vec[1] + this->m_data[6] * vec[2] + this->m_data[7] * vec[3],
@@ -191,7 +191,7 @@ namespace Math{
 					this->m_data[12] * vec[0] + this->m_data[13] * vec[1] + this->m_data[14] * vec[2] + this->m_data[15] * vec[3]
 				};
 			}
-			std::array<T,4> transform(const std::array<T,4>& vec){
+			std::array<T,4> transform(const std::array<T,4>& vec) const{
 				return this->transform(vec.cbegin());
 			}
 	};

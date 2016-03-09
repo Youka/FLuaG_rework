@@ -72,7 +72,7 @@ static int image_data_access(lua_State* L){
 #define LSTATE this->L.get()
 
 namespace FLuaG{
-	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride){
+	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const{
 		// Create & push image data as Lua userdata
 		*static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*))) = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable
