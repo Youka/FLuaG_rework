@@ -19,7 +19,6 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include <config.h>
 #include "../main/FLuaG.hpp"
-#include "../utils/imageop.hpp"
 #include "../utils/textconv.hpp"
 #include <cassert>
 
@@ -38,22 +37,14 @@ namespace AVS{
 		AVS_VideoFrame* frame = avs_library->avs_get_frame(filter_info->child, n);
 		// Make frame writable
 		avs_library->avs_make_writable(filter_info->env, &frame);
-		// Align frame bottom-up
-		unsigned char* const data = avs_get_write_ptr(frame);
-		const int pitch = avs_get_pitch(frame);
-		if(pitch < 0)
-			ImageOp::flip(data, filter_info->vi.height, -pitch);
 		// Render on frame
 		try{
-			static_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(data, ::abs(pitch), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
+			static_cast<FLuaG::Script*>(filter_info->user_data)->ProcessFrame(avs_get_write_ptr(frame), avs_get_pitch(frame), n * (filter_info->vi.fps_denominator * 1000.0 / filter_info->vi.fps_numerator));
 		}catch(const FLuaG::exception& e){
 			filter_info->error = avs_library->avs_save_string(filter_info->env, e.what(), -1);
 			// Because the AVS C API error handling is broken
 			MessageBoxW(NULL, Utf8::to_utf16(e.what()).c_str(), L"FLuaG error", MB_OK | MB_ICONERROR);
 		}
-		// Realign frame to origin
-		if(pitch < 0)
-			ImageOp::flip(data, filter_info->vi.height, -pitch);
 		// Pass frame further in processing chain
 		return frame;
 	}

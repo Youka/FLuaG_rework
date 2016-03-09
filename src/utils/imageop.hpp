@@ -18,13 +18,17 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <algorithm>
 
 namespace ImageOp{
-	// Flip data rows vertically
-	inline void flip(unsigned char* data, const unsigned height, const unsigned stride){
-		const std::unique_ptr<unsigned char> tmp(new unsigned char[stride]);
-		unsigned char* data_tail = data + (height-1) * stride;
-		for(const unsigned char* const data_stop = data + (height >> 1) * stride; data != data_stop; data = std::copy(tmp.get(), tmp.get()+stride, data))
-			std::copy(data_tail, data_tail+stride, tmp.get()),
-			data_tail = std::copy(data, data+stride, data_tail) - (stride << 1);
+	// Copy data rows with different strides and optional vertical flipping
+	inline void copy(const unsigned char* src_data, unsigned char* dst_data, const unsigned height, const unsigned src_stride, const unsigned dst_stride, const bool flip = false){
+		if(!flip && src_stride == dst_stride)
+			std::copy(src_data, src_data + height * src_stride, dst_data);
+		else{
+			if(flip) src_data += (height-1) * src_stride;
+			const int src_stride_i = flip ? -src_stride : src_stride;
+			const unsigned min_stride = std::min(src_stride, dst_stride);
+			for(const unsigned char* const dst_data_end = dst_data + height * dst_stride; dst_data != dst_data_end; src_data += src_stride_i, dst_data += dst_stride)
+				std::copy(src_data, src_data + min_stride, dst_data);
+		}
 	}
 
 	// Interlace RGB(A) planes

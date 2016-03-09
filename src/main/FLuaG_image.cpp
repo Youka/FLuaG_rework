@@ -14,7 +14,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include "FLuaG.hpp"
 #include "../utils/lua.h"
-#include <vector>
+#include "../utils/imageop.hpp"
 
 // Unique name for Lua metatable
 #define LUA_IMAGE_DATA "FLuaG_image_data"
@@ -22,7 +22,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 // Data container for Lua userdata
 struct ImageData{
 	std::weak_ptr<unsigned char> data;
-	unsigned rowsize, stride;
+	unsigned rowsize;
+	int stride;
 	unsigned short height;
 };
 
@@ -53,26 +54,16 @@ static int image_data_access(lua_State* L){
 		if(data_len != image_size)
 			return luaL_error(L, "Data size isn't equal to expected image size!");
 		// Copy data
-		if(udata->rowsize == udata->stride)
-			std::copy(data, data + data_len, udata->data.lock().get());
-		else{
-			unsigned char* image_data = udata->data.lock().get();
-			const unsigned short padding = udata->stride - udata->rowsize;
-			for(const unsigned char* const data_end = data + data_len; data != data_end; data += udata->rowsize)
-				image_data = std::copy(data, data + udata->rowsize, image_data) + padding;
-		}
+		ImageOp::copy(data, udata->data.lock().get(), udata->height, udata->rowsize, ::abs(udata->stride), udata->stride < 0);
 		return 0;
 	}else{
 		// Copy data
-		if(udata->rowsize == udata->stride)
+		if(static_cast<int>(udata->rowsize) == udata->stride)
 			lua_pushlstring(L, reinterpret_cast<char*>(udata->data.lock().get()), image_size);
 		else{
-			std::vector<unsigned char> sbuf;
-			sbuf.reserve(image_size);
-			const unsigned char* data = udata->data.lock().get();
-			for(const unsigned char* const data_end = data + udata->height * udata->stride; data != data_end; data += udata->stride)
-				sbuf.insert(sbuf.end(), data, data + udata->rowsize);
-			lua_pushlstring(L, reinterpret_cast<char*>(sbuf.data()), image_size);
+			std::unique_ptr<unsigned char> buf(new unsigned char[image_size]);
+			ImageOp::copy(udata->data.lock().get(), buf.get(), udata->height, ::abs(udata->stride), udata->rowsize, udata->stride < 0);
+			lua_pushlstring(L, reinterpret_cast<char*>(buf.get()), image_size);
 		}
 		return 1;
 	}
@@ -81,7 +72,7 @@ static int image_data_access(lua_State* L){
 #define LSTATE this->L.get()
 
 namespace FLuaG{
-	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride){
+	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride){
 		// Create & push image data as Lua userdata
 		*static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*))) = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable

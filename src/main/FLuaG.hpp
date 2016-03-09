@@ -58,7 +58,7 @@ namespace FLuaG{
 			// Userdata required by LoadFile function
 			std::string userdata;
 			// Image data to Lua object
-			void lua_pushimage(std::weak_ptr<unsigned char> image_data, unsigned stride);
+			void lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride);
 #ifdef FLUAG_FORCE_SINGLE_THREAD
 			std::promise<bool> main_prom;
 			std::future<bool> main_fut = main_prom.get_future();
@@ -95,6 +95,6 @@ namespace FLuaG{
 			void LoadFile(const std::string& filename) throw(exception);
 			void LoadScript(const std::string& script) throw(exception);
 			// Processing
-			void ProcessFrame(unsigned char* image_data, const unsigned stride, const unsigned long ms) throw(exception);
+			void ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms) throw(exception);
 	};
 }
