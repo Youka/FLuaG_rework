@@ -93,15 +93,72 @@ namespace Font{
 	// Native font class
 	class Font{
 		private:
+			// Attributes
 #ifdef _WIN32
-		HDC hdc;
-		HGDIOBJ old_font;
-		double spacing;
+			HDC dc;
+			HGDIOBJ old_font;
+			double spacing;
 #else
-		cairo_t* ctx;
-		PangoLayout* layout;
+			cairo_t* ctx;
+			PangoLayout* layout;
 #endif
+			// Helpers
+			void copy(const Font& other){
+#ifdef _WIN32
+				if(!other.dc){
+					this->dc = NULL;
+					this->old_font = NULL;
+					this->spacing = 0;
+				}else{
+					this->dc = CreateCompatibleDC(NULL);
+					SetMapMode(this->dc, GetMapMode(other.dc));
+					SetBkMode(this->dc, GetBkMode(other.dc));
+					SetTextAlign(this->dc, GetTextAlign(other.dc));
+					LOGFONTW lf;	// I trust in Spongebob that it has 4-byte boundary like required by GetObject
+					GetObjectW(GetCurrentObject(other.dc, OBJ_FONT), sizeof(lf), &lf);
+					this->old_font = SelectObject(this->dc, CreateFontIndirectW(&lf));
+					this->spacing = other.spacing;
+				}
+#else
+				if(!other.ctx){
+					this->ctx = nullptr;
+					this->layout = nullptr;
+				}else{
+					this->layout = pango_cairo_create_layout(this->ctx = cairo_create(cairo_image_surface_create(CAIRO_FORMAT_A1, 1, 1)));
+					pango_layout_set_font_description(this->layout, pango_layout_get_font_description(other.layout)),
+					pango_layout_set_attributes(this->layout, pango_layout_get_attributes(other.layout)),
+					pango_layout_set_auto_dir(this->layout, pango_layout_get_auto_dir(other.layout));
+				}
+#endif
+			}
+			void move(Font&& other){
+#ifdef _WIN32
+				if(!other.dc){
+					this->dc = NULL;
+					this->old_font = NULL;
+					this->spacing = 0;
+				}else{
+					this->dc = other.dc;
+					other.dc = NULL;
+					this->old_font = other.old_font;
+					other.old_font = NULL;
+					this->spacing = other.spacing;
+					other.spacing = 0;
+				}
+#else
+				if(!other.ctx){
+					this->ctx = nullptr;
+					this->layout = nullptr;
+				}else{
+					this->ctx = other.ctx;
+					other.ctx = nullptr;
+					this->layout = other.layout;
+					other.layout = nullptr;
+				}
+#endif
+			}
 		public:
+			// Rule-of-five
 
 			// TODO
 
