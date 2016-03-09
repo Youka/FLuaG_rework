@@ -20,6 +20,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 #ifdef _WIN32
 	#include "../utils/textconv.hpp"
 	#include <wingdi.h>
+
+	#define FONT_UPSCALE 64.0
+	#define FONT_DOWNSCALE 1.0/FONT_UPSCALE
 #else
 	#include <fontconfig/fontconfig.h>
 	#include <memory>
@@ -159,6 +162,45 @@ namespace Font{
 			}
 		public:
 			// Rule-of-five
+			Font() :
+#ifdef _WIN32
+				dc(NULL), old_font(NULL), spacing(0)
+#else
+				ctx(nullptr), layout(nullptr)
+#endif
+				{}
+			Font(const std::string& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception)
+#ifdef _WIN32
+				: Font(Utf8::to_utf16(family), size, bold, italic, underline, strikeout, spacing, rtl){
+#else
+			{
+
+				// TODO
+
+#endif
+			}
+#ifdef _WIN32
+			Font(const std::wstring& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception){
+
+				// TODO
+
+			}
+#endif
+			~Font(){
+#ifdef _WIN32
+				if(this->dc){
+					DeleteObject(SelectObject(this->dc, this->old_font));
+					DeleteDC(this->dc);
+				}
+#else
+				if(this->ctx){
+					g_object_unref(this->layout);
+					cairo_surface_t* surf = cairo_get_target(this->ctx);
+					cairo_destroy(this->ctx);
+					cairo_surface_destroy(surf);
+				}
+#endif
+			}
 
 			// TODO
 
