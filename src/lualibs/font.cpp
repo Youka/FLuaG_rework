@@ -13,62 +13,27 @@ Permission is granted to anyone to use this software for any purpose, including 
 */
 
 #include "libs.h"
-#ifdef _WIN32
-	#include "../utils/lua.h"
-	#include "../utils/textconv.hpp"
-	#include <wingdi.h>
-#else
-	#include <fontconfig/fontconfig.h>
-	#include <memory>
-#endif
-
-#ifdef _WIN32
-static int CALLBACK enumfontcallback(const LOGFONTW* lf, const TEXTMETRICW*, const DWORD fonttype, LPARAM lParam){
-	// Push font properties to Lua table
-	lua_State* L = reinterpret_cast<lua_State*>(lParam);
-	lua_createtable(L, 0, 4);
-	lua_pushstring(L, Utf8::from_utf16(lf->lfFaceName).c_str()); lua_setfield(L, -2, "family");
-	lua_pushstring(L, Utf8::from_utf16(reinterpret_cast<const ENUMLOGFONTEXW*>(lf)->elfStyle).c_str()); lua_setfield(L, -2, "style");
-	lua_pushboolean(L, fonttype & TRUETYPE_FONTTYPE); lua_setfield(L, -2, "outline");
-	lua_pushstring(L, Utf8::from_utf16(reinterpret_cast<const ENUMLOGFONTEXW*>(lf)->elfScript).c_str()); lua_setfield(L, -2, "script");
-	lua_rawseti(L, -2, 1+lua_rawlen(L, -2));
-	// Continue font enumeration until end
-	return 1;
-}
-#endif
+#include "../utils/lua.h"
+#include "../utils/font.hpp"
 
 static int font_list(lua_State* L){
-#ifdef _WIN32
-	lua_newtable(L);
-	const HDC hdc = CreateCompatibleDC(NULL);
-	LOGFONTW lf = {0};
-	lf.lfCharSet = DEFAULT_CHARSET;
-	EnumFontFamiliesExW(hdc, &lf, enumfontcallback, reinterpret_cast<LPARAM>(L), 0);
-	DeleteDC(hdc);
-	return 1;
-#else
-	// Get font list from FontConfig
-	FcConfig* fc = FcInitLoadConfigAndFonts();
-	std::unique_ptr<FcPattern, void(*)(FcPattern*)> pattern(FcPatternCreate(), FcPatternDestroy);
-	std::unique_ptr<FcObjectSet, void(*)(FcObjectSet*)> objset(FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_OUTLINE, nullptr), FcObjectSetDestroy);
-	std::unique_ptr<FcFontSet, void(*)(FcFontSet*)> fontlist(FcFontList(fc, pattern.get(), objset.get()), FcFontSetDestroy);
-	// Send font properties to Lua
-	if(fontlist){
-		lua_createtable(L, fontlist->nfont, 0);
-		for(int i = 0; i < fontlist->nfont; ++i){
-			lua_createtable(L, 0, 4);
-			const FcPattern* font = fontlist->fonts[i];
-			FcChar8* sresult; FcBool bresult;
-			FcPatternGetString(font, FC_FAMILY, 0, &sresult); lua_pushstring(L, reinterpret_cast<char*>(sresult)); lua_setfield(L, -2, "family");
-			FcPatternGetString(font, FC_STYLE, 0, &sresult); lua_pushstring(L, reinterpret_cast<char*>(sresult)); lua_setfield(L, -2, "style");
-			FcPatternGetString(font, FC_FILE, 0, &sresult); lua_pushstring(L, reinterpret_cast<char*>(sresult)); lua_setfield(L, -2, "file");
-			FcPatternGetBool(font, FC_OUTLINE, 0, &bresult); lua_pushboolean(L, bresult); lua_setfield(L, -2, "outline");
-			lua_rawseti(L, -2, 1+i);
+	try{
+		const auto list = Font::list();
+		lua_createtable(L, list.size(), 0);
+		int i = 0;
+		for(const auto& entry : list){
+			lua_createtable(L, 0, 5);
+			lua_pushstring(L, entry.family.c_str()); lua_setfield(L, -2, "family");
+			lua_pushstring(L, entry.style.c_str()); lua_setfield(L, -2, "style");
+			lua_pushstring(L, entry.file.c_str()); lua_setfield(L, -2, "file");
+			lua_pushstring(L, entry.script.c_str()); lua_setfield(L, -2, "script");
+			lua_pushboolean(L, entry.outline); lua_setfield(L, -2, "outline");
+			lua_rawseti(L, -2, ++i);
 		}
-		return 1;
-	}else
-		return 0;
-#endif
+	}catch(const Font::exception& e){
+		return luaL_error(L, e.what());
+	}
+	return 1;
 }
 
 int luaopen_font(lua_State* L){
