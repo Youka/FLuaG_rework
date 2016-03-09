@@ -20,14 +20,14 @@ Permission is granted to anyone to use this software for any purpose, including 
 #ifdef _WIN32
 	#include "../utils/textconv.hpp"
 	#include <wingdi.h>
-
-	#define FONT_UPSCALE 64.0
-	#define FONT_DOWNSCALE 1.0/FONT_UPSCALE
 #else
 	#include <fontconfig/fontconfig.h>
 	#include <memory>
 	#include <pango/pangocairo.h>
 #endif
+
+#define FONT_UPSCALE 64.0
+#define FONT_DOWNSCALE (1.0/FONT_UPSCALE)
 
 namespace Font{
 	// Simple local exception
@@ -174,16 +174,72 @@ namespace Font{
 				: Font(Utf8::to_utf16(family), size, bold, italic, underline, strikeout, spacing, rtl){
 #else
 			{
-
-				// TODO
-
+				// Check parameters
+				if(size < 0)
+					throw exception("Size must be bigger zero!");
+				// Create context+layout
+				cairo_surface_t* surf = cairo_image_surface_create(CAIRO_FORMAT_A1, 1, 1);
+				if(!surf)
+					throw exception("Couldn't create cairo surface!");
+				if(!(this->ctx = cairo_create(surf))){
+					cairo_surface_destroy(surf);
+					throw exception("Couldn't create cairo context!");
+				}
+				if(!(this->layout = pango_cairo_create_layout(this->ctx))){
+					cairo_destroy(this->ctx);
+					cairo_surface_destroy(surf);
+					throw exception("Couldn't create pango layout!");
+				}
+				// Set layout properties
+				PangoFontDescription *font = pango_font_description_new();
+				pango_font_description_set_family(font, family.c_str());
+				pango_font_description_set_weight(font, bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL);
+				pango_font_description_set_style(font, italic ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL);
+				pango_font_description_set_absolute_size(font, size * PANGO_SCALE * FONT_UPSCALE);
+				pango_layout_set_font_description(this->layout, font);
+				pango_font_description_free(font);
+				PangoAttrList* attr_list = pango_attr_list_new();
+				pango_attr_list_insert(attr_list, pango_attr_underline_new(underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
+				pango_attr_list_insert(attr_list, pango_attr_strikethrough_new(strikeout));
+				pango_attr_list_insert(attr_list, pango_attr_letter_spacing_new(spacing * PANGO_SCALE * FONT_UPSCALE));
+				pango_layout_set_attributes(this->layout, attr_list);
+				pango_attr_list_unref(attr_list);
+				pango_layout_set_auto_dir(this->layout, rtl);
 #endif
 			}
 #ifdef _WIN32
-			Font(const std::wstring& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception){
-
-				// TODO
-
+			Font(const std::wstring& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception)
+				: spacing(spacing){
+				// Check parameters
+				if(family.length() > 31)	// See LOGFONT limitation
+					throw exception("Family length exceeds 31!");
+				if(size < 0)
+					throw exception("Size must be bigger zero!");
+				// Create context
+				if(!(this->dc = CreateCompatibleDC(NULL)))
+					throw exception("Couldn't create device context!");
+				SetMapMode(this->dc, MM_TEXT);
+				SetBkMode(this->dc, TRANSPARENT);
+				if(rtl)
+					SetTextAlign(this->dc, TA_RTLREADING);
+				// Create font
+				LOGFONTW lf = {0};
+				lf.lfHeight = size * FONT_UPSCALE;
+				lf.lfWeight = bold ? FW_BOLD : FW_NORMAL;
+				lf.lfItalic = italic;
+				lf.lfUnderline = underline;
+				lf.lfStrikeOut = strikeout;
+				lf.lfCharSet = DEFAULT_CHARSET;
+				lf.lfOutPrecision = OUT_TT_PRECIS;
+				lf.lfQuality = ANTIALIASED_QUALITY;
+				lf.lfFaceName[family.copy(lf.lfFaceName, 31)] = L'\0';
+				HFONT font = CreateFontIndirectW(&lf);
+				if(!font){
+					DeleteDC(this->dc);
+					throw exception("Couldn't create font!");
+				}
+				// Set font to context
+				this->old_font = SelectObject(this->dc, font);
 			}
 #endif
 			~Font(){
