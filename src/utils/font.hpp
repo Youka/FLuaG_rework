@@ -23,6 +23,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #else
 	#include <fontconfig/fontconfig.h>
 	#include <memory>
+	#include <pango/pangocairo.h>
 #endif
 
 namespace Font{
@@ -88,4 +89,21 @@ namespace Font{
 #endif
 		return result;
 	}
+
+	// Native font class
+	class Font{
+		private:
+#ifdef _WIN32
+		HDC hdc;
+		HGDIOBJ old_font;
+		double spacing;
+#else
+		cairo_t* ctx;
+		PangoLayout* layout;
+#endif
+		public:
+
+			// TODO
+
+	};
 }
