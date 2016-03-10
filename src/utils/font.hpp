@@ -25,6 +25,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 	#include <memory>
 	#include <pango/pangocairo.h>
 #endif
+#include <cassert>
 
 #define FONT_UPSCALE 64.0
 
@@ -399,8 +400,109 @@ namespace Font{
 				return static_cast<double>(sz.cx) / FONT_UPSCALE + text.length() * this->spacing;
 			}
 #endif
-
-			// TODO: text-to-path
-
+			// Text-to-vectors conversion
+			struct PathSegment{
+				enum class Type{MOVE, LINE, CURVE, CLOSE} type;
+				double x, y;
+			};
+			std::vector<PathSegment> text_path(const std::string& text) const throw(exception){
+#ifdef _WIN32
+				return this->text_path(Utf8::to_utf16(text));
+#else
+				// Add text path to context
+				pango_layout_set_text(this->layout, text.data(), text.length());
+				cairo_save(this->ctx);
+				cairo_scale(ctx, 1.0 / FONT_UPSCALE, 1.0 / FONT_UPSCALE);
+				pango_cairo_layout_path(this->ctx, this->layout);
+				cairo_restore(this->ctx);
+				// Get path points
+				std::unique_ptr<cairo_path_t, void(*)(cairo_path_t*)> path(cairo_copy_path(this->ctx), cairo_path_destroy);
+				if(path->status != CAIRO_STATUS_SUCCESS){
+					cairo_new_path(this->ctx);
+					throw exception("Couldn't get cairo path!");
+				}
+				// Pack points for output
+				std::vector<PathSegment> result;
+				result.reserve(path->num_data >> 1);	// Make a memory guess by expecting all segments are moves/lines
+				for(cairo_path_data_t* pdata = path->data, *data_end = pdata + path->num_data; pdata != data_end; pdata += pdata->header.length){
+					assert(pdata < data_end);
+					switch(pdata->header.type){
+						case CAIRO_PATH_MOVE_TO:
+							result.push_back({PathSegment::Type::MOVE, pdata[1].point.x, pdata[1].point.y});
+							break;
+						case CAIRO_PATH_LINE_TO:
+							result.push_back({PathSegment::Type::LINE, pdata[1].point.x, pdata[1].point.y});
+							break;
+						case CAIRO_PATH_CURVE_TO:
+							result.push_back({PathSegment::Type::CURVE, pdata[1].point.x, pdata[1].point.y});
+							result.push_back({PathSegment::Type::CURVE, pdata[2].point.x, pdata[2].point.y});
+							result.push_back({PathSegment::Type::CURVE, pdata[3].point.x, pdata[3].point.y});
+							break;
+						case CAIRO_PATH_CLOSE_PATH:
+							result.push_back({PathSegment::Type::CLOSE});
+							break;
+					}
+				}
+				// Clear context from path...
+				cairo_new_path(this->ctx);
+				// ...and return collected points
+				return result;
+#endif
+			}
+#ifdef _WIN32
+			std::vector<PathSegment> text_path(const std::wstring& text) const throw(exception){
+				// Check valid text length
+				if(text.length() > 8192)	// See ExtTextOut limitation
+					throw exception("Text length mustn't exceed 8192!");
+				// Get character widths
+				std::vector<int> xdist;
+				if(this->spacing != 0.0){
+					xdist.reserve(text.length());
+					const int scaled_spacing = this->spacing * FONT_UPSCALE;
+					for(const char c : text){
+						INT width;
+						GetCharWidth32W(this->dc, c, c, &width);
+						xdist.push_back(width + scaled_spacing);
+					}
+				}
+				// Add text path to context
+				BeginPath(this->dc);
+				ExtTextOutW(this->dc, 0, 0, 0x0, NULL, text.data(), text.length(), xdist.empty() ? NULL : xdist.data());
+				EndPath(this->dc);
+				// Collect path points
+				std::vector<PathSegment> result;
+				const int points_n = GetPath(this->dc, NULL, NULL, 0);
+				if(points_n){
+					std::vector<POINT> points;
+					std::vector<BYTE> types;
+					points.reserve(points_n);
+					types.reserve(points_n);
+					result.reserve(points_n);
+					GetPath(this->dc, points.data(), types.data(), points_n);
+					// Pack points in output
+					for(int point_i = 0; point_i < points_n; ++point_i){
+						switch(types[point_i]){
+							case PT_MOVETO:
+								result.push_back({PathSegment::Type::MOVE, static_cast<double>(points[point_i].x) / FONT_UPSCALE, static_cast<double>(points[point_i].y) / FONT_UPSCALE});
+								break;
+							case PT_LINETO:
+							case PT_LINETO|PT_CLOSEFIGURE:
+								result.push_back({PathSegment::Type::LINE, static_cast<double>(points[point_i].x) / FONT_UPSCALE, static_cast<double>(points[point_i].y) / FONT_UPSCALE});
+								break;
+							case PT_BEZIERTO:
+							case PT_BEZIERTO|PT_CLOSEFIGURE:
+								result.push_back({PathSegment::Type::CURVE, static_cast<double>(points[point_i].x) / FONT_UPSCALE, static_cast<double>(points[point_i].y) / FONT_UPSCALE});
+								break;
+						}
+						if(types[point_i]&PT_CLOSEFIGURE)
+							result.push_back({PathSegment::Type::CLOSE});
+					}
+				}
+				// Clear context from path...
+				AbortPath(this->dc);
+				// ...and return collected points
+				return result;
+			}
+#endif
 	};
 }
