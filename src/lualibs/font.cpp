@@ -16,6 +16,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../utils/lua.h"
 #include "../utils/font.hpp"
 
+#define LUA_FONT "font"
+
 static int font_list(lua_State* L){
 	try{
 		const auto list = Font::list();
@@ -36,12 +38,109 @@ static int font_list(lua_State* L){
 	return 1;
 }
 
+static int font_free(lua_State* L){
+	delete *static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT));
+	return 0;
+}
+
+static int font_data(lua_State* L){
+	const Font::Font* font = *static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT));
+	lua_pushstring(L, font->get_family().c_str());
+	lua_pushnumber(L, font->get_size());
+	lua_pushboolean(L, font->get_bold());
+	lua_pushboolean(L, font->get_italic());
+	lua_pushboolean(L, font->get_underline());
+	lua_pushboolean(L, font->get_strikeout());
+	lua_pushnumber(L, font->get_spacing());
+	lua_pushboolean(L, font->get_rtl());
+	return 8;
+}
+
+static int font_metrics(lua_State* L){
+	const Font::Font::Metrics metrics = (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->metrics();
+	lua_pushnumber(L, metrics.height);
+	lua_pushnumber(L, metrics.ascent);
+	lua_pushnumber(L, metrics.descent);
+	lua_pushnumber(L, metrics.internal_leading);
+	lua_pushnumber(L, metrics.external_leading);
+	return 5;
+}
+
+static int font_text_width(lua_State* L){
+	lua_pushnumber(L, (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->text_width(luaL_checkstring(L, 2)));
+	return 1;
+}
+
+static int font_text_path(lua_State* L){
+	try{
+		const std::vector<Font::Font::PathSegment> segments = (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->text_path(luaL_checkstring(L, 2));
+		lua_createtable(L, segments.size() / 3, 0);	// Memory guess by expecting all segments are moves/lines
+		int table_i = 0;
+		for(size_t segment_i = 0; segment_i < segments.size(); ++segment_i){
+			const auto& segment = segments[segment_i];
+			switch(segment.type){
+				using Type = Font::Font::PathSegment::Type;
+				case Type::MOVE:
+					lua_pushstring(L, "m"); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.x); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.y); lua_rawseti(L, -2, ++table_i);
+					break;
+				case Type::LINE:
+					lua_pushstring(L, "l"); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.x); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.y); lua_rawseti(L, -2, ++table_i);
+					break;
+				case Type::CURVE:
+					lua_pushstring(L, "b"); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.x); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segment.y); lua_rawseti(L, -2, ++table_i);
+					assert(segment_i+2 < segments.size());
+					lua_pushnumber(L, segments[segment_i+1].x); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segments[segment_i+1].y); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segments[segment_i+2].x); lua_rawseti(L, -2, ++table_i);
+					lua_pushnumber(L, segments[segment_i+2].y); lua_rawseti(L, -2, ++table_i);
+					segment_i += 2;	// Skip 2 more for next loop pass
+					break;
+				case Type::CLOSE:
+					lua_pushstring(L, "c"); lua_rawseti(L, -2, ++table_i);
+					break;
+			}
+		}
+	}catch(const Font::exception& e){
+		return luaL_error(L, e.what());
+	}
+	return 1;
+}
+
+static int font_create(lua_State* L){
+	try{
+		Font::Font font(luaL_checkstring(L, 1), luaL_optnumber(L, 2, 12),
+					luaL_optboolean(L, 3, false), luaL_optboolean(L, 4, false), luaL_optboolean(L, 5, false), luaL_optboolean(L, 6, false),
+					luaL_optnumber(L, 7, 0), luaL_optboolean(L, 8, false));
+		*static_cast<Font::Font**>(lua_newuserdata(L, sizeof(Font::Font*))) = new Font::Font(std::move(font));
+	}catch(const Font::exception& e){
+		return luaL_error(L, e.what());
+	}
+	if(luaL_newmetatable(L, LUA_FONT)){
+		static const luaL_Reg l[] = {
+			{"__gc", font_free},
+			{"data", font_data},
+			{"metrics", font_metrics},
+			{"textwidth", font_text_width},
+			{"textpath", font_text_path},
+			{NULL, NULL}
+		};
+		luaL_setfuncs(L, l, 0);
+		lua_pushvalue(L, -1); lua_setfield(L, -2, "__index");
+	}
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
 int luaopen_font(lua_State* L){
 	static const luaL_Reg l[] = {
 		{"list", font_list},
-
-		// TODO: font class
-
+		{"create", font_create},
 		{NULL, NULL}
 	};
 	luaL_newlib(L, l);
