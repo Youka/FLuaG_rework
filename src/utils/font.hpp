@@ -281,79 +281,111 @@ namespace Font{
 				return this->ctx;
 #endif
 			}
-			std::string get_family() const{
+			std::string get_family() const throw(exception){
 #ifdef _WIN32
 				return Utf8::from_utf16(this->get_family_unicode());
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				return pango_font_description_get_family(pango_layout_get_font_description(this->layout));
 #endif
 			}
 #ifdef _WIN32
-			std::wstring get_family_unicode() const{
+			std::wstring get_family_unicode() const throw(exception){
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return lf.lfFaceName;
 			}
 #endif
-			float get_size() const{
+			float get_size() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return static_cast<float>(lf.lfHeight) / FONT_UPSCALE;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				return static_cast<float>(pango_font_description_get_size(pango_layout_get_font_description(this->layout))) / FONT_UPSCALE / PANGO_SCALE;
 #endif
 			}
-			bool get_bold() const{
+			bool get_bold() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return lf.lfWeight == FW_BOLD;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				return pango_font_description_get_weight(pango_layout_get_font_description(this->layout)) == PANGO_WEIGHT_BOLD;
 #endif
 			}
-			bool get_italic() const{
+			bool get_italic() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return lf.lfItalic;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				return pango_font_description_get_style(pango_layout_get_font_description(this->layout)) == PANGO_STYLE_ITALIC;
 #endif
 			}
-			bool get_underline() const{
+			bool get_underline() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return lf.lfUnderline;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_UNDERLINE))->value == PANGO_UNDERLINE_SINGLE;
 #endif
 			}
-			bool get_strikeout() const{
+			bool get_strikeout() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				LOGFONTW lf;
 				GetObjectW(GetCurrentObject(this->dc, OBJ_FONT), sizeof(lf), &lf);
 				return lf.lfStrikeOut;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_STRIKETHROUGH))->value;
 #endif
 			}
-			double get_spacing() const{
+			double get_spacing() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				return this->spacing;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return static_cast<double>(reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_LETTER_SPACING))->value) / FONT_UPSCALE / PANGO_SCALE;
 #endif
 			}
-			bool get_rtl() const{
+			bool get_rtl() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				return GetTextAlign(this->dc) == TA_RTLREADING;
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				return pango_layout_get_auto_dir(this->layout);
 #endif
 			}
@@ -361,8 +393,10 @@ namespace Font{
 			struct Metrics{
 				double height, ascent, descent, internal_leading, external_leading;
 			};
-			Metrics metrics() const{
+			Metrics metrics() const throw(exception){
 #ifdef _WIN32
+				if(!this->dc)
+					throw exception("Invalid state!");
 				TEXTMETRICW metrics;
 				GetTextMetricsW(this->dc, &metrics);
 				return {
@@ -373,6 +407,8 @@ namespace Font{
 					static_cast<double>(metrics.tmExternalLeading) / FONT_UPSCALE
 				};
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				Metrics result;
 				std::unique_ptr<PangoFontMetrics, void(*)(PangoFontMetrics*)> metrics(pango_context_get_metrics(pango_layout_get_context(this->layout), pango_layout_get_font_description(this->layout), nullptr), pango_font_metrics_unref);
 				result.ascent = static_cast<double>(pango_font_metrics_get_ascent(metrics.get())) / FONT_UPSCALE / PANGO_SCALE;
@@ -383,10 +419,12 @@ namespace Font{
 				return result;
 #endif
 			}
-			double text_width(const std::string& text) const{
+			double text_width(const std::string& text) const throw(exception){
 #ifdef _WIN32
 				return this->text_width(Utf8::to_utf16(text));
 #else
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				pango_layout_set_text(this->layout, text.data(), text.length());
 				PangoRectangle rect;
 				pango_layout_get_pixel_extents(this->layout, nullptr, &rect);
@@ -394,7 +432,9 @@ namespace Font{
 #endif
 			}
 #ifdef _WIN32
-			double text_width(const std::wstring& text) const{
+			double text_width(const std::wstring& text) const throw(exception){
+				if(!this->dc)
+					throw exception("Invalid state!");
 				SIZE sz;
 				GetTextExtentPoint32W(this->dc, text.data(), text.length(), &sz);
 				return static_cast<double>(sz.cx) / FONT_UPSCALE + text.length() * this->spacing;
@@ -409,6 +449,9 @@ namespace Font{
 #ifdef _WIN32
 				return this->text_path(Utf8::to_utf16(text));
 #else
+				// Check valid state/cairo context
+				if(!this->ctx)
+					throw exception("Invalid state!");
 				// Add text path to context
 				pango_layout_set_text(this->layout, text.data(), text.length());
 				cairo_save(this->ctx);
@@ -451,6 +494,9 @@ namespace Font{
 			}
 #ifdef _WIN32
 			std::vector<PathSegment> text_path(const std::wstring& text) const throw(exception){
+				// Check valid state/device context
+				if(!this->dc)
+					throw exception("Invalid state!");
 				// Check valid text length
 				if(text.length() > 8192)	// See ExtTextOut limitation
 					throw exception("Text length mustn't exceed 8192!");
