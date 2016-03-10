@@ -145,8 +145,9 @@ message(STATUS "Package config installation path: ${CMAKE_INSTALL_PREFIX}/share/
 if(${BUILD_TESTS})
 	# Build & run hello test
 	add_executable(hello_test_exe ${PROJECT_SOURCE_DIR}/tests/hello.c)
-	if(CMAKE_COMPILER_IS_GNUCC)
-		target_link_libraries(hello_test_exe dl "-Wl,-rpath=.")
+	target_link_libraries(hello_test_exe fluag)
+	if(NOT WIN32)
+		target_link_libraries(hello_test_exe "-Wl,-rpath=.")
 	endif()
-	add_test(hello_test hello_test_exe "${CMAKE_SHARED_LIBRARY_PREFIX}fluag${CMAKE_SHARED_LIBRARY_SUFFIX}")
+	add_test(hello_test hello_test_exe)
 endif()

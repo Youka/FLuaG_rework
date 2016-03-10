@@ -1,56 +1,21 @@
-/* DLL functions */
-#include "dl.h"
+/* FLuaG C API header */
+#include "../src/interfaces/public.h"
 
 /* Program entry */
-int main(const int argc, const char** argv){
-	/* Declarations */
-	DLL_HANDLE plugin;
-	typedef void* fluag_h;
-	fluag_h(*fluag_create)(void);
-	int(*fluag_load_script)(fluag_h, const char*, char*);
-	void(*fluag_set_userdata)(fluag_h, const char*);
-	void(*fluag_destroy)(fluag_h);
-	const char*(*fluag_get_version)(void);
-	fluag_h f;
-	/* Check for input */
-	if(argc != 2)
-		return 1;
-	/* Open plugin handle */
-	plugin = DLL_OPEN(argv[1]);
-	if(!plugin)
-		return 2;
-	/* Get plugin functions */
-#ifdef __GNUC__
-	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-#endif
-	if(!(
-		DLL_ASSIGN_PROC(plugin, fluag_create) &&
-		DLL_ASSIGN_PROC(plugin, fluag_load_script) &&
-		DLL_ASSIGN_PROC(plugin, fluag_set_userdata) &&
-		DLL_ASSIGN_PROC(plugin, fluag_destroy) &&
-		DLL_ASSIGN_PROC(plugin, fluag_get_version)
-	)){
-		DLL_CLOSE(plugin);
-		return 3;
-	}
+int main(){
 	/* Create FLuaG instance */
-	f = fluag_create();
-	if(!f){
-		DLL_CLOSE(plugin);
-		return 4;
-	}
+	fluag_h f = fluag_create();
+	if(!f)
+		return 1;
 	/* Set userdata to instance */
 	fluag_set_userdata(f, fluag_get_version());
 	/* Load script to instance */
 	if(!fluag_load_script(f, "print(string.format('Hello from FLuaG v%s!', ...))", 0)){
 		fluag_destroy(f);
-		DLL_CLOSE(plugin);
-		return 5;
+		return 2;
 	}
 	/* Destroy instance */
 	fluag_destroy(f);
-	/* Close plugin handle */
-	DLL_CLOSE(plugin);
 	/* Successful program end */
 	return 0;
 }

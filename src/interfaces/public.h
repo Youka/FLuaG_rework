@@ -21,7 +21,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 
 #ifdef _WIN32
-	#ifdef fluag_EXPORTS	// Set by CMake for shared libraries (libname_EXPORTS)
+	#ifdef fluag_EXPORTS	/* Set by CMake for shared libraries (libname_EXPORTS) */
 		#define FLUAG_EXPORT EXTERN_C __declspec(dllexport)
 	#else
 		#define FLUAG_EXPORT EXTERN_C __declspec(dllimport)
@@ -30,10 +30,10 @@ Permission is granted to anyone to use this software for any purpose, including 
 	#define FLUAG_EXPORT EXTERN_C
 #endif
 
-/// FLuaG script handle type
+/** FLuaG script handle type */
 typedef void* fluag_h;
 
-/// Maximal length for output warning
+/** Maximal length for output warning */
 #define FLUAG_WARNING_LENGTH 256
 
 /**
