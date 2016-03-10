@@ -1,8 +1,8 @@
 # Include script helpers
-include(FindLua51)
 include(FindOpenGL)
 include(FindGLEW)
 include(FindPNG)
+include(${PROJECT_SOURCE_DIR}/cmake/FindLua.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
 find_package(Boost 1.54.0 COMPONENTS filesystem regex)
