@@ -12,7 +12,7 @@ function GetFrame(frame, ms)
 		-- Set pixel to red'ish color
 		cdata[i+2] = 255
 	end
-	
+
 	-- Set frame data
 	frame(data)
 end
