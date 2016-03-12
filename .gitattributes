@@ -10,6 +10,7 @@
 CMakeFiles.txt	diff=cmake
 *.cmake		diff=cmake
 *.h.in		diff=c
+*.pc.in		diff=bash
 
 # Source code
 *.hpp		diff=cpp
@@ -25,6 +26,7 @@ CMakeFiles.txt	diff=cmake
 *.html		diff=html
 *.css		diff=css
 *.js		diff=js
+*.pc		diff=bash
 
 # Images
 *.png		binary
