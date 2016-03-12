@@ -75,6 +75,7 @@ static int tgl_context_activate(lua_State* L){
 
 // Shader metatable methods
 static int tgl_shader_free(lua_State* L){
+	TGL_CHECK_CONTEXT
 	glDeleteShader(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)));
 	return 0;
 }
@@ -122,6 +123,7 @@ static int tgl_shader_create(lua_State* L){
 
 // Program metatable methods
 static int tgl_program_free(lua_State* L){
+	TGL_CHECK_CONTEXT
 	glDeleteProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
 	return 0;
 }
@@ -286,6 +288,7 @@ static int tgl_program_create(lua_State* L){
 
 // VAO metatable methods
 static int tgl_vao_free(lua_State* L){
+	TGL_CHECK_CONTEXT
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	glDeleteVertexArrays(1, &udata[1]);
 	glDeleteBuffers(1, &udata[0]);
@@ -399,6 +402,7 @@ static int tgl_vao_create(lua_State* L){
 
 // Texture metatable methods
 static int tgl_texture_free(lua_State* L){
+	TGL_CHECK_CONTEXT
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	glDeleteTextures(1, &udata[0]);
 	if(udata[1])
@@ -572,6 +576,7 @@ static int tgl_texture_create(lua_State* L){
 
 // Framebuffer metatable methods
 static int tgl_fbo_free(lua_State* L){
+	TGL_CHECK_CONTEXT
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
 	glDeleteFramebuffers(1, &udata[2]);
 	glDeleteRenderbuffers(2, &udata[0]);
@@ -579,11 +584,13 @@ static int tgl_fbo_free(lua_State* L){
 }
 
 static int tgl_fbo_bind(lua_State *L){
+	TGL_CHECK_CONTEXT
 	glBindFramebuffer(GL_FRAMEBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
 	return 0;
 }
 
 static int tgl_fbo_info(lua_State *L){
+	TGL_CHECK_CONTEXT
 	// Temporary bind RBO and get data
 	glBindRenderbuffer(GL_RENDERBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
 	GLint width, height, samples;
@@ -598,6 +605,7 @@ static int tgl_fbo_info(lua_State *L){
 }
 
 static int tgl_fbo_blit(lua_State *L){
+	TGL_CHECK_CONTEXT
 	// Get arguments
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
 	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 2, LUA_TGL_TEXTURE));
@@ -712,7 +720,7 @@ static int tgl_clear(lua_State* L){
 static int tgl_viewport(lua_State* L){
 	TGL_CHECK_CONTEXT
 	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
-        if(glHasError())
+	if(glHasError())
 		return luaL_error(L, "Invalid rectangle!");
 	return 0;
 }
@@ -729,7 +737,7 @@ static int tgl_size(lua_State* L){
 			glLineWidth(luaL_checknumber(L, 2));
 			break;
 	}
-        if(glHasError())
+	if(glHasError())
 		return luaL_error(L, "Size have to be greater than zero!");
 	return 0;
 }
@@ -936,11 +944,11 @@ static int tgl_blend(lua_State* L){
 
 static int tgl_info(lua_State* L){
 	TGL_CHECK_CONTEXT
-	static const char* option_str[] = {"version", "extensions", nullptr};
-	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS};
+	static const char* option_str[] = {"version", "extensions", "error", nullptr};
+	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS, GL_ERROR_REGAL};
 	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
 		case GL_VERSION:
-                        lua_createtable(L, 0, 4);
+			lua_createtable(L, 0, 4);
 			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_VENDOR))); lua_setfield(L, -2, "vendor");
 			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_RENDERER))); lua_setfield(L, -2, "renderer");
 			lua_pushstring(L, reinterpret_cast<const char*>(glGetString(GL_VERSION))); lua_setfield(L, -2, "version");
@@ -950,12 +958,16 @@ static int tgl_info(lua_State* L){
 				GLint extensions_n;
 				glGetIntegerv(GL_NUM_EXTENSIONS, &extensions_n);
 				lua_createtable(L, extensions_n, 0);
-					for(GLint i = 0; i < extensions_n; ++i){
-						assert(glGetStringi(GL_EXTENSIONS, i));
-						lua_pushstring(L, reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))); lua_rawseti(L, -2, i);
-					}
+				for(GLint i = 0; i < extensions_n; ++i){
+					assert(glGetStringi(GL_EXTENSIONS, i));
+					lua_pushstring(L, reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))); lua_rawseti(L, -2, i);
+				}
 			}
 			break;
+		case GL_ERROR_REGAL:
+			lua_pushstring(L, reinterpret_cast<const char*>(gluErrorString(glGetError())));
+			break;
+
 	}
 	return 1;
 }
