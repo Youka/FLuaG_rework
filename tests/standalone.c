@@ -14,8 +14,10 @@ int main(const int argc, const char** argv){
 	char warning[FLUAG_WARNING_LENGTH];
 	/* Create FLuaG instance */
 	f = fluag_create();
-	if(!f)
+	if(!f){
+		fputs("Couldn't create FLuaG instance!", stderr);
 		return 1;
+	}
 	/* Evaluate command line arguments and send to instance */
 	for(i = 1; i < argc; ++i)
 		/* Userdata */
