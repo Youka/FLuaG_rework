@@ -19,5 +19,5 @@ Package path: %s]],
 )
 print(meta)
 
-function GetFrame(frame, ms)
+function GetFrame()
 end

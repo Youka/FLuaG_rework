@@ -1,5 +1,5 @@
 -- Process frame
-function GetFrame(frame, ms)
+function GetFrame(frame)
 	-- Detect video is BGR or BGRA
 	if _VIDEO.has_alpha then
 		-- Set frame to opaque purple

@@ -18,5 +18,5 @@ end
 png.writefile("light.png", {width = size, height = size, type = "rgba", data = table.concat(pixels)})
 
 -- No frame processing
-function GetFrame(frame, ms)
+function GetFrame()
 end

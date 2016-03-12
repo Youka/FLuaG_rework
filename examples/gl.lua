@@ -59,6 +59,6 @@ vao:draw("triangle fan", 0, 4)
 local data = select(4, fbo:blit(tex):data(_VIDEO.has_alpha and "bgra" or "bgr"))
 
 -- Frame processing
-function GetFrame(frame, ms)
+function GetFrame(frame)
 	frame(data)
 end

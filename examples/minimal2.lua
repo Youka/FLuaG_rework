@@ -2,7 +2,7 @@
 local ffi = require("ffi")
 
 -- Process frame
-function GetFrame(frame, ms)
+function GetFrame(frame)
 	-- Fetch frame data
 	local data, data_size = frame(), #frame
 
