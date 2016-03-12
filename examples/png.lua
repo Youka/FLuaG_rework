@@ -11,7 +11,7 @@ for y = 0.5, size-0.5 do
 			-- Calculate & insert pixel to image data
 			local distance = math.hypot(half_size - x, half_size - y)
 			pixels_n = pixels_n + 1
-			pixels[pixels_n] = string.char(255, 255, 255, distance > half_size and 0 or (1 - distance / half_size) * 255)
+			pixels[pixels_n] = string.char(255, 255, 255, distance > half_size and 0 or math.floor((1 - distance / half_size) * 255))
 	end
 end
 -- Write image to file
