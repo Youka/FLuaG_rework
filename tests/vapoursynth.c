@@ -59,9 +59,9 @@ int main(){
 	}
 	/* Create blank (yellow) clip */
 	vsapi->clearMap(in);
-    vsapi->propSetFloat(in, "color", 255, paReplace);
-    vsapi->propSetFloat(in, "color", 255, paAppend);
-    vsapi->propSetFloat(in, "color", 0, paAppend);
+	vsapi->propSetFloat(in, "color", 255, paReplace);
+	vsapi->propSetFloat(in, "color", 255, paAppend);
+	vsapi->propSetFloat(in, "color", 0, paAppend);
 	vsapi->freeMap(out);
 	out = vsapi->invoke(plugin_std, "BlankClip", in);
 	error = vsapi->getError(out);

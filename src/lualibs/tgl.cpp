@@ -585,7 +585,7 @@ static int tgl_fbo_free(lua_State* L){
 
 static int tgl_fbo_bind(lua_State *L){
 	TGL_CHECK_CONTEXT
-	glBindFramebuffer(GL_FRAMEBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
+	glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO))[2]);
 	return 0;
 }
 
