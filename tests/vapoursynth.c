@@ -3,6 +3,13 @@
 /* Standard libraries headers */
 #include <stdio.h>
 
+/* System shared library extension */
+#ifdef _WIN32
+	#define SHARED_LIB_EXT ".dll"
+#else
+	#define SHARED_LIB_EXT ".so"
+#endif
+
 /* Program entry */
 int main(){
 	/* Declarations */
@@ -31,7 +38,7 @@ int main(){
 	}
 	/* Load FLuaG plugin */
 	in = vsapi->createMap();
-	vsapi->propSetData(in, "path", "libfluag.so", -1, paReplace);
+	vsapi->propSetData(in, "path", "libfluag"SHARED_LIB_EXT, -1, paReplace);
 	out = vsapi->invoke(plugin_std, "LoadPlugin", in);
 	error = vsapi->getError(out);
 	if(error){
