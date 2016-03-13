@@ -227,12 +227,12 @@ static int geometry_matrix_scale(lua_State* L){
 static int geometry_matrix_rotate(lua_State* L){
 	Matrix::Axis axis = Matrix::Axis::X;
 	static const char* option_str[] = {"x", "y", "z", nullptr};
-	switch(luaL_checkoption(L, 3, nullptr, option_str)){
+	switch(luaL_checkoption(L, 2, nullptr, option_str)){
 		case 0: axis = Matrix::Axis::X; break;
 		case 1: axis = Matrix::Axis::Y; break;
 		case 2: axis = Matrix::Axis::Z; break;
 	}
-	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->rotate(luaL_checknumber(L, 2), axis);
+	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->rotate(luaL_checknumber(L, 3), axis);
 	lua_settop(L, 1);
 	return 1;
 }
