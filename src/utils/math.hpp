@@ -25,6 +25,10 @@ Permission is granted to anyone to use this software for any purpose, including 
 #define M_PI_2		1.57079632679489661923
 #define M_SQRT2		1.41421356237309504880
 
+#ifndef POINT_ON_LINE_TOLERANCE
+	#define POINT_ON_LINE_TOLERANCE 0.00001
+#endif
+
 namespace Math{
 	template<typename T>
 	inline char sign(const T x){
@@ -217,7 +221,7 @@ namespace Geometry{
 	}
 
 	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1){
-		return std::hypot(l1.x-l0.x, l1.y-l0.y) == std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y);
+		return std::abs(std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y) - std::hypot(l1.x-l0.x, l1.y-l0.y)) < POINT_ON_LINE_TOLERANCE;
 	}
 
 	inline Point2d line_intersect(const Point2d& l1p1, const Point2d& l1p2, const Point2d& l2p1, const Point2d& l2p2){
