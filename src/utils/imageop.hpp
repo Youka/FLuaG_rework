@@ -2,7 +2,7 @@
 Project: FLuaG
 File: imageop.hpp
 
-Copyright (c) 2015, Christoph "Youka" Spanknebel
+Copyright (c) 2015-2016, Christoph "Youka" Spanknebel
 
 This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
 

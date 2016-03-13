@@ -2,7 +2,7 @@
 Project: FLuaG
 File: resources.rc
 
-Copyright (c) 2015, Christoph "Youka" Spanknebel
+Copyright (c) 2015-2016, Christoph "Youka" Spanknebel
 
 This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
 
@@ -36,7 +36,7 @@ BEGIN
             VALUE "CompanyName", PROJECT_AUTHOR
             VALUE "FileVersion", PROJECT_VERSION_STRING
             VALUE "InternalName", PROJECT_NAME
-            VALUE "LegalCopyright", PROJECT_AUTHOR ",© 2015"
+            VALUE "LegalCopyright", PROJECT_AUTHOR ",© 2015-2016"
             VALUE "OriginalFilename", "lib" PROJECT_NAME ".dll"
             VALUE "ProductName", PROJECT_NAME
             VALUE "ProductVersion", PROJECT_VERSION_STRING
