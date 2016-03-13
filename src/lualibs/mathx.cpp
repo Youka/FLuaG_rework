@@ -317,8 +317,8 @@ static int math_bezier(lua_State* L){
 		case 0: lua_pushnil(L); break;
 		case 1: luaL_checktype(L, 2, LUA_TNUMBER); break;
 		case 2: lua_pushnumber(L, pct_inv * luaL_checknumber(L, 2) + pct * luaL_checknumber(L, 3)); break;
-		case 3: lua_pushnumber(L, pct_inv * pct_inv * luaL_checknumber(L, 2) + pct_inv * pct * luaL_checknumber(L, 3) + pct * pct * luaL_checknumber(L, 4)); break;
-		case 4: lua_pushnumber(L, pct_inv * pct_inv * pct_inv * luaL_checknumber(L, 2) + pct_inv * pct_inv * pct * luaL_checknumber(L, 3) + pct_inv * pct * pct * luaL_checknumber(L, 4) + pct * pct * pct * luaL_checknumber(L, 5)); break;
+		case 3: lua_pushnumber(L, pct_inv * pct_inv * luaL_checknumber(L, 2) + 2 * pct_inv * pct * luaL_checknumber(L, 3) + pct * pct * luaL_checknumber(L, 4)); break;
+		case 4: lua_pushnumber(L, pct_inv * pct_inv * pct_inv * luaL_checknumber(L, 2) + 3 * pct_inv * pct_inv * pct * luaL_checknumber(L, 3) + 3 * pct_inv * pct * pct * luaL_checknumber(L, 4) + pct * pct * pct * luaL_checknumber(L, 5)); break;
 		default:{
 				double result = 0;
 				for(int i = 0, n = top-2; i <= n; ++i)

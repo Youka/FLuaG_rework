@@ -7,9 +7,7 @@ print(math.fac(5))
 
 print(math.gauss(-0.5, 4.5))
 
-for i=0, 1, 0.1 do
-	print(math.bezier(i, 0, 3.3, 6.6, 10))
-end
+print(math.bezier(0.5, 0, 6, 10))
 
 print(math.complex(0,1) + math.complex(2,1))
 
