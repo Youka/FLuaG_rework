@@ -85,7 +85,16 @@ int luaopen_utf8x(lua_State* L){
 		{"len", utf8_len},
 		{NULL, NULL}
 	};
-	luaL_newlib(L, l);
-	lua_pushstring(L, "[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*"); lua_setfield(L, -2, "charpattern");
-	return 1;
+	lua_getglobal(L, "utf8");
+	if(lua_istable(L, -1)){
+		luaL_setfuncs(L, l, 0);
+		lua_pushstring(L, "[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*"); lua_setfield(L, -2, "charpattern");
+		lua_pop(L, 1);
+	}else{
+		lua_pop(L, 1);
+		luaL_newlib(L, l);
+		lua_pushstring(L, "[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*"); lua_setfield(L, -2, "charpattern");
+		lua_setglobal(L, "utf8");
+	}
+	return 0;
 }
