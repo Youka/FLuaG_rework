@@ -287,57 +287,6 @@ namespace Geometry{
 		return curves;
 	}
 
-	inline std::vector<std::array<Point2d,3>> ear_clipping(std::vector<Point2d> points){
-		// Output buffer
-		std::vector<std::array<Point2d,3>> triangles;
-		// Anything to do?
-		if(points.size() > 2){
-			// Buffers for calculations
-			triangles.reserve(points.size()-2);
-			std::vector<char> directions; directions.reserve(points.size()-2);
-			std::vector<Point2d> new_points; new_points.reserve(points.size()-1);
-			// Evaluate triangles from points
-			while(points.size() > 2){
-				// Collect angles of point-to-neighbours vectors (exclude first & last point)
-				directions.clear();
-				double sum_directions = 0;
-				for(size_t i = 2; i < points.size(); ++i){
-					const double z = normal_z(points[i-2], points[i-1], points[i]);
-					directions.push_back(Math::sign(z));
-					sum_directions += z;
-				}
-				// Polygon is convex?
-				const char all_direction = Math::sign(sum_directions);
-				if(std::all_of(directions.cbegin(), directions.cend(), std::bind(std::equal_to<const char>(), all_direction, std::placeholders::_1))){
-					// Just split points into triangles
-					for(size_t i = 2; i < points.size(); ++i)
-						triangles.push_back({points.front(), points[i-1], points[i]});
-					break;	// Finish / just 2 points left
-				}else{
-					// Pick ears/edge triangles from points
-					new_points = {points.front()};
-					for(size_t first = 0, next = 1, next_end = points.size()-1; next != next_end; ++next){
-						const Point2d& t1 = points[first], &t2 = points[next], &t3 = points[next+1];
-						const char& direction = directions[next-1];	// Remember: directions don't include the first point!!!
-						// Point is ear without intersection
-						if(direction == all_direction && std::none_of(points.cbegin(), points.cend(), std::bind(in_triangle, std::placeholders::_1, t1, t2, t3)))
-							triangles.push_back({t1, t2, t3});
-						// Point is valley or ear with intersection
-						else if(direction != 0){
-							new_points.push_back(t2);
-							first = next;
-						}
-						// Point is on vector...
-					}
-					new_points.push_back(points.back());
-					points.swap(new_points);
-				}
-			}
-		}
-		// Return collected triangles
-		return triangles;
-	}
-
 	inline std::vector<Point2d> curve_flatten(const std::array<Point2d,4> points, const double tolerance){
 		// Check valid arguments
 		if(tolerance <= 0)

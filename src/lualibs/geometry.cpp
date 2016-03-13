@@ -113,31 +113,6 @@ static int geometry_curve_flatten(lua_State* L){
 	return 0;
 }
 
-static int geometry_ear_clipping(lua_State* L){
-	// Check argument
-	luaL_checktype(L, 1, LUA_TTABLE);
-	// Get argument (table) as 2d points
-	std::vector<Geometry::Point2d> points(lua_rawlen(L, 1) >> 1);
-	int i = 0;
-	for(auto& point : points){
-		lua_rawgeti(L, 1, ++i); lua_rawgeti(L, 1, ++i);
-		point = {luaL_checknumber(L, -2), luaL_checknumber(L, -1)};
-		lua_pop(L, 2);
-	}
-	// Convert polygon/points to triangles
-	const auto triangles = Geometry::ear_clipping(points);
-	// Send triangles to Lua
-	lua_createtable(L, triangles.size(), 0);
-	i = 0;
-	for(const auto& triangle : triangles){
-		lua_createtable(L, 6, 0);
-		lua_pushnumber(L, triangle[0].x); lua_pushnumber(L, triangle[0].y); lua_pushnumber(L, triangle[1].x); lua_pushnumber(L, triangle[1].y); lua_pushnumber(L, triangle[2].x); lua_pushnumber(L, triangle[2].y);
-		lua_rawseti(L, -7, 6); lua_rawseti(L, -6, 5); lua_rawseti(L, -5, 4); lua_rawseti(L, -4, 3); lua_rawseti(L, -3, 2); lua_rawseti(L, -2, 1);
-		lua_rawseti(L, -2, ++i);
-	}
-	return 1;
-}
-
 static int geometry_tesselate(lua_State* L){
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -347,7 +322,6 @@ int luaopen_geometry(lua_State* L){
 		{"bound", geometry_bound},
 		{"arccurve", geometry_arc_curve},
 		{"curveflatten", geometry_curve_flatten},
-		{"earclipping", geometry_ear_clipping},
 		{"tesselate", geometry_tesselate},
 		{"matrix", geometry_matrix_create},
 		{NULL, NULL}
