@@ -230,7 +230,8 @@ static int tgl_program_uniform(lua_State* L){
 			default:
 				return luaL_error(L, "Number of arguments doesn't meet any requirements!");
 		}
-	}
+	}else
+		return luaL_error(L, "Invalid data type!");
 	// Check for error
 	if(glHasError())
 		return luaL_error(L, "Setting uniform failed!");
@@ -421,10 +422,10 @@ static int tgl_texture_param(lua_State* L){
 	if(param == "filter"){
 		const std::string value = luaL_checkstring(L, 3);
 		if(value == "nearest"){
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		}else if(value == "linear"){
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}else
 			return luaL_error(L, "Invalid filter value!");
@@ -441,8 +442,6 @@ static int tgl_texture_param(lua_State* L){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 		}else
 			return luaL_error(L, "Invalid wrap value!");
-	}else if(param == "mipmaps"){
-		glGenerateMipmap(GL_TEXTURE_2D);
 	}else
 		return luaL_error(L, "Invalid parameter!");
 	return 0;
@@ -548,7 +547,7 @@ static int tgl_texture_create(lua_State* L){
 		return luaL_error(L, "Invalid texture value!");
 	}
 	// Set texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
