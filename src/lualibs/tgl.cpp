@@ -59,7 +59,7 @@ static int tgl_context_free(lua_State* L){
 
 static int tgl_context_activate(lua_State* L){
 	// Set current GL context to use
-	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr :  *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr : *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	// Further context preparations
 	if(glfwGetCurrentContext()){
 		// Initialize GLEW
@@ -559,7 +559,7 @@ static int tgl_texture_create(lua_State* L){
 	if(luaL_newmetatable(L, LUA_TGL_TEXTURE)){
 		static const luaL_Reg l[] = {
 			{"__gc", tgl_texture_free},
-			{"parameter", tgl_texture_param},
+			{"param", tgl_texture_param},
 			{"data", tgl_texture_data},
 			{"bind", tgl_texture_bind},
 			{NULL, NULL}
@@ -627,8 +627,8 @@ static int tgl_fbo_blit(lua_State *L){
 		glDeleteFramebuffers(1, &fbo);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
 	}
-	// Reset FBOs to default
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// Reset FBOs to this object
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, udata[2]);
 	// Delete no longer needed FBO
 	glDeleteFramebuffers(1, &fbo);
 	// Return input texture
@@ -668,8 +668,6 @@ static int tgl_fbo_create(lua_State* L){
 		glDeleteRenderbuffers(2, rbo);
 		return luaL_error(L, "Framebuffer couldn't get completed!");
 	}
-	// Reset FBO to default
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// Create userdata for FBO
 	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) * 3));
 	udata[0] = rbo[0];

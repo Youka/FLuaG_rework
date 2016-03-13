@@ -2,7 +2,7 @@
 local ctx = require("tgl")
 ctx:activate()
 
--- Create FBO as drawing target
+-- Create (+ bind) FBO as drawing target
 local fbo = ctx.createfbo(_VIDEO.width, _VIDEO.height, 8)
 
 -- Create texture for FBO blitting
@@ -49,7 +49,6 @@ local vao = ctx.createvao(
 )
 
 -- Configure drawing
-fbo:bind()
 ctx.viewport(0, 0, fbo:info())
 program:use()
 
