@@ -217,14 +217,13 @@ namespace Geometry{
 	}
 
 	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1){
-		static const auto length_sqr = [](const Point2d& p){return p.x * p.x + p.y * p.y;};
-		return length_sqr(l1 - l0) == length_sqr(p - l0) + length_sqr(p - l1);
+		return std::hypot(l1.x-l0.x, l1.y-l0.y) == std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y);
 	}
 
 	inline Point2d line_intersect(const Point2d& l1p1, const Point2d& l1p2, const Point2d& l2p1, const Point2d& l2p2){
 		// Check direction
-		const Point2d l1 = l1p2 - l1p1,
-			l2 = l2p2 - l2p1;
+		const Point2d l1 = l1p1 - l1p2,
+			l2 = l2p1 - l2p2;
 		const double det = normal_z(l1, l2);
 		if(det == 0)
 			throw std::out_of_range("Lines parallel!");
