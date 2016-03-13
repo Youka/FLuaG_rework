@@ -18,7 +18,7 @@ Because FLuaG requires users to write program code in Lua, learning this languag
 
 Furthermore FLuaG is used as client of a host, so knowing the host is another important point. As mentioned, [Avisynth](http://avisynth.nl/index.php/Getting_started) and [Vapoursynth](http://www.vapoursynth.com/doc/gettingstarted.html) are the usual targets.
 
-Next reading the [documentations](docs/index.html) and playing with examples *(see below)* simultaneously is the way to learn.
+Next reading the [documentations](docs/) and playing with examples *(see below)* simultaneously is the way to learn.
 
 ### Examples
 ---
@@ -72,10 +72,10 @@ Next reading the [documentations](docs/index.html) and playing with examples *(s
 For more, take a look at the [examples directory](examples/).
 
 ### Contact
-Just whisper **Youka** on <a href="http://en.wikipedia.org/wiki/IRC">IRC</a> servers [freenode](https://www.freenode.net/) and [rizon](http://rizon.net/) or open an issue on [Github](https://github.com/Youka/FLuaG).
+Just whisper to **Youka** on <a href="http://en.wikipedia.org/wiki/IRC">IRC</a> servers [freenode](https://www.freenode.net/) or [rizon](http://rizon.net/) or open an issue on [Github](https://github.com/Youka/FLuaG).
 
 ### Contributing
-FLuaG stays in full control of Youka, so becoming a lead developer is out of question. But giving suggestions and ideas or sending patches/pull requests are appreciated.
+FLuaG stays in full control of Youka, so becoming a lead developer is out of question. But giving suggestions and ideas or sending patches/pull requests is appreciated.
 
 ### License
 This software is under zlib license. For details, read [LICENSE.txt](LICENSE.txt).
