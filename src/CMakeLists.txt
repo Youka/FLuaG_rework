@@ -1,3 +1,9 @@
+# Check for available compilers (has to happen after project definition for compiler flags)
+if(NOT(CMAKE_COMPILER_IS_GNUCC OR MSVC_VERSION GREATER 1600))
+	message(FATAL_ERROR "Just GCC & MSVC11+ compilers supported!")
+endif()
+message(STATUS "Generator: ${CMAKE_GENERATOR}")
+
 # Include script helpers
 include(FindOpenGL)
 include(FindGLEW)
@@ -13,12 +19,6 @@ endif()
 if(NOT CMAKE_CROSSCOMPILING)
 	include(${PROJECT_SOURCE_DIR}/cmake/CheckSIMD.cmake)
 endif()
-
-# Check for available compilers (has to happen after project definition for compiler flags)
-if(NOT(CMAKE_COMPILER_IS_GNUCC OR MSVC_VERSION GREATER 1600))
-	message(FATAL_ERROR "Just GCC & MSVC11+ compilers supported!")
-endif()
-message(STATUS "Generator: ${CMAKE_GENERATOR}")
 
 # Request build options from user
 if(MINGW)
@@ -93,7 +93,7 @@ message(STATUS "Additional compiler features: ${COMPILE_FEATURES}")
 # Set standard libraries link type (static vs dynamic)
 if(BUILD_STD_STATIC)
 	if(CMAKE_COMPILER_IS_GNUCC)
-		add_linker_flags("-static")
+		add_linker_flags(-static)
 	else()	# MSVC
 		foreach(build_type
 			CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
@@ -117,7 +117,7 @@ configure_file(
 # Plan dynamic library compilation
 file(GLOB_RECURSE LIBRARY_SOURCES *.cpp *.hpp *.c *.h *.rc)
 if(NOT WIN32)
-	list(REMOVE_ITEM LIBRARY_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp")
+	list(REMOVE_ITEM LIBRARY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp)
 endif()
 add_library(fluag SHARED ${LIBRARY_SOURCES})
 target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC} ${DEPEND_BOOST_INC} ${DEPEND_FC_INC} ${DEPEND_PANGOCAIRO_INC})
@@ -149,7 +149,7 @@ if(TEST_HELLO)
 	add_executable(hello_test_exe ${PROJECT_SOURCE_DIR}/tests/hello.c)
 	target_link_libraries(hello_test_exe fluag)
 	if(NOT WIN32)
-		target_link_libraries(hello_test_exe "-Wl,-rpath=.")
+		target_link_libraries(hello_test_exe -Wl,-rpath=.)
 	endif()
 	add_test(hello_test hello_test_exe)
 endif()
@@ -157,7 +157,7 @@ if(TEST_STANDALONE)
 	add_executable(standalone_test_exe ${PROJECT_SOURCE_DIR}/tests/standalone.c)
 	target_link_libraries(standalone_test_exe fluag)
 	if(NOT WIN32)
-		target_link_libraries(standalone_test_exe "-Wl,-rpath=.")
+		target_link_libraries(standalone_test_exe -Wl,-rpath=.)
 	endif()
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/standalone_test.lua "if ({...})[1] ~= 'test' or _VIDEO.width ~= 1280 or _VIDEO.height ~= 720 or _VIDEO.has_alpha or _VIDEO.fps ~= 24 or _VIDEO.frames ~= 240 then error('Unexpected metadata!') end")
 	add_test(standalone_test standalone_test_exe --arg=test --video=1280,720,0,24,240 standalone_test.lua)
