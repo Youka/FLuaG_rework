@@ -1,25 +1,28 @@
-\documentclass[a4paper,12pt]{article}
+\documentclass[12pt]{article}
+
+\title{FLuaG interfaces}
+\author{Youka}
+\date{\today{}, Darmstadt}
+
 \begin{document}
 
-The foundations of the rigorous study of \emph{analysis}
-were laid in the nineteenth century, notably by the
-mathematicians Cauchy and Weierstrass. Central to the
-study of this subject are the formal definitions of
-\emph{limits} and \emph{continuity}.
+\maketitle
+\tableofcontents
 
-Let $D$ be a subset of $\bf R$ and let
-$f \colon D \to \mathbf{R}$ be a real-valued function on
-$D$. The function $f$ is said to be \emph{continuous} on
-$D$ if, for all $\epsilon > 0$ and for all $x \in D$,
-there exists some $\delta > 0$ (which may depend on $x$)
-such that if $y \in D$ satisfies
-\[ |y - x| < \delta \]
-then
-\[ |f(y) - f(x)| < \epsilon. \]
+\section{Avisynth}
+\label{sec:avisynth}
 
-One may readily verify that if $f$ and $g$ are continuous
-functions on $D$ then the functions $f+g$, $f-g$ and
-$f.g$ are continuous. If in addition $g$ is everywhere
-non-zero then $f/g$ is continuous.
+TODO
+
+\section{Vapoursynth}
+\label{sec:vapoursynth}
+
+TODO
+
+\section{C API}
+\label{sec:c-api}
+
+TODO
+
 
 \end{document}
