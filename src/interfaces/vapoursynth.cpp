@@ -46,6 +46,7 @@ namespace VS{
 			const VSFrameRef* src = vsapi->getFrameFilter(n, data->node.get(), frame_ctx);
 			std::unique_ptr<VSFrameRef, std::function<void(VSFrameRef*)>> dst(vsapi->copyFrame(src, core), [vsapi](VSFrameRef* frame){vsapi->freeFrame(frame);});
 			vsapi->freeFrame(src);
+			assert(vsapi->getFrameWidth(dst.get(), 0) == data->vi->width && vsapi->getFrameHeight(dst.get(), 0) == data->vi->height && vsapi->getFrameFormat(dst.get())->id == data->vi->format->id);
 			// Merge frame planes
 			const bool has_alpha = data->vi->format->id == pfCompatBGR32;
 			const size_t plane_size = data->vi->width * data->vi->height;

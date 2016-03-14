@@ -35,6 +35,7 @@ namespace AVS{
 	AVS_VideoFrame* AVSC_CC get_frame(AVS_FilterInfo* filter_info, int n){
 		// Get current frame
 		AVS_VideoFrame* frame = avs_library->avs_get_frame(filter_info->child, n);
+		assert(avs_get_row_size(frame) == filter_info->vi.width * (avs_is_rgb32(&filter_info->vi) ? 4 : 3) && avs_get_height(frame) == filter_info->vi.height);
 		// Make frame writable
 		avs_library->avs_make_writable(filter_info->env, &frame);
 		// Render on frame

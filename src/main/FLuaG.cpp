@@ -175,7 +175,7 @@ namespace FLuaG{
 
 	void Script::ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms) throw(exception){
 		// Check for valid stride
-		if(::abs(stride) < this->image_rowsize)
+		if(static_cast<unsigned>(::abs(stride)) < this->image_rowsize)
 			throw exception("Image stride cannot be smaller than rowsize!");
 		// Look for function to call
 		lua_getglobal(LSTATE, "GetFrame");
