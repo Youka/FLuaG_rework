@@ -30,16 +30,21 @@ namespace Module{
 		// Result buffer
 		std::string path;
 		// Get this DLL filename into the buffer
+		union{
+			std::string(*func)();
+			void* obj;
+		}cast_wrapper;
+		cast_wrapper.func = dir;	// Prevents "warning: ISO C++ forbids casting between pointer-to-function and pointer-to-object"
 #ifdef _WIN32
 		HMODULE module;
-		if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(dir), &module)){
+		if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(cast_wrapper.obj), &module)){
 			wchar_t filenamew[MAX_PATH];
 			if(GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))
 				path = Utf8::from_utf16(filenamew);
 		}
 #else
 		Dl_info dli;
-		if(dladdr(reinterpret_cast<const void*>(&dir), &dli))
+		if(dladdr(cast_wrapper.obj, &dli))
 			path = dli.dli_fname;
 #endif
 		// Shorten filename to directory
