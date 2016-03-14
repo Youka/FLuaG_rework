@@ -416,7 +416,9 @@ static int tgl_texture_param(lua_State* L){
 	// Get arguments
 	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	const std::string param = luaL_checkstring(L, 2);
-	// Bind texture for access
+	// Save old texture and bind texture for access
+	GLuint old_tex;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&old_tex));
 	glBindTexture(GL_TEXTURE_2D, tex);
 	// Set texture parameters
 	if(param == "filter"){
@@ -444,6 +446,8 @@ static int tgl_texture_param(lua_State* L){
 			return luaL_error(L, "Invalid wrap value!");
 	}else
 		return luaL_error(L, "Invalid parameter!");
+	// Restore old texture binding
+	glBindTexture(GL_TEXTURE_2D, old_tex);
 	return 0;
 }
 
@@ -454,7 +458,9 @@ static int tgl_texture_data(lua_State* L){
 	static const char* option_str[] = {"rgb", "bgr", "rgba", "bgra", "none", nullptr};
 	static const GLenum option_enum[] = {GL_RGB, GL_BGR, GL_RGBA, GL_BGRA, 0x0};
 	const GLenum request_format = option_enum[luaL_checkoption(L, 2, "none", option_str)];
-	// Bind texture for access
+	// Save old texture and bind texture for access
+	GLuint old_tex;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&old_tex));
 	glBindTexture(GL_TEXTURE_2D, udata[0]);
 	// Get texture header
 	GLint width, height, format;
@@ -497,6 +503,8 @@ static int tgl_texture_data(lua_State* L){
 		// Read texture to PBO
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, nullptr);
+		// Restore old texture binding
+		glBindTexture(GL_TEXTURE_2D, old_tex);
 		// Copy/push PBO to Lua
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if(glHasError() || !pbo_map)
@@ -506,6 +514,8 @@ static int tgl_texture_data(lua_State* L){
 		// Return header + data to Lua
 		return 4;
 	}
+	// Restore old texture binding
+	glBindTexture(GL_TEXTURE_2D, old_tex);
 	// Return only the header to Lua
 	return 3;
 }
@@ -536,9 +546,10 @@ static int tgl_texture_create(lua_State* L){
 		return luaL_error(L, "Invalid dimensions!");
 	if(data && data_len != static_cast<size_t>(width * height * (format == GL_RGB || format == GL_BGR ? 3 : 4)))
 		return luaL_error(L, "Data size doesn't fit!");
-	// Create texture
-	GLuint tex;
+	// Create texture & save old one
+	GLuint tex, old_tex;
 	glGenTextures(1, &tex);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&old_tex));
 	// Fill texture
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format, GL_UNSIGNED_BYTE, data);
@@ -551,6 +562,8 @@ static int tgl_texture_create(lua_State* L){
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// Restore old texture binding
+	glBindTexture(GL_TEXTURE_2D, old_tex);
 	// Create userdata for texture
 	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) << 1));
 	udata[0] = tex;
@@ -613,6 +626,9 @@ static int tgl_fbo_blit(lua_State *L){
 	GLint width, height;
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
 	glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
+	// Save old FBO
+	GLuint old_fbo;
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&old_fbo));
 	// Generate & bind destination FBO
 	GLuint fbo;
 	glGenFramebuffers(1, &fbo);
@@ -627,8 +643,8 @@ static int tgl_fbo_blit(lua_State *L){
 		glDeleteFramebuffers(1, &fbo);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
 	}
-	// Reset FBOs to this object
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, udata[2]);
+	// Restore old FBO binding
+	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
 	// Delete no longer needed FBO
 	glDeleteFramebuffers(1, &fbo);
 	// Return input texture
@@ -653,9 +669,10 @@ static int tgl_fbo_create(lua_State* L){
 		glDeleteRenderbuffers(2, rbo);
 		return luaL_error(L, "Couldn't allocate memory for FBO buffers!");
 	}
-	// Generate FBO
-	GLuint fbo;
+	// Generate FBO & save old one
+	GLuint fbo, old_fbo;
 	glGenFramebuffers(1, &fbo);
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, reinterpret_cast<GLint*>(&old_fbo));
 	// Bind RBOS to FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo[0]);
@@ -668,6 +685,8 @@ static int tgl_fbo_create(lua_State* L){
 		glDeleteRenderbuffers(2, rbo);
 		return luaL_error(L, "Framebuffer couldn't get completed!");
 	}
+	// Restore old FBO binding
+	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
 	// Create userdata for FBO
 	GLuint* udata = static_cast<GLuint*>(lua_newuserdata(L, sizeof(GLuint) * 3));
 	udata[0] = rbo[0];

@@ -49,6 +49,7 @@ local vao = ctx.createvao(
 )
 
 -- Configure drawing
+fbo:bind()
 ctx.viewport(0, 0, fbo:info())
 program:use()
 
