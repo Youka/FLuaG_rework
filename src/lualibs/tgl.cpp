@@ -254,8 +254,8 @@ static int tgl_program_create(lua_State* L){
 	if(program == 0)
 		return luaL_error(L, "Couldn't generate program!");
 	// Attach shaders to program
-        glAttachShader(program, vshader);
-        glAttachShader(program, fshader);
+	glAttachShader(program, vshader);
+	glAttachShader(program, fshader);
 	// Link & complete program
 	glLinkProgram(program);
 	GLint program_status;
@@ -349,17 +349,17 @@ static int tgl_vao_create(lua_State* L){
 		data[i-1] = lua_tonumber(L, -1);
 		lua_pop(L, 1);
 	}
-        // Create VBO
-        GLuint vbo;
-        glGenBuffers(1, &vbo);
-        // Fill VBO
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.size() << 2, data.data(), GL_STATIC_DRAW);
-        if(glHasError()){
+	// Create VBO
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	// Fill VBO
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, data.size() << 2, data.data(), GL_STATIC_DRAW);
+	if(glHasError()){
 		glDeleteBuffers(1, &vbo);
 		return luaL_error(L, "Couldn't allocate memory for VBO data!");
-        }
-        // Create VAO
+	}
+	// Create VAO
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	// Configure VAO
@@ -447,7 +447,8 @@ static int tgl_texture_param(lua_State* L){
 	}else
 		return luaL_error(L, "Invalid parameter!");
 	// Restore old texture binding
-	glBindTexture(GL_TEXTURE_2D, old_tex);
+	if(tex != old_tex)
+		glBindTexture(GL_TEXTURE_2D, old_tex);
 	return 0;
 }
 
@@ -504,7 +505,8 @@ static int tgl_texture_data(lua_State* L){
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		glGetTexImage(GL_TEXTURE_2D, 0, request_format, GL_UNSIGNED_BYTE, nullptr);
 		// Restore old texture binding
-		glBindTexture(GL_TEXTURE_2D, old_tex);
+		if(udata[0] != old_tex)
+			glBindTexture(GL_TEXTURE_2D, old_tex);
 		// Copy/push PBO to Lua
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if(glHasError() || !pbo_map)
@@ -515,7 +517,8 @@ static int tgl_texture_data(lua_State* L){
 		return 4;
 	}
 	// Restore old texture binding
-	glBindTexture(GL_TEXTURE_2D, old_tex);
+	if(udata[0] != old_tex)
+		glBindTexture(GL_TEXTURE_2D, old_tex);
 	// Return only the header to Lua
 	return 3;
 }
@@ -643,7 +646,7 @@ static int tgl_fbo_blit(lua_State *L){
 		glDeleteFramebuffers(1, &fbo);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
 	}
-	// Restore old FBO binding
+	// Restore old (at least draw) FBO binding
 	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
 	// Delete no longer needed FBO
 	glDeleteFramebuffers(1, &fbo);
