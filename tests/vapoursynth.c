@@ -25,7 +25,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 
 /* Program entry */
-int main(){
+int main(const int argc, const char** argv){
 	/* Declarations */
 	const VSAPI* vsapi;
 	VSCore* core;
@@ -33,13 +33,19 @@ int main(){
 	VSMap* in, *out;
 	const char* error;
 	VSNodeRef* node;
+	int i, n;
 	char frame_error[128];
 	const VSFrameRef* frame;
+	/* Check command line arguments */
+	if(argc != 2){
+		fputs("Script expected!", stderr);
+		return 1;
+	}
 	/* Get global Vapoursynth API instance */
 	vsapi = getVapourSynthAPI(VAPOURSYNTH_API_VERSION);
 	if(!vsapi){
 		fputs("Couldn't create Vapoursynth API!", stderr);
-		return 1;
+		return 2;
 	}
 	/* Create Vapoursynth core instance */
 	core = vsapi->createCore(0);
@@ -48,7 +54,7 @@ int main(){
 	if(!plugin_std){
 		vsapi->freeCore(core);
 		fputs("Couldn't get 'std' plugin!", stderr);
-		return 2;
+		return 3;
 	}
 	/* Load FLuaG plugin */
 	in = vsapi->createMap();
@@ -60,7 +66,7 @@ int main(){
 		vsapi->freeCore(core);
 		fputs(error, stderr);
 		vsapi->freeMap(out);
-		return 3;
+		return 4;
 	}
 	/* Get FLuaG plugin */
 	plugin_fluag = vsapi->getPluginById("youka.graphics.fluag", core);
@@ -69,7 +75,7 @@ int main(){
 		vsapi->freeMap(in);
 		vsapi->freeCore(core);
 		fputs("Couldn't get FLuaG plugin!", stderr);
-		return 4;
+		return 5;
 	}
 	/* Create blank (yellow) clip */
 	vsapi->clearMap(in);
@@ -84,10 +90,10 @@ int main(){
 		vsapi->freeCore(core);
 		fputs(error, stderr);
 		vsapi->freeMap(out);
-		return 5;
+		return 6;
 	}
 	/* Call FLuaG */
-	vsapi->propSetData(out, "script", "vapoursynth_test.lua", -1, paReplace);
+	vsapi->propSetData(out, "script", argv[1], -1, paReplace);
 	vsapi->freeMap(in);
 	in = vsapi->invoke(plugin_fluag, "FLuaG", out);
 	error = vsapi->getError(in);
@@ -96,21 +102,23 @@ int main(){
 		vsapi->freeCore(core);
 		fputs(error, stderr);
 		vsapi->freeMap(in);
-		return 6;
-	}
-	/* Trigger frame processing */
-	node = vsapi->propGetNode(in, "clip", 0, 0);
-	frame = vsapi->getFrame(0, node, frame_error, sizeof(frame_error));
-	if(!frame){
-		vsapi->freeNode(node);
-		vsapi->freeMap(out);
-		vsapi->freeMap(in);
-		vsapi->freeCore(core);
-		fputs(frame_error, stderr);
 		return 7;
 	}
+	/* Trigger frames processing */
+	node = vsapi->propGetNode(in, "clip", 0, 0);
+	for(i = 0, n = vsapi->getVideoInfo(node)->numFrames; i < n; ++i){
+		frame = vsapi->getFrame(i, node, frame_error, sizeof(frame_error));
+		if(!frame){
+			vsapi->freeNode(node);
+			vsapi->freeMap(out);
+			vsapi->freeMap(in);
+			vsapi->freeCore(core);
+			fputs(frame_error, stderr);
+			return 8;
+		}
+		vsapi->freeFrame(frame);
+	}
 	/* Free resources */
-	vsapi->freeFrame(frame);
 	vsapi->freeNode(node);
 	vsapi->freeMap(out);
 	vsapi->freeMap(in);
