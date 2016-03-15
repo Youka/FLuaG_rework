@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../utils/math.hpp"
 #include <GL/glu.h>
 #include <memory>
+#include <cassert>
 
 static int geometry_stretch(lua_State* L){
 	const Geometry::Point2d v = Geometry::stretch({luaL_checknumber(L, 1), luaL_checknumber(L,2)}, luaL_checknumber(L, 3));
@@ -113,6 +114,39 @@ static int geometry_curve_flatten(lua_State* L){
 	return 0;
 }
 
+struct TessState{
+	GLenum cur_type;
+	std::vector<Geometry::Point2d> buffer;
+	std::vector<std::array<Geometry::Point2d,3>> triangles;
+};
+static void APIENTRY tess_begin_callback (const GLenum type, void* userdata){
+	static_cast<TessState*>(userdata)->cur_type = type;
+}
+static void APIENTRY tess_vertex_callback(const void* vertex, void* userdata){
+	const auto& pvertex = *static_cast<const std::array<double,3>*>(vertex);
+	static_cast<TessState*>(userdata)->buffer.push_back({pvertex[0], pvertex[1]});
+}
+static void APIENTRY tess_combine_callback(const GLdouble coords[3], const void*[4], const GLfloat[4], void** out){
+	*out = new std::array<double,3>{coords[0], coords[1], coords[2]};	// Safe because std::array is just a wrapper around C array
+}
+static void APIENTRY tess_end_callback(void* userdata){
+	TessState* state = static_cast<TessState*>(userdata);
+	switch(state->cur_type){
+		case GL_TRIANGLES:
+			for(size_t i = 0; i+2 < state->buffer.size(); i+=3)
+				state->triangles.push_back({state->buffer[i], state->buffer[i+1], state->buffer[i+2]});
+			break;
+		case GL_TRIANGLE_STRIP:
+			for(size_t i = 2; i < state->buffer.size(); ++i)
+				state->triangles.push_back({state->buffer[i-2], state->buffer[i-1], state->buffer[i]});
+			break;
+		case GL_TRIANGLE_FAN:
+			for(size_t i = 2; i < state->buffer.size(); ++i)
+				state->triangles.push_back({state->buffer.front(), state->buffer[i-1], state->buffer[i]});
+			break;
+	}
+	state->buffer.clear();
+}
 static int geometry_tesselate(lua_State* L){
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -132,46 +166,15 @@ static int geometry_tesselate(lua_State* L){
 		lua_pop(L, 1);
 	}
 	// Tesselate with GLU
-	struct TessState{
-		GLenum cur_type;
-		std::vector<Geometry::Point2d> buffer;
-		std::vector<std::array<Geometry::Point2d,3>> triangles;
-	}state;
 	const std::unique_ptr<GLUtesselator, void(APIENTRY *)(GLUtesselator*)> tess(gluNewTess(), gluDeleteTess);
+	assert(tess.get());
 	gluTessProperty(tess.get(), GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 	gluTessProperty(tess.get(), GLU_TESS_BOUNDARY_ONLY, GL_FALSE);
-	void (*begin_callback)(const GLenum, void*) = [](const GLenum type, void* userdata){
-		static_cast<TessState*>(userdata)->cur_type = type;
-	};
-	gluTessCallback(tess.get(), GLU_TESS_BEGIN_DATA, reinterpret_cast<void(APIENTRY *)()>(begin_callback));
-	void (*vertex_callback)(const void*, void*) = [](const void* vertex, void* userdata){
-		auto& pvertex = *static_cast<const std::array<double,3>*>(vertex);
-		static_cast<TessState*>(userdata)->buffer.push_back({pvertex[0], pvertex[1]});
-	};
-	gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, reinterpret_cast<void(APIENTRY *)()>(vertex_callback));
-	void (*end_callback)(void*) = [](void* userdata){
-		TessState* state = static_cast<TessState*>(userdata);
-		switch(state->cur_type){
-			case GL_TRIANGLES:
-				for(size_t i = 0; i+2 < state->buffer.size(); i+=3)
-					state->triangles.push_back({state->buffer[i], state->buffer[i+1], state->buffer[i+2]});
-				break;
-			case GL_TRIANGLE_STRIP:
-				for(size_t i = 2; i < state->buffer.size(); ++i)
-					state->triangles.push_back({state->buffer[i-2], state->buffer[i-1], state->buffer[i]});
-				break;
-			case GL_TRIANGLE_FAN:
-				for(size_t i = 2; i < state->buffer.size(); ++i)
-					state->triangles.push_back({state->buffer.front(), state->buffer[i-1], state->buffer[i]});
-				break;
-		}
-		state->buffer.clear();
-	};
-	gluTessCallback(tess.get(), GLU_TESS_END_DATA, reinterpret_cast<void(APIENTRY *)()>(end_callback));
-	void (*combine_callback)(const GLdouble[3], const void*[4], const GLfloat[4], void**) = [](const GLdouble coords[3], const void*[4], const GLfloat[4], void** out){
-		*out = new std::array<double,3>{coords[0], coords[1], coords[2]};	// Safe because std::array is just a wrapper around C array
-	};
-	gluTessCallback(tess.get(), GLU_TESS_COMBINE, reinterpret_cast<void(APIENTRY *)()>(combine_callback));
+	gluTessCallback(tess.get(), GLU_TESS_BEGIN_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_begin_callback));
+	gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_vertex_callback));
+	gluTessCallback(tess.get(), GLU_TESS_END_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_end_callback));
+	gluTessCallback(tess.get(), GLU_TESS_COMBINE, reinterpret_cast<void(APIENTRY *)()>(tess_combine_callback));
+	TessState state;
 	gluTessBeginPolygon(tess.get(), &state);
 	for(auto& contour : contours){
 		gluTessBeginContour(tess.get());
