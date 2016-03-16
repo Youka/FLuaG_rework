@@ -22,16 +22,19 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <algorithm>
 #include <cassert>
 
-// OpenGL error check (application hang without context)
-static bool glHasError(){
-	// No errors?
-	if(glGetError() == GL_NO_ERROR)
-		return false;
+// OpenGL error check (safe; clears other errors on stack)
+static GLenum glGetError_s(){
+	// Get newest error
+	const GLenum error = glGetError();
 	// Clear remaining errors (with limit to prevent endless loop by context errors)
-	for(unsigned short i = 0; glGetError() != GL_NO_ERROR && i < std::numeric_limits<decltype(i)>::max(); ++i);
-	// Had error(s)!
-	return true;
+	if(error != GL_NO_ERROR)
+		for(unsigned short i = 0; glGetError() != GL_NO_ERROR && i < std::numeric_limits<decltype(i)>::max(); ++i);
+	// Return error code
+	return error;
 }
+
+// OpenGL context check in Lua (to insert on function begin)
+#define TGL_CHECK_CONTEXT if(!glfwGetCurrentContext()) return luaL_error(L, "No context!");
 
 // Unique names for Lua metatables
 #define LUA_TGL_CONTEXT "tgl_context"
@@ -40,38 +43,6 @@ static bool glHasError(){
 #define LUA_TGL_VAO "tgl_vao"
 #define LUA_TGL_TEXTURE "tgl_texture"
 #define LUA_TGL_FBO "tgl_fbo"
-
-// GL context management variables
-static std::mutex context_mutex;
-static unsigned context_count = 0;
-
-// OpenGL context check in Lua (to insert on function begin)
-#define TGL_CHECK_CONTEXT if(!glfwGetCurrentContext()) return luaL_error(L, "No context!");
-
-// Context metatable methods
-static int tgl_context_free(lua_State* L){
-	std::unique_lock<std::mutex> context_lock(context_mutex);
-	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	if(!--context_count)
-		glfwTerminate();
-	return 0;
-}
-
-static int tgl_context_activate(lua_State* L){
-	// Set current GL context to use
-	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr : *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	// Further context preparations
-	if(glfwGetCurrentContext()){
-		// Initialize GLEW
-		std::unique_lock<std::mutex> context_lock(context_mutex);
-		glewExperimental = GL_TRUE;
-		if(glewInit() != GLEW_OK)
-			return luaL_error(L, "Couldn't initialize GLEW!");
-		// Clear all errors caused by GLFW & GLEW initializations
-		glHasError();
-	}
-	return 0;
-}
 
 // Shader metatable methods
 static int tgl_shader_free(lua_State* L){
@@ -131,7 +102,7 @@ static int tgl_program_free(lua_State* L){
 static int tgl_program_use(lua_State* L){
 	TGL_CHECK_CONTEXT
 	glUseProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Can't use this program!");
 	return 0;
 }
@@ -233,7 +204,7 @@ static int tgl_program_uniform(lua_State* L){
 	}else
 		return luaL_error(L, "Invalid data type!");
 	// Check for error
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Setting uniform failed!");
 	return 0;
 }
@@ -312,7 +283,7 @@ static int tgl_vao_draw(lua_State* L){
 	glBindVertexArray(udata[1]);
 	// Draw (send vertex data to shader)
 	glDrawArrays(mode, first, count);
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Drawing operation was invalid!");
 	return 0;
 }
@@ -355,7 +326,7 @@ static int tgl_vao_create(lua_State* L){
 	// Fill VBO
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, data.size() << 2, data.data(), GL_STATIC_DRAW);
-	if(glHasError()){
+	if(glGetError_s()){
 		glDeleteBuffers(1, &vbo);
 		return luaL_error(L, "Couldn't allocate memory for VBO data!");
 	}
@@ -368,13 +339,13 @@ static int tgl_vao_create(lua_State* L){
 	GLbyte* offset = 0;
 	for(const auto& prop : props){
 		glEnableVertexAttribArray(prop.location_index);
-		if(glHasError()){
+		if(glGetError_s()){
 			glDeleteVertexArrays(1, &vao);
 			glDeleteBuffers(1, &vbo);
                         return luaL_error(L, "Invalid location!");
 		}
 		glVertexAttribPointer(prop.location_index, prop.vertex_size, GL_FLOAT, GL_FALSE, stride, offset);
-		if(glHasError()){
+		if(glGetError_s()){
 			glDeleteVertexArrays(1, &vao);
 			glDeleteBuffers(1, &vbo);
                         return luaL_error(L, "Invalid vertex size!");
@@ -495,7 +466,7 @@ static int tgl_texture_data(lua_State* L){
 			glGenBuffers(1, &pbo);
 			glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
 			glBufferData(GL_PIXEL_PACK_BUFFER, data_size, nullptr, GL_STREAM_READ);	// Reserve enough memory for all supported formats
-			if(glHasError()){
+			if(glGetError_s()){
 				glDeleteBuffers(1, &pbo);
 				return luaL_error(L, "Couldn't allocate memory for PBO!");
 			}
@@ -509,7 +480,7 @@ static int tgl_texture_data(lua_State* L){
 			glBindTexture(GL_TEXTURE_2D, old_tex);
 		// Copy/push PBO to Lua
 		GLvoid* pbo_map = glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-		if(glHasError() || !pbo_map)
+		if(glGetError_s() || !pbo_map)
 			return luaL_error(L, "Couldn't allocate virtual memory for PBO mapping!");
 		lua_pushlstring(L, static_cast<char*>(pbo_map), data_size);
 		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
@@ -527,7 +498,7 @@ static int tgl_texture_bind(lua_State* L){
 	TGL_CHECK_CONTEXT
 	// Set active texture
 	glActiveTexture(GL_TEXTURE0 + luaL_optinteger(L, 2, 0));
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Invalid unit!");
 	// Bind texture
 	glBindTexture(GL_TEXTURE_2D, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE)));
@@ -556,7 +527,7 @@ static int tgl_texture_create(lua_State* L){
 	// Fill texture
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, format == GL_BGR ? GL_RGB : (format == GL_BGRA ? GL_RGBA : format), width, height, 0, format, GL_UNSIGNED_BYTE, data);
-	if(glHasError()){
+	if(glGetError_s()){
 		glDeleteTextures(1, &tex);
 		return luaL_error(L, "Invalid texture value!");
 	}
@@ -641,7 +612,7 @@ static int tgl_fbo_blit(lua_State *L){
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, udata[2]);
 	// Blit source to destination FBO (includes downsampling)
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	if(glHasError()){
+	if(glGetError_s()){
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDeleteFramebuffers(1, &fbo);
 		return luaL_error(L, "Couldn't copy framebuffer to texture data!");
@@ -668,7 +639,7 @@ static int tgl_fbo_create(lua_State* L){
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo[1]);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
-	if(glHasError()){
+	if(glGetError_s()){
 		glDeleteRenderbuffers(2, rbo);
 		return luaL_error(L, "Couldn't allocate memory for FBO buffers!");
 	}
@@ -739,7 +710,7 @@ static int tgl_clear(lua_State* L){
 static int tgl_viewport(lua_State* L){
 	TGL_CHECK_CONTEXT
 	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Invalid rectangle!");
 	return 0;
 }
@@ -756,7 +727,7 @@ static int tgl_size(lua_State* L){
 			glLineWidth(luaL_checknumber(L, 2));
 			break;
 	}
-	if(glHasError())
+	if(glGetError_s())
 		return luaL_error(L, "Size have to be greater than zero!");
 	return 0;
 }
@@ -773,7 +744,7 @@ static int tgl_scissor(lua_State* L){
 	TGL_CHECK_CONTEXT
 	if(lua_gettop(L)){
 		glScissor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
-		if(glHasError())
+		if(glGetError_s())
 			return luaL_error(L, "Invalid rectangle!");
 		glEnable(GL_SCISSOR_TEST);
 	}else
@@ -950,7 +921,7 @@ static int tgl_blend(lua_State* L){
 			else
 				alpha_dst_func = option_enum[luaL_checkoption(L, -1, nullptr, option_str)];
 			glBlendFuncSeparate(rgb_src_func, rgb_dst_func, alpha_src_func, alpha_dst_func);
-			if(glHasError())	// GL_SRC_ALPHA_SATURATE just allowed for source!
+			if(glGetError_s())	// GL_SRC_ALPHA_SATURATE just allowed for source!
 				return luaL_error(L, "Invalid blend function!");
 		}
 		lua_pop(L, 4);
@@ -991,7 +962,36 @@ static int tgl_info(lua_State* L){
 	return 1;
 }
 
-int luaopen_tgl(lua_State* L){
+// GL context management variables
+static std::mutex context_mutex;
+static unsigned context_count = 0;
+
+// Context metatable methods
+static int tgl_context_free(lua_State* L){
+	std::unique_lock<std::mutex> context_lock(context_mutex);
+	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	if(!--context_count)
+		glfwTerminate();
+	return 0;
+}
+
+static int tgl_context_activate(lua_State* L){
+	// Set current GL context to use
+	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr : *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
+	// Further context preparations
+	if(glfwGetCurrentContext()){
+		// Initialize GLEW
+		std::unique_lock<std::mutex> context_lock(context_mutex);
+		glewExperimental = GL_TRUE;
+		if(glewInit() != GLEW_OK)
+			return luaL_error(L, "Couldn't initialize GLEW!");
+		// Clear all errors caused by GLFW & GLEW initializations
+		glGetError_s();
+	}
+	return 0;
+}
+
+static int tgl_context_create(lua_State* L){
 	// Initialize GLFW with general properties
 	std::unique_lock<std::mutex> context_lock(context_mutex);
 	if(!context_count){
@@ -1042,5 +1042,11 @@ int luaopen_tgl(lua_State* L){
 	// Increment counter for finally created context
 	++context_count;
 	// Return the userdata to Lua
+	return 1;
+}
+
+// TGL library load
+int luaopen_tgl(lua_State* L){
+	lua_pushcfunction(L, tgl_context_create);
 	return 1;
 }

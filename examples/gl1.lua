@@ -1,5 +1,6 @@
 -- Create & activate context
-local ctx = require("tgl")
+local tgl = require("tgl")
+local ctx = tgl()
 ctx:activate()
 
 -- Create (+ bind) FBO as drawing target
