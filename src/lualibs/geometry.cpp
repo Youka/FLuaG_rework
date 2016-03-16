@@ -115,7 +115,7 @@ static int geometry_curve_flatten(lua_State* L){
 }
 
 struct TessState{
-	GLenum cur_type;
+	GLenum error = GL_NO_ERROR, cur_type;
 	std::vector<Geometry::Point2d> buffer;
 	std::vector<std::array<Geometry::Point2d,3>> triangles;
 };
@@ -147,6 +147,9 @@ static void APIENTRY tess_end_callback(void* userdata){
 	}
 	state->buffer.clear();
 }
+static void APIENTRY tess_error_callback(GLenum err, void* userdata){
+	static_cast<TessState*>(userdata)->error = err;
+}
 static int geometry_tesselate(lua_State* L){
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -174,6 +177,7 @@ static int geometry_tesselate(lua_State* L){
 	gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_vertex_callback));
 	gluTessCallback(tess.get(), GLU_TESS_END_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_end_callback));
 	gluTessCallback(tess.get(), GLU_TESS_COMBINE, reinterpret_cast<void(APIENTRY *)()>(tess_combine_callback));
+	gluTessCallback(tess.get(), GLU_TESS_ERROR_DATA, reinterpret_cast<void(APIENTRY *)()>(tess_error_callback));
 	TessState state;
 	gluTessBeginPolygon(tess.get(), &state);
 	for(auto& contour : contours){
@@ -183,6 +187,8 @@ static int geometry_tesselate(lua_State* L){
 		gluTessEndContour(tess.get());
 	}
 	gluTessEndPolygon(tess.get());
+	if(state.error != GL_NO_ERROR)
+		return luaL_error(L, reinterpret_cast<const char*>(gluErrorString(state.error)));
 	// Send triangles to Lua
 	lua_createtable(L, state.triangles.size(), 0);
 	int i = 0;
