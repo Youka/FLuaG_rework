@@ -69,7 +69,9 @@ namespace FLuaG{
 				while((arg = this->Lrun_fut.get()) >= 0){
 					this->Lrun_prom = std::promise<int>();
 					this->Lrun_fut = this->Lrun_prom.get_future();
-					this->main_prom.set_value(lua_pcall(this->L.get(), arg, 0, 0));
+					const int call_err = lua_pcall(this->L.get(), arg, 0, 0);
+					lua_gc(this->L.get(), LUA_GCCOLLECT, 0);	// Doesn't remove error message on stack top
+					this->main_prom.set_value(call_err);
 				}
 				this->L.reset();	// Garbage collection runs Lua too (__gc metamethods)
 			});

@@ -145,6 +145,9 @@ namespace FLuaG{
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
 		}
+#ifndef FLUAG_FORCE_SINGLE_THREAD
+		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+#endif
 	}
 
 	void Script::LoadScript(const std::string& script) throw(exception){
@@ -171,6 +174,9 @@ namespace FLuaG{
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
 		}
+#ifndef FLUAG_FORCE_SINGLE_THREAD
+		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+#endif
 	}
 
 	void Script::ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms) throw(exception){
@@ -200,5 +206,8 @@ namespace FLuaG{
 			lua_pop(LSTATE, 1);
 			throw exception(std::move(err));
 		}
+#ifndef FLUAG_FORCE_SINGLE_THREAD
+		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+#endif
 	}
 }
