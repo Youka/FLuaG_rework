@@ -1,0 +1,33 @@
+% Document class & packages
+\documentclass[12pt,a4paper,notitlepage,onecolumn,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+
+% Title informations
+\title{\textcolor{blue}{FLuaG}}
+\author{Youka}
+\date{\today}
+
+% Set colors & font
+\color{black}
+\pagecolor{white}
+\renewcommand{\familydefault}{\ttdefault}
+
+% Begin document contents
+\begin{document}
+% Generate title & index
+\maketitle
+\vfill
+\tableofcontents
+\newpage
+% Add abstract
+\begin{abstract}
+This document explains the usage of software \textbf{FLuaG}.\\
+It doesn't explain internals, technical details or history but can be read as reference and simple how-to.
+\end{abstract}
+\newpage
+% Include files with actual contents
+\input{interfaces}
+\input{lua}
+% Finish document contents
+\end{document}

@@ -8,13 +8,9 @@ if(PDFLATEX_COMPILER)
 	# Setup documents installation
 	if(BUILD_DOCS)
 		message(STATUS "Documents installation path: ${CMAKE_INSTALL_PREFIX}/share/doc/fluag")
-		file(GLOB DOC_FILES *.tex)
-		foreach(doc ${DOC_FILES})
-			execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} -draftmode ${doc})	# Needed to collect forward informations (like table-of-contents) first
-			execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} ${doc})
-		endforeach()
-		file(GLOB DOC_FILES ${CMAKE_CURRENT_BINARY_DIR}/*.pdf)
-		install(FILES ${DOC_FILES} DESTINATION share/doc/fluag)
+		execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} -draftmode main.tex)	# Needed to collect forward informations (like table-of-contents) first
+		execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} main.tex)
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/main.pdf DESTINATION share/doc/fluag RENAME ${PROJECT_NAME}.pdf)
 	endif()
 else()
 	message(WARNING "PDFLaTeX required to build documents!")
