@@ -10,6 +10,7 @@ if(PDFLATEX_COMPILER)
 		message(STATUS "Documents installation path: ${CMAKE_INSTALL_PREFIX}/share/doc/fluag")
 		file(GLOB DOC_FILES *.tex)
 		foreach(doc ${DOC_FILES})
+			execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} -draftmode ${doc})	# Needed to collect forward informations (like table-of-contents) first
 			execute_process(COMMAND ${PDFLATEX_COMPILER} -output-directory=${CMAKE_CURRENT_BINARY_DIR} ${doc})
 		endforeach()
 		file(GLOB DOC_FILES ${CMAKE_CURRENT_BINARY_DIR}/*.pdf)
