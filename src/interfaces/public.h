@@ -33,8 +33,8 @@ Permission is granted to anyone to use this software for any purpose, including 
 /** FLuaG script handle type */
 typedef void* fluag_h;
 
-/** Maximal length for output warning */
-#define FLUAG_WARNING_LENGTH 256
+/** Maximal length for output error */
+#define FLUAG_ERROR_LENGTH 256
 
 /**
 Create FLuaG script handle.
@@ -48,20 +48,20 @@ Load file into FLuaG script.
 
 @param F Script handle
 @param filename Path to file for loading
-@param warning Warning string storage, can be zero
-@return 1 if success, 0 if error (see warning)
+@param err Error string storage, can be zero
+@return 1 if success, 0 if error (see err)
 */
-FLUAG_EXPORT int fluag_load_file(fluag_h F, const char* filename, char* warning);
+FLUAG_EXPORT int fluag_load_file(fluag_h F, const char* const filename, char* err);
 
 /**
 Load script into FLuaG script.
 
 @param F Script handle
 @param script Script content as string
-@param warning Warning string storage, can be zero
-@return 1 if success, 0 if error (see warning)
+@param err Error string storage, can be zero
+@return 1 if success, 0 if error (see err)
 */
-FLUAG_EXPORT int fluag_load_script(fluag_h F, const char* script, char* warning);
+FLUAG_EXPORT int fluag_load_script(fluag_h F, const char* const script, char* err);
 
 /**
 Set video informations into FLuaG script.
@@ -73,7 +73,7 @@ Set video informations into FLuaG script.
 @param fps Video frames-per-second
 @param frames Video frames number
 */
-FLUAG_EXPORT void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames);
+FLUAG_EXPORT void fluag_set_video(fluag_h F, const unsigned short width, const unsigned short height, const char has_alpha, const double fps, const unsigned long frames);
 
 /**
 Set userdata into FLuaG script.
@@ -81,7 +81,7 @@ Set userdata into FLuaG script.
 @param F Script handle
 @param userdata Userdata string
 */
-FLUAG_EXPORT void fluag_set_userdata(fluag_h F, const char* userdata);
+FLUAG_EXPORT void fluag_set_userdata(fluag_h F, const char* const userdata);
 
 /**
 Send frame into FLuaG script.
@@ -90,10 +90,10 @@ Send frame into FLuaG script.
 @param image_data Pixels data of image
 @param stride Image row size in bytes (pixels + padding)
 @param ms Image/frame time in milliseconds
-@param warning Warning string storage, can be zero
-@return 1 if success, 0 if error (see warning)
+@param err Error string storage, can be zero
+@return 1 if success, 0 if error (see err)
 */
-FLUAG_EXPORT int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, unsigned long ms, char* warning);
+FLUAG_EXPORT int fluag_process_frame(fluag_h F, unsigned char* image_data, const unsigned stride, const unsigned long ms, char* err);
 
 /**
 Destroy FLuaG script handle.

@@ -25,47 +25,47 @@ fluag_h fluag_create(void){
 	}
 }
 
-int fluag_load_file(fluag_h F, const char* filename, char* warning){
+int fluag_load_file(fluag_h F, const char* const filename, char* err){
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->LoadFile(filename);
 		}catch(const FLuaG::exception& e){
-			if(warning)
-				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
+			if(err)
+				strncpy(err, e.what(), FLUAG_ERROR_LENGTH-1)[FLUAG_ERROR_LENGTH-1] = '\0';
 			return 0;
 		}
 	return 1;
 }
 
-int fluag_load_script(fluag_h F, const char* script, char* warning){
+int fluag_load_script(fluag_h F, const char* const script, char* err){
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->LoadScript(script);
 		}catch(const FLuaG::exception& e){
-			if(warning)
-				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
+			if(err)
+				strncpy(err, e.what(), FLUAG_ERROR_LENGTH-1)[FLUAG_ERROR_LENGTH-1] = '\0';
 			return 0;
 		}
 	return 1;
 }
 
-void fluag_set_video(fluag_h F, unsigned short width, unsigned short height, char has_alpha, double fps, unsigned long frames){
+void fluag_set_video(fluag_h F, const unsigned short width, const unsigned short height, const char has_alpha, const double fps, const unsigned long frames){
 	if(F)
 		static_cast<FLuaG::Script*>(F)->SetVideo({width, height, static_cast<bool>(has_alpha), fps, frames});
 }
 
-void fluag_set_userdata(fluag_h F, const char* userdata){
+void fluag_set_userdata(fluag_h F, const char* const userdata){
 	if(F)
 		static_cast<FLuaG::Script*>(F)->SetUserdata(userdata);
 }
 
-int fluag_process_frame(fluag_h F, unsigned char* image_data, unsigned stride, unsigned long ms, char* warning){
+int fluag_process_frame(fluag_h F, unsigned char* image_data, const unsigned stride, const unsigned long ms, char* err){
 	if(F)
 		try{
 			static_cast<FLuaG::Script*>(F)->ProcessFrame(image_data, stride, ms);
 		}catch(const FLuaG::exception& e){
-			if(warning)
-				strncpy(warning, e.what(), FLUAG_WARNING_LENGTH-1)[FLUAG_WARNING_LENGTH-1] = '\0';
+			if(err)
+				strncpy(err, e.what(), FLUAG_ERROR_LENGTH-1)[FLUAG_ERROR_LENGTH-1] = '\0';
 			return 0;
 		}
 	return 1;
