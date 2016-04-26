@@ -122,35 +122,35 @@ file(GLOB_RECURSE LIBRARY_SOURCES *.cpp *.hpp *.c *.h *.rc)
 if(NOT WIN32)
 	list(REMOVE_ITEM LIBRARY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/avisynth.cpp)
 endif()
-add_library(fluag SHARED ${LIBRARY_SOURCES})
-target_include_directories(fluag PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC} ${DEPEND_BOOST_INC} ${DEPEND_FC_INC} ${DEPEND_PANGOCAIRO_INC})
-target_link_libraries(fluag ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB} ${DEPEND_BOOST_LIB} ${DEPEND_FC_LIB} ${DEPEND_PANGOCAIRO_LIB})
+add_library(${PROJECT_NAME_LOWER} SHARED ${LIBRARY_SOURCES})
+target_include_directories(${PROJECT_NAME_LOWER} PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${DEPEND_LUA_INC} ${DEPEND_GLEW_INC} ${DEPEND_GLFW_INC} ${DEPEND_PNG_INC} ${DEPEND_BOOST_INC} ${DEPEND_FC_INC} ${DEPEND_PANGOCAIRO_INC})
+target_link_libraries(${PROJECT_NAME_LOWER} ${DEPEND_LUA_LIB} ${DEPEND_GLEW_LIB} ${DEPEND_GLFW_LIB} ${DEPEND_OGL_LIB} ${DEPEND_PNG_LIB} ${DEPEND_BOOST_LIB} ${DEPEND_FC_LIB} ${DEPEND_PANGOCAIRO_LIB})
 if(NOT MSVC)
-	target_link_libraries(fluag pthread)
+	target_link_libraries(${PROJECT_NAME_LOWER} pthread)
 endif()
 
 # Setup library installation
-install(TARGETS fluag	# Runtime
+install(TARGETS ${PROJECT_NAME_LOWER}	# Runtime
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib
 )
 message(STATUS "Binaries installation path: ${CMAKE_INSTALL_PREFIX}/bin")
 message(STATUS "Library installation path: ${CMAKE_INSTALL_PREFIX}/lib")
-install(FILES interfaces/public.h DESTINATION include RENAME fluag.h)	# Public header
+install(FILES interfaces/public.h DESTINATION include RENAME ${PROJECT_NAME_LOWER}.h)	# Public header
 message(STATUS "Headers installation path: ${CMAKE_INSTALL_PREFIX}/include")
 configure_file(	# Package config
-	${CMAKE_CURRENT_SOURCE_DIR}/fluag.pc.in
-	${CMAKE_CURRENT_BINARY_DIR}/fluag.pc
+	${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME_LOWER}.pc.in
+	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_LOWER}.pc
 	@ONLY
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fluag.pc DESTINATION share/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_LOWER}.pc DESTINATION share/pkgconfig)
 message(STATUS "Package config installation path: ${CMAKE_INSTALL_PREFIX}/share/pkgconfig")
 
 # Add functionality tests
 if(TEST_HELLO)
 	add_executable(hello_test_exe ${PROJECT_SOURCE_DIR}/tests/hello.c)
-	target_link_libraries(hello_test_exe fluag)
+	target_link_libraries(hello_test_exe ${PROJECT_NAME_LOWER})
 	if(NOT WIN32)
 		target_link_libraries(hello_test_exe -Wl,-rpath=.)
 	endif()
@@ -158,7 +158,7 @@ if(TEST_HELLO)
 endif()
 if(TEST_STANDALONE)
 	add_executable(standalone_test_exe ${PROJECT_SOURCE_DIR}/tests/standalone.c)
-	target_link_libraries(standalone_test_exe fluag)
+	target_link_libraries(standalone_test_exe ${PROJECT_NAME_LOWER})
 	if(NOT WIN32)
 		target_link_libraries(standalone_test_exe -Wl,-rpath=.)
 	endif()
