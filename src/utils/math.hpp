@@ -31,117 +31,100 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 namespace Math{
 	template<typename T>
-	inline char sign(const T x){
+	inline char sign(const T x) noexcept{
 		return x < 0 ? -1 : (x > 0 ? 1 : 0);
 	}
 
-	inline int fac(int n){
+	inline int fac(int n) noexcept{
 		int k = 1;
 		while(n > 1)
 			k *= n--;
 		return k;
 	}
 
-	inline double bin_coeff(const int i, const int n){
+	inline double bin_coeff(const int i, const int n) noexcept{
 		return fac(n) / (fac(i) * fac(n-i));
 	}
 
-	inline double bernstein(const int i, const int n, const double t){
+	inline double bernstein(const int i, const int n, const double t) noexcept{
 		return bin_coeff(i, n) * std::pow(t, i) * std::pow(1-t, n-i);
 	}
 
 	template<typename T>
-	class Matrix4x4{
-		private:
-			// Raw matrix data
-			std::array<T,16> m_data;
+	class Matrix4x4 : public std::array<T,16>{
 		public:
+			// Transparent template type
+			using super_t = std::array<T,16>;
 			// Ctors
-			Matrix4x4(){this->identity();}
-			Matrix4x4(const std::array<T,16>& data) : m_data(data){}
-			Matrix4x4(const T* data){std::copy(data, data+16, this->m_data.begin());}
+			Matrix4x4() noexcept{this->identity();}
+			Matrix4x4(const T* p) noexcept{std::copy(p, p+16, this->begin());}
+			Matrix4x4(const super_t& arr) noexcept : super_t(arr){}
 			Matrix4x4(const T x11, const T x12, const T x13, const T x14,
-				const T x21, const T x22, const T x23, const T x24,
-				const T x31, const T x32, const T x33, const T x34,
-				const T x41, const T x42, const T x43, const T x44) : m_data({x11, x12, x13, x14,
-											x21, x22, x23, x24,
-											x31, x32, x33, x34,
-											x41, x42, x43, x44}){}
-			// Copy
-			Matrix4x4(const Matrix4x4& other){this->m_data = other.m_data;}
-			Matrix4x4& operator=(const Matrix4x4& other){this->m_data = other.m_data; return *this;}
-			// No move
-			// Dtor
-			~Matrix4x4() = default;
-			// Data access
-			T& operator[](const unsigned i){return this->m_data[i];}
-			const T& operator[](const unsigned i) const{return this->m_data[i];}
+					const T x21, const T x22, const T x23, const T x24,
+					const T x31, const T x32, const T x33, const T x34,
+					const T x41, const T x42, const T x43, const T x44) noexcept
+					: super_t({x11, x12, x13, x14,
+							x21, x22, x23, x24,
+							x31, x32, x33, x34,
+							x41, x42, x43, x44}){}
 			// Unary methods
-			Matrix4x4& identity(){
-				this->m_data = {
-					1, 0, 0, 0,
-					0, 1, 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1
-				};
-				return *this;
+			void identity() noexcept{
+				*this = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 			}
-			bool invert(){
-				std::array<T,16> inv_matrix = {
-				/* 11 */	this->m_data[5]*this->m_data[10]*this->m_data[15] + this->m_data[6]*this->m_data[11]*this->m_data[13] + this->m_data[7]*this->m_data[9]*this->m_data[14] - this->m_data[5]*this->m_data[11]*this->m_data[14] - this->m_data[6]*this->m_data[9]*this->m_data[15] - this->m_data[7]*this->m_data[10]*this->m_data[13],
-				/* 12 */	this->m_data[1]*this->m_data[11]*this->m_data[14] + this->m_data[2]*this->m_data[9]*this->m_data[15] + this->m_data[3]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[10]*this->m_data[15] - this->m_data[2]*this->m_data[11]*this->m_data[13] - this->m_data[3]*this->m_data[9]*this->m_data[14],
-				/* 13 */	this->m_data[1]*this->m_data[6]*this->m_data[15] + this->m_data[2]*this->m_data[7]*this->m_data[13] + this->m_data[3]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[7]*this->m_data[14] - this->m_data[2]*this->m_data[5]*this->m_data[15] - this->m_data[3]*this->m_data[6]*this->m_data[13],
-				/* 14 */	this->m_data[1]*this->m_data[7]*this->m_data[10] + this->m_data[2]*this->m_data[5]*this->m_data[11] + this->m_data[3]*this->m_data[6]*this->m_data[9] - this->m_data[1]*this->m_data[6]*this->m_data[11] - this->m_data[2]*this->m_data[7]*this->m_data[9] - this->m_data[3]*this->m_data[5]*this->m_data[10],
-				/* 21 */	this->m_data[4]*this->m_data[11]*this->m_data[14] + this->m_data[6]*this->m_data[8]*this->m_data[15] + this->m_data[7]*this->m_data[10]*this->m_data[12] - this->m_data[4]*this->m_data[10]*this->m_data[15] - this->m_data[6]*this->m_data[11]*this->m_data[12] - this->m_data[7]*this->m_data[8]*this->m_data[14],
-				/* 22 */	this->m_data[0]*this->m_data[10]*this->m_data[15] + this->m_data[2]*this->m_data[11]*this->m_data[12] + this->m_data[3]*this->m_data[8]*this->m_data[14] - this->m_data[0]*this->m_data[11]*this->m_data[14] - this->m_data[2]*this->m_data[8]*this->m_data[15] - this->m_data[3]*this->m_data[10]*this->m_data[12],
-				/* 23 */	this->m_data[0]*this->m_data[7]*this->m_data[14] + this->m_data[2]*this->m_data[4]*this->m_data[15] + this->m_data[3]*this->m_data[6]*this->m_data[12] - this->m_data[0]*this->m_data[6]*this->m_data[15] - this->m_data[2]*this->m_data[7]*this->m_data[12] - this->m_data[3]*this->m_data[4]*this->m_data[14],
-				/* 24 */	this->m_data[0]*this->m_data[6]*this->m_data[11] + this->m_data[2]*this->m_data[7]*this->m_data[8] + this->m_data[3]*this->m_data[4]*this->m_data[10] - this->m_data[0]*this->m_data[7]*this->m_data[10] - this->m_data[2]*this->m_data[4]*this->m_data[11] - this->m_data[3]*this->m_data[6]*this->m_data[8],
-				/* 31 */	this->m_data[4]*this->m_data[9]*this->m_data[15] + this->m_data[5]*this->m_data[11]*this->m_data[12] + this->m_data[7]*this->m_data[8]*this->m_data[13] - this->m_data[4]*this->m_data[11]*this->m_data[13] - this->m_data[5]*this->m_data[8]*this->m_data[15] - this->m_data[7]*this->m_data[9]*this->m_data[12],
-				/* 32 */	this->m_data[0]*this->m_data[11]*this->m_data[13] + this->m_data[1]*this->m_data[8]*this->m_data[15] + this->m_data[3]*this->m_data[9]*this->m_data[12] - this->m_data[0]*this->m_data[9]*this->m_data[15] - this->m_data[1]*this->m_data[11]*this->m_data[12] - this->m_data[3]*this->m_data[8]*this->m_data[13],
-				/* 33 */	this->m_data[0]*this->m_data[5]*this->m_data[15] + this->m_data[1]*this->m_data[7]*this->m_data[12] + this->m_data[3]*this->m_data[4]*this->m_data[13] - this->m_data[0]*this->m_data[7]*this->m_data[13] - this->m_data[1]*this->m_data[4]*this->m_data[15] - this->m_data[3]*this->m_data[5]*this->m_data[12],
-				/* 34 */	this->m_data[0]*this->m_data[7]*this->m_data[9] + this->m_data[1]*this->m_data[4]*this->m_data[11] + this->m_data[3]*this->m_data[5]*this->m_data[8] - this->m_data[0]*this->m_data[5]*this->m_data[11] - this->m_data[1]*this->m_data[7]*this->m_data[8] - this->m_data[3]*this->m_data[4]*this->m_data[9],
-				/* 41 */	this->m_data[4]*this->m_data[10]*this->m_data[13] + this->m_data[5]*this->m_data[8]*this->m_data[14] + this->m_data[6]*this->m_data[9]*this->m_data[12] - this->m_data[4]*this->m_data[9]*this->m_data[14] - this->m_data[5]*this->m_data[10]*this->m_data[12] - this->m_data[6]*this->m_data[8]*this->m_data[13],
-				/* 42 */	this->m_data[0]*this->m_data[9]*this->m_data[14] + this->m_data[1]*this->m_data[10]*this->m_data[12] + this->m_data[2]*this->m_data[8]*this->m_data[13] - this->m_data[0]*this->m_data[10]*this->m_data[13] - this->m_data[1]*this->m_data[8]*this->m_data[14] - this->m_data[2]*this->m_data[9]*this->m_data[12],
-				/* 43 */	this->m_data[0]*this->m_data[6]*this->m_data[13] + this->m_data[1]*this->m_data[4]*this->m_data[14] + this->m_data[2]*this->m_data[5]*this->m_data[12] - this->m_data[0]*this->m_data[5]*this->m_data[14] - this->m_data[1]*this->m_data[6]*this->m_data[12] - this->m_data[2]*this->m_data[4]*this->m_data[13],
-				/* 44 */	this->m_data[0]*this->m_data[5]*this->m_data[10] + this->m_data[1]*this->m_data[6]*this->m_data[8] + this->m_data[2]*this->m_data[4]*this->m_data[9] - this->m_data[0]*this->m_data[6]*this->m_data[9] - this->m_data[1]*this->m_data[4]*this->m_data[10] - this->m_data[2]*this->m_data[5]*this->m_data[8]
+			bool invert() noexcept{
+				const super_t inv_matrix = {
+				/* 11 */	(*this)[5]*(*this)[10]*(*this)[15] + (*this)[6]*(*this)[11]*(*this)[13] + (*this)[7]*(*this)[9]*(*this)[14] - (*this)[5]*(*this)[11]*(*this)[14] - (*this)[6]*(*this)[9]*(*this)[15] - (*this)[7]*(*this)[10]*(*this)[13],
+				/* 12 */	(*this)[1]*(*this)[11]*(*this)[14] + (*this)[2]*(*this)[9]*(*this)[15] + (*this)[3]*(*this)[10]*(*this)[13] - (*this)[1]*(*this)[10]*(*this)[15] - (*this)[2]*(*this)[11]*(*this)[13] - (*this)[3]*(*this)[9]*(*this)[14],
+				/* 13 */	(*this)[1]*(*this)[6]*(*this)[15] + (*this)[2]*(*this)[7]*(*this)[13] + (*this)[3]*(*this)[5]*(*this)[14] - (*this)[1]*(*this)[7]*(*this)[14] - (*this)[2]*(*this)[5]*(*this)[15] - (*this)[3]*(*this)[6]*(*this)[13],
+				/* 14 */	(*this)[1]*(*this)[7]*(*this)[10] + (*this)[2]*(*this)[5]*(*this)[11] + (*this)[3]*(*this)[6]*(*this)[9] - (*this)[1]*(*this)[6]*(*this)[11] - (*this)[2]*(*this)[7]*(*this)[9] - (*this)[3]*(*this)[5]*(*this)[10],
+				/* 21 */	(*this)[4]*(*this)[11]*(*this)[14] + (*this)[6]*(*this)[8]*(*this)[15] + (*this)[7]*(*this)[10]*(*this)[12] - (*this)[4]*(*this)[10]*(*this)[15] - (*this)[6]*(*this)[11]*(*this)[12] - (*this)[7]*(*this)[8]*(*this)[14],
+				/* 22 */	(*this)[0]*(*this)[10]*(*this)[15] + (*this)[2]*(*this)[11]*(*this)[12] + (*this)[3]*(*this)[8]*(*this)[14] - (*this)[0]*(*this)[11]*(*this)[14] - (*this)[2]*(*this)[8]*(*this)[15] - (*this)[3]*(*this)[10]*(*this)[12],
+				/* 23 */	(*this)[0]*(*this)[7]*(*this)[14] + (*this)[2]*(*this)[4]*(*this)[15] + (*this)[3]*(*this)[6]*(*this)[12] - (*this)[0]*(*this)[6]*(*this)[15] - (*this)[2]*(*this)[7]*(*this)[12] - (*this)[3]*(*this)[4]*(*this)[14],
+				/* 24 */	(*this)[0]*(*this)[6]*(*this)[11] + (*this)[2]*(*this)[7]*(*this)[8] + (*this)[3]*(*this)[4]*(*this)[10] - (*this)[0]*(*this)[7]*(*this)[10] - (*this)[2]*(*this)[4]*(*this)[11] - (*this)[3]*(*this)[6]*(*this)[8],
+				/* 31 */	(*this)[4]*(*this)[9]*(*this)[15] + (*this)[5]*(*this)[11]*(*this)[12] + (*this)[7]*(*this)[8]*(*this)[13] - (*this)[4]*(*this)[11]*(*this)[13] - (*this)[5]*(*this)[8]*(*this)[15] - (*this)[7]*(*this)[9]*(*this)[12],
+				/* 32 */	(*this)[0]*(*this)[11]*(*this)[13] + (*this)[1]*(*this)[8]*(*this)[15] + (*this)[3]*(*this)[9]*(*this)[12] - (*this)[0]*(*this)[9]*(*this)[15] - (*this)[1]*(*this)[11]*(*this)[12] - (*this)[3]*(*this)[8]*(*this)[13],
+				/* 33 */	(*this)[0]*(*this)[5]*(*this)[15] + (*this)[1]*(*this)[7]*(*this)[12] + (*this)[3]*(*this)[4]*(*this)[13] - (*this)[0]*(*this)[7]*(*this)[13] - (*this)[1]*(*this)[4]*(*this)[15] - (*this)[3]*(*this)[5]*(*this)[12],
+				/* 34 */	(*this)[0]*(*this)[7]*(*this)[9] + (*this)[1]*(*this)[4]*(*this)[11] + (*this)[3]*(*this)[5]*(*this)[8] - (*this)[0]*(*this)[5]*(*this)[11] - (*this)[1]*(*this)[7]*(*this)[8] - (*this)[3]*(*this)[4]*(*this)[9],
+				/* 41 */	(*this)[4]*(*this)[10]*(*this)[13] + (*this)[5]*(*this)[8]*(*this)[14] + (*this)[6]*(*this)[9]*(*this)[12] - (*this)[4]*(*this)[9]*(*this)[14] - (*this)[5]*(*this)[10]*(*this)[12] - (*this)[6]*(*this)[8]*(*this)[13],
+				/* 42 */	(*this)[0]*(*this)[9]*(*this)[14] + (*this)[1]*(*this)[10]*(*this)[12] + (*this)[2]*(*this)[8]*(*this)[13] - (*this)[0]*(*this)[10]*(*this)[13] - (*this)[1]*(*this)[8]*(*this)[14] - (*this)[2]*(*this)[9]*(*this)[12],
+				/* 43 */	(*this)[0]*(*this)[6]*(*this)[13] + (*this)[1]*(*this)[4]*(*this)[14] + (*this)[2]*(*this)[5]*(*this)[12] - (*this)[0]*(*this)[5]*(*this)[14] - (*this)[1]*(*this)[6]*(*this)[12] - (*this)[2]*(*this)[4]*(*this)[13],
+				/* 44 */	(*this)[0]*(*this)[5]*(*this)[10] + (*this)[1]*(*this)[6]*(*this)[8] + (*this)[2]*(*this)[4]*(*this)[9] - (*this)[0]*(*this)[6]*(*this)[9] - (*this)[1]*(*this)[4]*(*this)[10] - (*this)[2]*(*this)[5]*(*this)[8]
 				};
-				T delta = this->m_data[0] * inv_matrix[0] +
-					this->m_data[1] * inv_matrix[4] +
-					this->m_data[2] * inv_matrix[8] +
-					this->m_data[3] * inv_matrix[12];
-				if(delta != 0){
-					delta = 1 / delta,
-					std::transform(inv_matrix.cbegin(), inv_matrix.cend(), this->m_data.begin(), std::bind(std::multiplies<T>(), delta, std::placeholders::_1));
-					return true;
-				}
-				return false;
+				const T delta = (*this)[0] * inv_matrix[0] +
+					(*this)[1] * inv_matrix[4] +
+					(*this)[2] * inv_matrix[8] +
+					(*this)[3] * inv_matrix[12];
+				if(delta == 0)
+					return false;
+				std::transform(inv_matrix.cbegin(), inv_matrix.cend(), (*this).begin(), std::bind(std::multiplies<T>(), 1 / delta, std::placeholders::_1));
+				return true;
 			}
 			// Binary methods
-			Matrix4x4 operator*(const Matrix4x4& other) const{
+			Matrix4x4 operator*(const Matrix4x4& other) const noexcept{
 				return {
-					this->m_data[0] * other[0] + this->m_data[1] * other[4] + this->m_data[2] * other[8] + this->m_data[3] * other[12],
-					this->m_data[0] * other[1] + this->m_data[1] * other[5] + this->m_data[2] * other[9] + this->m_data[3] * other[13],
-					this->m_data[0] * other[2] + this->m_data[1] * other[6] + this->m_data[2] * other[10] + this->m_data[3] * other[14],
-					this->m_data[0] * other[3] + this->m_data[1] * other[7] + this->m_data[2] * other[11] + this->m_data[3] * other[15],
-					this->m_data[4] * other[0] + this->m_data[5] * other[4] + this->m_data[6] * other[8] + this->m_data[7] * other[12],
-					this->m_data[4] * other[1] + this->m_data[5] * other[5] + this->m_data[6] * other[9] + this->m_data[7] * other[13],
-					this->m_data[4] * other[2] + this->m_data[5] * other[6] + this->m_data[6] * other[10] + this->m_data[7] * other[14],
-					this->m_data[4] * other[3] + this->m_data[5] * other[7] + this->m_data[6] * other[11] + this->m_data[7] * other[15],
-					this->m_data[8] * other[0] + this->m_data[9] * other[4] + this->m_data[10] * other[8] + this->m_data[11] * other[12],
-					this->m_data[8] * other[1] + this->m_data[9] * other[5] + this->m_data[10] * other[9] + this->m_data[11] * other[13],
-					this->m_data[8] * other[2] + this->m_data[9] * other[6] + this->m_data[10] * other[10] + this->m_data[11] * other[14],
-					this->m_data[8] * other[3] + this->m_data[9] * other[7] + this->m_data[10] * other[11] + this->m_data[11] * other[15],
-					this->m_data[12] * other[0] + this->m_data[13] * other[4] + this->m_data[14] * other[8] + this->m_data[15] * other[12],
-					this->m_data[12] * other[1] + this->m_data[13] * other[5] + this->m_data[14] * other[9] + this->m_data[15] * other[13],
-					this->m_data[12] * other[2] + this->m_data[13] * other[6] + this->m_data[14] * other[10] + this->m_data[15] * other[14],
-					this->m_data[12] * other[3] + this->m_data[13] * other[7] + this->m_data[14] * other[11] + this->m_data[15] * other[15]
+					(*this)[0] * other[0] + (*this)[1] * other[4] + (*this)[2] * other[8] + (*this)[3] * other[12],
+					(*this)[0] * other[1] + (*this)[1] * other[5] + (*this)[2] * other[9] + (*this)[3] * other[13],
+					(*this)[0] * other[2] + (*this)[1] * other[6] + (*this)[2] * other[10] + (*this)[3] * other[14],
+					(*this)[0] * other[3] + (*this)[1] * other[7] + (*this)[2] * other[11] + (*this)[3] * other[15],
+					(*this)[4] * other[0] + (*this)[5] * other[4] + (*this)[6] * other[8] + (*this)[7] * other[12],
+					(*this)[4] * other[1] + (*this)[5] * other[5] + (*this)[6] * other[9] + (*this)[7] * other[13],
+					(*this)[4] * other[2] + (*this)[5] * other[6] + (*this)[6] * other[10] + (*this)[7] * other[14],
+					(*this)[4] * other[3] + (*this)[5] * other[7] + (*this)[6] * other[11] + (*this)[7] * other[15],
+					(*this)[8] * other[0] + (*this)[9] * other[4] + (*this)[10] * other[8] + (*this)[11] * other[12],
+					(*this)[8] * other[1] + (*this)[9] * other[5] + (*this)[10] * other[9] + (*this)[11] * other[13],
+					(*this)[8] * other[2] + (*this)[9] * other[6] + (*this)[10] * other[10] + (*this)[11] * other[14],
+					(*this)[8] * other[3] + (*this)[9] * other[7] + (*this)[10] * other[11] + (*this)[11] * other[15],
+					(*this)[12] * other[0] + (*this)[13] * other[4] + (*this)[14] * other[8] + (*this)[15] * other[12],
+					(*this)[12] * other[1] + (*this)[13] * other[5] + (*this)[14] * other[9] + (*this)[15] * other[13],
+					(*this)[12] * other[2] + (*this)[13] * other[6] + (*this)[14] * other[10] + (*this)[15] * other[14],
+					(*this)[12] * other[3] + (*this)[13] * other[7] + (*this)[14] * other[11] + (*this)[15] * other[15]
 				};
 			}
 			enum class Order{APPEND, PREPEND};
-			Matrix4x4& multiply(const Matrix4x4& other, const Order order = Order::PREPEND){
+			Matrix4x4& multiply(const Matrix4x4& other, const Order order = Order::PREPEND) noexcept{
 				return *this = (order == Order::PREPEND ? *this * other : other * *this);
 			}
-			Matrix4x4& translate(const T x, const T y, const T z, const Order order = Order::PREPEND){
+			Matrix4x4& translate(const T x, const T y, const T z, const Order order = Order::PREPEND) noexcept{
 				return this->multiply({
 						1, 0, 0, x,
 						0, 1, 0, y,
@@ -149,7 +132,7 @@ namespace Math{
 						0, 0, 0, 1
 					}, order);
 			}
-			Matrix4x4& scale(const T x, const T y, const T z, const Order order = Order::PREPEND){
+			Matrix4x4& scale(const T x, const T y, const T z, const Order order = Order::PREPEND) noexcept{
 				return this->multiply({
 						x, 0, 0, 0,
 						0, y, 0, 0,
@@ -158,7 +141,7 @@ namespace Math{
 					}, order);
 			}
 			enum class Axis{X, Y, Z};
-			Matrix4x4& rotate(const T angle, const Axis axis, const Order order = Order::PREPEND){
+			Matrix4x4& rotate(const T angle, const Axis axis, const Order order = Order::PREPEND) noexcept{
 				const auto sin = std::sin(angle),
 					cos = std::cos(angle);
 				switch(axis){
@@ -187,40 +170,45 @@ namespace Math{
 				}
 			}
 			// Transformations
-			std::array<T,4> transform(const T* vec) const{
+			std::array<T,4> transform(const T* vec) const noexcept{
 				return {
-					this->m_data[0] * vec[0] + this->m_data[1] * vec[1] + this->m_data[2] * vec[2] + this->m_data[3] * vec[3],
-					this->m_data[4] * vec[0] + this->m_data[5] * vec[1] + this->m_data[6] * vec[2] + this->m_data[7] * vec[3],
-					this->m_data[8] * vec[0] + this->m_data[9] * vec[1] + this->m_data[10] * vec[2] + this->m_data[11] * vec[3],
-					this->m_data[12] * vec[0] + this->m_data[13] * vec[1] + this->m_data[14] * vec[2] + this->m_data[15] * vec[3]
+					(*this)[0] * vec[0] + (*this)[1] * vec[1] + (*this)[2] * vec[2] + (*this)[3] * vec[3],
+					(*this)[4] * vec[0] + (*this)[5] * vec[1] + (*this)[6] * vec[2] + (*this)[7] * vec[3],
+					(*this)[8] * vec[0] + (*this)[9] * vec[1] + (*this)[10] * vec[2] + (*this)[11] * vec[3],
+					(*this)[12] * vec[0] + (*this)[13] * vec[1] + (*this)[14] * vec[2] + (*this)[15] * vec[3]
 				};
 			}
-			std::array<T,4> transform(const std::array<T,4>& vec) const{
+			std::array<T,4> transform(const std::array<T,4>& vec) const noexcept{
 				return this->transform(vec.cbegin());
 			}
+			std::array<T,4> transform(const T vec_x, const T vec_y, const T vec_z, const T vec_w) const noexcept{
+				return this->transform({vec_x, vec_y, vec_z, vec_w});
+			}
 	};
+	using Matrix4x4f = Matrix4x4<float>;
+	using Matrix4x4d = Matrix4x4<double>;
 }
 
 namespace Geometry{
 	struct Point2d{
 		double x, y;
-		Point2d operator+(const Point2d& other) const{return {this->x + other.x, this->y + other.y};};
-		Point2d operator-(const Point2d& other) const{return {this->x - other.x, this->y - other.y};};
-		Point2d operator*(const Point2d& other) const{return {this->x * other.x, this->y * other.y};};
-		Point2d operator/(const Point2d& other) const{return {this->x / other.x, this->y / other.y};};
-		Point2d operator-() const{return {-this->x, -this->y};};
-		bool operator==(const Point2d& other) const{return this->x == other.x && this->y == other.y;};
-		bool operator!=(const Point2d& other) const{return !(*this == other);};
+		Point2d operator+(const Point2d& other) const noexcept{return {this->x + other.x, this->y + other.y};};
+		Point2d operator-(const Point2d& other) const noexcept{return {this->x - other.x, this->y - other.y};};
+		Point2d operator*(const Point2d& other) const noexcept{return {this->x * other.x, this->y * other.y};};
+		Point2d operator/(const Point2d& other) const noexcept{return {this->x / other.x, this->y / other.y};};
+		Point2d operator-() const noexcept{return {-this->x, -this->y};};
+		bool operator==(const Point2d& other) const noexcept{return this->x == other.x && this->y == other.y;};
+		bool operator!=(const Point2d& other) const noexcept{return !(*this == other);};
 	};
 
-	inline double normal_z(const Point2d& v1, const Point2d& v2){
+	inline double normal_z(const Point2d& v1, const Point2d& v2) noexcept{
 		return v1.x * v2.y - v1.y * v2.x;
 	}
-	inline double normal_z(const Point2d& p0, const Point2d& p1, const Point2d& p2){
+	inline double normal_z(const Point2d& p0, const Point2d& p1, const Point2d& p2) noexcept{
 		return normal_z(p1 - p0, p2 - p1);
 	}
 
-	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1){
+	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1) noexcept{
 		return std::abs(std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y) - std::hypot(l1.x-l0.x, l1.y-l0.y)) < POINT_ON_LINE_TOLERANCE;
 	}
 
@@ -242,23 +230,23 @@ namespace Geometry{
 		return lx;
 	}
 
-	inline bool in_triangle(const Point2d& p, const Point2d& t1, const Point2d& t2, const Point2d& t3){
+	inline bool in_triangle(const Point2d& p, const Point2d& t1, const Point2d& t2, const Point2d& t3) noexcept{
 		const char t2t3p = Math::sign(normal_z(t2, t3, p));
 		return Math::sign(normal_z(t1, t2, p)) == t2t3p && t2t3p == Math::sign(normal_z(t3, t1, p));
 	}
 
-	inline Point2d stretch(const Point2d& v, const double new_length){
+	inline Point2d stretch(const Point2d& v, const double new_length) noexcept{
 		double factor;
 		return v.x == 0 && v.y == 0 ? v : (factor = new_length / std::hypot(v.x, v.y), Point2d{factor,factor} * v);
 	}
 
-	inline Point2d rotate(const Point2d& v, const double angle){
+	inline Point2d rotate(const Point2d& v, const double angle) noexcept{
 		const double sin_angle = std::sin(angle),
 			cos_angle = std::cos(angle);
 		return {cos_angle * v.x - sin_angle * v.y, sin_angle * v.x + cos_angle * v.y};
 	}
 
-	inline std::vector<std::array<Point2d,4>> arc_to_curves(const Point2d& start, const Point2d& center, const double angle){
+	inline std::vector<std::array<Point2d,4>> arc_to_curves(const Point2d& start, const Point2d& center, const double angle) noexcept{
 		// Output buffer
 		std::vector<std::array<Point2d,4>> curves;
 		// Anything to do?
@@ -290,7 +278,7 @@ namespace Geometry{
 		return curves;
 	}
 
-	inline std::vector<Point2d> curve_flatten(const std::array<Point2d,4> points, const double tolerance){
+	inline std::vector<Point2d> curve_flatten(const std::array<Point2d,4> points, const double tolerance) noexcept{
 		// Check valid arguments
 		if(tolerance <= 0)
 			throw std::out_of_range("Invalid tolerance!");

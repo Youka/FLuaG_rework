@@ -17,7 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #if LUA_VERSION_NUM <= 501
 	#define lua_rawlen lua_objlen
 	#define luaL_newlibtable(L, l) lua_createtable(L, 0, sizeof(l)/sizeof(l[0])-1)
-	inline void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup){
+	inline void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) noexcept{
 		if(nup == 0)
 			luaL_register(L, NULL, l);
 		else{

@@ -56,14 +56,14 @@ namespace ImageOp{
 	}
 
 	// Deinterlace RGB(A) planes
-	inline void deinterlace_rgb(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, const size_t plane_size){
+	inline void deinterlace_rgb(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, const size_t plane_size) noexcept{
 		for(
 			const unsigned char* const data_end = data + plane_size * 3;
 			data != data_end;
 			*r++ = *data++, *g++ = *data++, *b++ = *data++
 		);
 	}
-	inline void deinterlace_rgba(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, unsigned char* a, const size_t plane_size){
+	inline void deinterlace_rgba(const unsigned char* data, unsigned char* r, unsigned char* g, unsigned char* b, unsigned char* a, const size_t plane_size) noexcept{
 		for(
 			const unsigned char* const data_end = data + (plane_size << 2);
 			data != data_end;

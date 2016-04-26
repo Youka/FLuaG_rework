@@ -25,7 +25,7 @@ int main(const int argc, const char** argv){
 	int i;
 	unsigned width, height, has_alpha, frames;
 	float fps;
-	char warning[FLUAG_WARNING_LENGTH];
+	char warning[FLUAG_ERROR_LENGTH];
 	/* Create FLuaG instance */
 	f = fluag_create();
 	if(!f){

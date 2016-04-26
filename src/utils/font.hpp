@@ -27,7 +27,9 @@ Permission is granted to anyone to use this software for any purpose, including 
 #endif
 #include <cassert>
 
-#define FONT_UPSCALE 64.0
+#ifndef FONT_UPSCALE
+	#define FONT_UPSCALE 64.0
+#endif
 
 namespace Font{
 	// Simple local exception
@@ -35,8 +37,8 @@ namespace Font{
 		private:
 			const std::string message;
 		public:
-			exception(const std::string& message) : message(message){}
-			exception(std::string&& message) : message(std::move(message)){}
+			exception(const std::string& message) noexcept : message(message){}
+			exception(std::string&& message) noexcept : message(std::move(message)){}
 			const char* what() const throw() override{return message.c_str();}
 	};
 
@@ -46,7 +48,7 @@ namespace Font{
 		bool outline;
 	};
 #ifdef _WIN32
-	static int CALLBACK enumfontcallback(const LOGFONTW* lf, const TEXTMETRICW*, const DWORD fonttype, LPARAM lParam){
+	static int CALLBACK enumfontcallback(const LOGFONTW* lf, const TEXTMETRICW*, const DWORD fonttype, LPARAM lParam) noexcept{
 		// Add font properties to list output
 		reinterpret_cast<std::vector<ListEntry>*>(lParam)->push_back({
 			Utf8::from_utf16(lf->lfFaceName),
@@ -59,7 +61,7 @@ namespace Font{
 		return 1;
 	}
 #endif
-	inline std::vector<ListEntry> list() throw(exception){
+	inline std::vector<ListEntry> list(){
 		std::vector<ListEntry> result;
 #ifdef _WIN32
 		const HDC hdc = CreateCompatibleDC(NULL);
@@ -72,9 +74,9 @@ namespace Font{
 #else
 		// Get font list from FontConfig
 		FcConfig* fc = FcInitLoadConfigAndFonts();
-		std::unique_ptr<FcPattern, void(*)(FcPattern*)> pattern(FcPatternCreate(), FcPatternDestroy);
-		std::unique_ptr<FcObjectSet, void(*)(FcObjectSet*)> objset(FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_OUTLINE, nullptr), FcObjectSetDestroy);
-		std::unique_ptr<FcFontSet, void(*)(FcFontSet*)> fontlist(FcFontList(fc, pattern.get(), objset.get()), FcFontSetDestroy);
+		const std::unique_ptr<FcPattern, void(*)(FcPattern*)> pattern(FcPatternCreate(), FcPatternDestroy);
+		const std::unique_ptr<FcObjectSet, void(*)(FcObjectSet*)> objset(FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, FC_OUTLINE, nullptr), FcObjectSetDestroy);
+		const std::unique_ptr<FcFontSet, void(*)(FcFontSet*)> fontlist(FcFontList(fc, pattern.get(), objset.get()), FcFontSetDestroy);
 		if(!fontlist)
 			throw exception("Couldn't create font list!");
 		// Add font list to output
@@ -106,7 +108,7 @@ namespace Font{
 			PangoLayout* layout;
 #endif
 			// Helpers
-			void copy(const Font& other){
+			void copy(const Font& other) noexcept{
 #ifdef _WIN32
 				if(!other.dc){
 					this->dc = NULL;
@@ -134,7 +136,7 @@ namespace Font{
 				}
 #endif
 			}
-			void move(Font&& other){
+			void move(Font&& other) noexcept{
 #ifdef _WIN32
 				if(!other.dc){
 					this->dc = NULL;
@@ -162,14 +164,14 @@ namespace Font{
 			}
 		public:
 			// Rule-of-five
-			Font() :
+			Font() noexcept :
 #ifdef _WIN32
 				dc(NULL), old_font(NULL), spacing(0)
 #else
 				ctx(nullptr), layout(nullptr)
 #endif
 				{}
-			Font(const std::string& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception)
+			Font(const std::string& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false)
 #ifdef _WIN32
 				: Font(Utf8::to_utf16(family), size, bold, italic, underline, strikeout, spacing, rtl){
 #else
@@ -208,7 +210,7 @@ namespace Font{
 #endif
 			}
 #ifdef _WIN32
-			Font(const std::wstring& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false) throw(exception)
+			Font(const std::wstring& family, float size = 12, bool bold = false, bool italic = false, bool underline = false, bool strikeout = false, double spacing = 0.0, bool rtl = false)
 				: spacing(spacing){
 				// Check parameters
 				if(family.length() > 31)	// See LOGFONT limitation
@@ -242,7 +244,7 @@ namespace Font{
 				this->old_font = SelectObject(this->dc, font);
 			}
 #endif
-			~Font(){
+			~Font() noexcept{
 #ifdef _WIN32
 				if(this->dc){
 					DeleteObject(SelectObject(this->dc, this->old_font));
@@ -257,31 +259,31 @@ namespace Font{
 				}
 #endif
 			}
-			Font(const Font& other){
+			Font(const Font& other) noexcept{
 				this->copy(other);
 			}
-			Font& operator=(const Font& other){
+			Font& operator=(const Font& other) noexcept{
 				this->~Font();
 				this->copy(other);
 				return *this;
 			}
-			Font(Font&& other){
+			Font(Font&& other) noexcept{
 				this->move(std::forward<Font>(other));
 			}
-			Font& operator=(Font&& other){
+			Font& operator=(Font&& other) noexcept{
 				this->~Font();
 				this->move(std::forward<Font>(other));
 				return *this;
 			}
 			// Getters
-			operator bool() const{
+			operator bool() const noexcept{
 #ifdef _WIN32
 				return this->dc;
 #else
 				return this->ctx;
 #endif
 			}
-			std::string get_family() const throw(exception){
+			std::string get_family() const{
 #ifdef _WIN32
 				return Utf8::from_utf16(this->get_family_unicode());
 #else
@@ -291,7 +293,7 @@ namespace Font{
 #endif
 			}
 #ifdef _WIN32
-			std::wstring get_family_unicode() const throw(exception){
+			std::wstring get_family_unicode() const{
 				if(!this->dc)
 					throw exception("Invalid state!");
 				LOGFONTW lf;
@@ -299,7 +301,7 @@ namespace Font{
 				return lf.lfFaceName;
 			}
 #endif
-			float get_size() const throw(exception){
+			float get_size() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -312,7 +314,7 @@ namespace Font{
 				return static_cast<float>(pango_font_description_get_size(pango_layout_get_font_description(this->layout))) / FONT_UPSCALE / PANGO_SCALE;
 #endif
 			}
-			bool get_bold() const throw(exception){
+			bool get_bold() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -325,7 +327,7 @@ namespace Font{
 				return pango_font_description_get_weight(pango_layout_get_font_description(this->layout)) == PANGO_WEIGHT_BOLD;
 #endif
 			}
-			bool get_italic() const throw(exception){
+			bool get_italic() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -338,7 +340,7 @@ namespace Font{
 				return pango_font_description_get_style(pango_layout_get_font_description(this->layout)) == PANGO_STYLE_ITALIC;
 #endif
 			}
-			bool get_underline() const throw(exception){
+			bool get_underline() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -348,11 +350,11 @@ namespace Font{
 #else
 				if(!this->ctx)
 					throw exception("Invalid state!");
-				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				const std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_UNDERLINE))->value == PANGO_UNDERLINE_SINGLE;
 #endif
 			}
-			bool get_strikeout() const throw(exception){
+			bool get_strikeout() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -362,11 +364,11 @@ namespace Font{
 #else
 				if(!this->ctx)
 					throw exception("Invalid state!");
-				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				const std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_STRIKETHROUGH))->value;
 #endif
 			}
-			double get_spacing() const throw(exception){
+			double get_spacing() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -374,11 +376,11 @@ namespace Font{
 #else
 				if(!this->ctx)
 					throw exception("Invalid state!");
-				std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
+				const std::unique_ptr<PangoAttrIterator, void(*)(PangoAttrIterator*)> attr_list_iter(pango_attr_list_get_iterator(pango_layout_get_attributes(this->layout)), pango_attr_iterator_destroy);
 				return static_cast<double>(reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(attr_list_iter.get(), PANGO_ATTR_LETTER_SPACING))->value) / FONT_UPSCALE / PANGO_SCALE;
 #endif
 			}
-			bool get_rtl() const throw(exception){
+			bool get_rtl() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -393,7 +395,7 @@ namespace Font{
 			struct Metrics{
 				double height, ascent, descent, internal_leading, external_leading;
 			};
-			Metrics metrics() const throw(exception){
+			Metrics metrics() const{
 #ifdef _WIN32
 				if(!this->dc)
 					throw exception("Invalid state!");
@@ -410,7 +412,7 @@ namespace Font{
 				if(!this->ctx)
 					throw exception("Invalid state!");
 				Metrics result;
-				std::unique_ptr<PangoFontMetrics, void(*)(PangoFontMetrics*)> metrics(pango_context_get_metrics(pango_layout_get_context(this->layout), pango_layout_get_font_description(this->layout), nullptr), pango_font_metrics_unref);
+				const std::unique_ptr<PangoFontMetrics, void(*)(PangoFontMetrics*)> metrics(pango_context_get_metrics(pango_layout_get_context(this->layout), pango_layout_get_font_description(this->layout), nullptr), pango_font_metrics_unref);
 				result.ascent = static_cast<double>(pango_font_metrics_get_ascent(metrics.get())) / FONT_UPSCALE / PANGO_SCALE;
 				result.descent = static_cast<double>(pango_font_metrics_get_descent(metrics.get())) / FONT_UPSCALE / PANGO_SCALE;
 				result.height = result.ascent + result.descent;
@@ -419,7 +421,7 @@ namespace Font{
 				return result;
 #endif
 			}
-			double text_width(const std::string& text) const throw(exception){
+			double text_width(const std::string& text) const{
 #ifdef _WIN32
 				return this->text_width(Utf8::to_utf16(text));
 #else
@@ -432,7 +434,7 @@ namespace Font{
 #endif
 			}
 #ifdef _WIN32
-			double text_width(const std::wstring& text) const throw(exception){
+			double text_width(const std::wstring& text) const{
 				if(!this->dc)
 					throw exception("Invalid state!");
 				SIZE sz;
@@ -445,7 +447,7 @@ namespace Font{
 				enum class Type{MOVE, LINE, CURVE, CLOSE} type;
 				double x, y;
 			};
-			std::vector<PathSegment> text_path(const std::string& text) const throw(exception){
+			std::vector<PathSegment> text_path(const std::string& text) const{
 #ifdef _WIN32
 				return this->text_path(Utf8::to_utf16(text));
 #else
@@ -459,7 +461,7 @@ namespace Font{
 				pango_cairo_layout_path(this->ctx, this->layout);
 				cairo_restore(this->ctx);
 				// Get path points
-				std::unique_ptr<cairo_path_t, void(*)(cairo_path_t*)> path(cairo_copy_path(this->ctx), cairo_path_destroy);
+				const std::unique_ptr<cairo_path_t, void(*)(cairo_path_t*)> path(cairo_copy_path(this->ctx), cairo_path_destroy);
 				if(path->status != CAIRO_STATUS_SUCCESS){
 					cairo_new_path(this->ctx);
 					throw exception("Couldn't get cairo path!");
@@ -493,7 +495,7 @@ namespace Font{
 #endif
 			}
 #ifdef _WIN32
-			std::vector<PathSegment> text_path(const std::wstring& text) const throw(exception){
+			std::vector<PathSegment> text_path(const std::wstring& text) const{
 				// Check valid state/device context
 				if(!this->dc)
 					throw exception("Invalid state!");

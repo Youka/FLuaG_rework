@@ -26,7 +26,7 @@ namespace Module{
 #ifdef _WIN32	// Unix needs the following function exported for DL informations
 	static
 #endif
-	std::string dir(){
+	std::string dir() noexcept{
 		// Result buffer
 		std::string path;
 		// Get this DLL filename into the buffer
