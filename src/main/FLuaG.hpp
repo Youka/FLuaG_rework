@@ -19,8 +19,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <memory>
 #include <lua.hpp>
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-	#include <thread>
-	#include <future>
+	#include "../utils/threading.hpp"
 #endif
 
 namespace FLuaG{
@@ -60,21 +59,7 @@ namespace FLuaG{
 			// Image data to Lua object
 			void lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const noexcept;
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-			std::promise<bool> main_prom;
-			std::future<bool> main_fut = main_prom.get_future();
-			std::promise<int> Lrun_prom;
-			std::future<int> Lrun_fut = Lrun_prom.get_future();
-			std::thread Lrun = std::thread([this](void){
-				int arg;
-				while((arg = this->Lrun_fut.get()) >= 0){
-					this->Lrun_prom = std::promise<int>();
-					this->Lrun_fut = this->Lrun_prom.get_future();
-					const int call_err = lua_pcall(this->L.get(), arg, 0, 0);
-					lua_gc(this->L.get(), LUA_GCCOLLECT, 0);	// Doesn't remove error message on stack top
-					this->main_prom.set_value(call_err);
-				}
-				this->L.reset();	// Garbage collection runs Lua too (__gc metamethods)
-			});
+			std::unique_ptr<Threading::Context<int>> call_context = decltype(call_context)(new (typename decltype(call_context)::element_type)());
 #endif
 		public:
 			// Ctor
@@ -82,9 +67,7 @@ namespace FLuaG{
 			Script(const std::string& filename);
 			Script(const std::string& filename, const VideoHeader header, const std::string& userdata);
 			// Dtor
-#ifdef FLUAG_FORCE_SINGLE_THREAD
-			~Script();
-#endif
+			~Script() = default;
 			// No copy
 			Script(const Script&) = delete;
 			Script& operator=(const Script&) = delete;
