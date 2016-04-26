@@ -23,51 +23,54 @@ Next reading the [documentations](docs/) and playing with examples *(see below)*
 ### Examples
 ---
 **test.vpy**
+```python
+# Import Vapoursynth
+import vapoursynth as vs
 
-	# Import Vapoursynth
-	import vapoursynth as vs
+# Get Vapoursynth core
+core = vs.get_core()
 
-	# Get Vapoursynth core
-	core = vs.get_core()
-
-	# Create grey clip
-	clip = core.std.BlankClip(width = 1280, height = 720, format = vs.RGB24, fpsnum = 24000, fpsden = 1001, length = 240, color = [127, 127, 127])
-	# Edit clip by FLuaG
-	core.std.LoadPlugin("<INSERT_PATH_HERE>/libfluag.so")
-	clip = core.graphics.FLuaG(clip, "test.lua")
-	# Set output clip
-	core.resize.Bicubic(clip, format=vs.YUV420P8, matrix_s="709").set_output()
+# Create grey clip
+clip = core.std.BlankClip(width = 1280, height = 720, format = vs.RGB24, fpsnum = 24000, fpsden = 1001, length = 240, color = [127, 127, 127])
+# Edit clip by FLuaG
+core.std.LoadPlugin("<INSERT_PATH_HERE>/libfluag.so")
+clip = core.graphics.FLuaG(clip, "test.lua")
+# Set output clip
+core.resize.Bicubic(clip, format=vs.YUV420P8, matrix_s="709").set_output()
+```
 
 **test.avs**
+```avisynth
+# Load FLuaG plugin
+LoadCPlugin("<INSERT_PATH_HERE>/libfluag.dll")
 
-	# Load FLuaG plugin
-	LoadCPlugin("<INSERT_PATH_HERE>/libfluag.dll")
-
-	# Create simple clip
-	ColorBars().KillAudio().Trim(0,300)
-	# Edit clip by FLuaG
-	FLuaG("test.lua")
+# Create simple clip
+ColorBars().KillAudio().Trim(0,300)
+# Edit clip by FLuaG
+FLuaG("test.lua")
+```
 
 **test.lua** *(if compiled with [LuaJIT](http://luajit.org/luajit.html) as Lua interpreter)*
+```lua
+-- Load FFI library
+local ffi = require("ffi")
 
-	-- Load FFI library
-	local ffi = require("ffi")
+-- Process frame
+function GetFrame(frame)
+	-- Fetch frame data
+	local data, data_size = frame(), #frame
 
-	-- Process frame
-	function GetFrame(frame)
-		-- Fetch frame data
-		local data, data_size = frame(), #frame
-
-		-- Edit frame data
-		local cdata = ffi.cast("uint8_t*", ffi.cast("const char*", data))
-		for i=0, data_size-1, _VIDEO.has_alpha and 4 or 3 do
-			-- Set pixel to red'ish color
-			cdata[i+2] = 255
-		end
-
-		-- Set frame data
-		frame(data)
+	-- Edit frame data
+	local cdata = ffi.cast("uint8_t*", ffi.cast("const char*", data))
+	for i=0, data_size-1, _VIDEO.has_alpha and 4 or 3 do
+		-- Set pixel to redish color
+		cdata[i+2] = 255
 	end
+
+	-- Set frame data
+	frame(data)
+end
+```
 ---
 For more, take a look at the [examples directory](examples/).
 

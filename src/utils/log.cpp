@@ -1,5 +1,5 @@
 /*
-Project: VVFRenderer
+Project: FLuaG
 File: log.cpp
 
 Copyright (c) 2015-2016, Christoph "Youka" Spanknebel
