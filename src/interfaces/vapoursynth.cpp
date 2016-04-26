@@ -28,13 +28,13 @@ namespace VS{
 	};
 
 	// Filter initialization
-	void VS_CC init_filter(VSMap*, VSMap*, void** inst_data, VSNode* node, VSCore*, const VSAPI* vsapi){
+	void VS_CC init_filter(VSMap*, VSMap*, void** inst_data, VSNode* node, VSCore*, const VSAPI* vsapi) noexcept{
 		// Set output clip informations
 		vsapi->setVideoInfo(static_cast<InstanceData*>(*inst_data)->vi, 1, node);
 	}
 
 	// Frame filtering
-	const VSFrameRef* VS_CC get_frame(int n, int activationReason, void** inst_data, void**, VSFrameContext* frame_ctx, VSCore* core, const VSAPI* vsapi){
+	const VSFrameRef* VS_CC get_frame(int n, int activationReason, void** inst_data, void**, VSFrameContext* frame_ctx, VSCore* core, const VSAPI* vsapi) noexcept{
 		InstanceData* data = static_cast<InstanceData*>(*inst_data);
 		// Frame creation
 		if(activationReason == arInitial)
@@ -71,12 +71,12 @@ namespace VS{
 	}
 
 	// Filter destruction
-	void VS_CC free_filter(void* inst_data, VSCore*, const VSAPI*){
+	void VS_CC free_filter(void* inst_data, VSCore*, const VSAPI*) noexcept{
 		delete static_cast<InstanceData*>(inst_data);
 	}
 
 	// Filter creation
-	void VS_CC apply_filter(const VSMap* in, VSMap* out, void*, VSCore* core, const VSAPI* vsapi){
+	void VS_CC apply_filter(const VSMap* in, VSMap* out, void*, VSCore* core, const VSAPI* vsapi) noexcept{
 		// Allocate instance data storage & extract clip into it
 		std::unique_ptr<InstanceData> inst_data(new InstanceData{{vsapi->propGetNode(in, "clip", 0, nullptr), [vsapi](VSNodeRef* node){vsapi->freeNode(node);}}});
 		inst_data->vi = vsapi->getVideoInfo(inst_data->node.get());
@@ -117,7 +117,7 @@ namespace VS{
 }
 
 // Vapoursynth plugin entry point
-VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin config_func, VSRegisterFunction reg_func, VSPlugin* plugin){
+VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin config_func, VSRegisterFunction reg_func, VSPlugin* plugin) noexcept{
 	// Write filter information to Vapoursynth configuration (identifier, namespace, description, vs version, is read-only, plugin storage)
 	config_func("youka.graphics.fluag", "graphics", PROJECT_DESCRIPTION, VAPOURSYNTH_API_VERSION, 1, plugin);
 	// Register filter to Vapoursynth with configuration in plugin storage (filter name, arguments, filter creation function, userdata, plugin storage)

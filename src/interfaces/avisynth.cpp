@@ -27,12 +27,12 @@ namespace AVS{
 	AVS_Library* avs_library = nullptr;
 
 	// Filter finished
-	void AVSC_CC free_filter(AVS_FilterInfo* filter_info){
+	void AVSC_CC free_filter(AVS_FilterInfo* filter_info) noexcept{
 		delete static_cast<FLuaG::Script*>(filter_info->user_data);
 	}
 
 	// Frame filtering
-	AVS_VideoFrame* AVSC_CC get_frame(AVS_FilterInfo* filter_info, int n){
+	AVS_VideoFrame* AVSC_CC get_frame(AVS_FilterInfo* filter_info, int n) noexcept{
 		// Get current frame
 		AVS_VideoFrame* frame = avs_library->avs_get_frame(filter_info->child, n);
 		assert(avs_get_row_size(frame) == filter_info->vi.width * (avs_is_rgb32(&filter_info->vi) ? 4 : 3) && avs_get_height(frame) == filter_info->vi.height);
@@ -51,7 +51,7 @@ namespace AVS{
 	}
 
 	// Filter call
-	AVS_Value AVSC_CC apply_filter(AVS_ScriptEnvironment* env, AVS_Value args, void*){
+	AVS_Value AVSC_CC apply_filter(AVS_ScriptEnvironment* env, AVS_Value args, void*) noexcept{
 		// Extract clip
 		AVS_FilterInfo* filter_info;
 		std::unique_ptr<AVS_Clip, void(*)(AVS_Clip*)> clip(avs_library->avs_new_c_filter(env, &filter_info, avs_array_elt(args, 0), 1), [](AVS_Clip* clip){avs_library->avs_release_clip(clip);});
@@ -95,7 +95,7 @@ namespace AVS{
 }
 
 // Avisynth plugin entry point
-AVSC_EXPORT const char* avisynth_c_plugin_init(AVS_ScriptEnvironment* env){
+AVSC_EXPORT const char* avisynth_c_plugin_init(AVS_ScriptEnvironment* env) noexcept{
 	// Avisynth library available and valid version?
 	if((AVS::avs_library || (AVS::avs_library = avs_load_library())) && !AVS::avs_library->avs_check_version(env, AVISYNTH_INTERFACE_VERSION))
 		// Register function to Avisynth scripting environment
