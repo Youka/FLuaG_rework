@@ -29,8 +29,8 @@ namespace FLuaG{
 		private:
 			const std::string message;
 		public:
-			exception(const std::string& message) : message(message){}
-			exception(std::string&& message) : message(std::move(message)){}
+			exception(const std::string& message) noexcept : message(message){}
+			exception(std::string&& message) noexcept : message(std::move(message)){}
 			const char* what() const throw() override{return message.c_str();}
 	};
 
@@ -58,7 +58,7 @@ namespace FLuaG{
 			// Userdata required by LoadFile function
 			std::string userdata;
 			// Image data to Lua object
-			void lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const;
+			void lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const noexcept;
 #ifdef FLUAG_FORCE_SINGLE_THREAD
 			std::promise<bool> main_prom;
 			std::future<bool> main_fut = main_prom.get_future();
@@ -79,8 +79,8 @@ namespace FLuaG{
 		public:
 			// Ctor
 			Script();
-			Script(const std::string& filename) throw(exception);
-			Script(const std::string& filename, const VideoHeader header, const std::string& userdata) throw(exception);
+			Script(const std::string& filename);
+			Script(const std::string& filename, const VideoHeader header, const std::string& userdata);
 			// Dtor
 #ifdef FLUAG_FORCE_SINGLE_THREAD
 			~Script();
@@ -89,14 +89,14 @@ namespace FLuaG{
 			Script(const Script&) = delete;
 			Script& operator=(const Script&) = delete;
 			// Move
-			Script(Script&& other);
-			Script& operator=(Script&& other);
+			Script(Script&& other) noexcept;
+			Script& operator=(Script&& other) noexcept;
 			// Setters
-			void SetVideo(const VideoHeader header);
-			void SetUserdata(const std::string& userdata);
-			void LoadFile(const std::string& filename) throw(exception);
-			void LoadScript(const std::string& script) throw(exception);
+			void SetVideo(const VideoHeader header) noexcept;
+			void SetUserdata(const std::string& userdata) noexcept;
+			void LoadFile(const std::string& filename);
+			void LoadScript(const std::string& script);
 			// Processing
-			void ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms) throw(exception);
+			void ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms);
 	};
 }

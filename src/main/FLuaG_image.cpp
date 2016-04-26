@@ -28,18 +28,18 @@ struct ImageData{
 };
 
 // Metatable methods
-static int image_data_delete(lua_State* L){
+static int image_data_delete(lua_State* L) noexcept{
 	delete *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	return 0;
 }
 
-static int image_data_size(lua_State* L){
+static int image_data_size(lua_State* L) noexcept{
 	const ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	lua_pushinteger(L, udata->height * udata->rowsize);
 	return 1;
 }
 
-static int image_data_access(lua_State* L){
+static int image_data_access(lua_State* L) noexcept{
 	// Get arguments
 	ImageData* udata = *static_cast<ImageData**>(luaL_checkudata(L, 1, LUA_IMAGE_DATA));
 	size_t data_len;
@@ -72,7 +72,7 @@ static int image_data_access(lua_State* L){
 #define LSTATE this->L.get()
 
 namespace FLuaG{
-	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const{
+	void Script::lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const noexcept{
 		// Create & push image data as Lua userdata
 		*static_cast<ImageData**>(lua_newuserdata(LSTATE, sizeof(ImageData*))) = new ImageData{image_data, this->image_rowsize, stride, this->image_height};
 		// Fetch/create Lua image data metatable

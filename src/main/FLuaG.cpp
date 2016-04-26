@@ -64,11 +64,11 @@ namespace FLuaG{
 		}
 	}
 
-	Script::Script(const std::string& filename) throw(exception) : Script(){
+	Script::Script(const std::string& filename) : Script(){
 		this->LoadFile(filename);
 	}
 
-	Script::Script(const std::string& filename, const VideoHeader header, const std::string& userdata) throw(exception) : Script(){
+	Script::Script(const std::string& filename, const VideoHeader header, const std::string& userdata) : Script(){
 		this->LoadFile(filename);
 		this->SetVideo(header);
 		this->SetUserdata(userdata);
@@ -81,11 +81,11 @@ namespace FLuaG{
 	}
 #endif
 
-	Script::Script(Script&& other) : Script(){
+	Script::Script(Script&& other) noexcept : Script(){
 		*this = std::move(other);
 	}
 
-	Script& Script::operator=(Script&& other){
+	Script& Script::operator=(Script&& other) noexcept{
 		// Save old Lua state for swapping
 		lua_State* old_L = this->L.release();
 		// Receive
@@ -101,7 +101,7 @@ namespace FLuaG{
 		return *this;
 	}
 
-	void Script::SetVideo(const VideoHeader header){
+	void Script::SetVideo(const VideoHeader header) noexcept{
 		// Create table for video informations
 		lua_createtable(LSTATE, 0, 5);
 		// Fill table with VideoHeader content
@@ -117,11 +117,11 @@ namespace FLuaG{
 		this->image_rowsize = header.has_alpha ? header.width << 2 : (header.width << 1) + header.width;
 	}
 
-	void Script::SetUserdata(const std::string& userdata){
+	void Script::SetUserdata(const std::string& userdata) noexcept{
 		this->userdata = userdata;
 	}
 
-	void Script::LoadFile(const std::string& filename) throw(exception){
+	void Script::LoadFile(const std::string& filename){
 		// Load file and push as function
 		if(luaL_loadfile(LSTATE, filename.c_str())){
 			const std::string err(lua_tostring(LSTATE, -1));
@@ -150,7 +150,7 @@ namespace FLuaG{
 #endif
 	}
 
-	void Script::LoadScript(const std::string& script) throw(exception){
+	void Script::LoadScript(const std::string& script){
 		// Load script and push as function
 		if(luaL_loadstring(LSTATE, script.c_str())){
 			const std::string err(lua_tostring(LSTATE, -1));
@@ -179,7 +179,7 @@ namespace FLuaG{
 #endif
 	}
 
-	void Script::ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms) throw(exception){
+	void Script::ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms){
 		// Check for valid stride
 		if(static_cast<unsigned>(::abs(stride)) < this->image_rowsize)
 			throw exception("Image stride cannot be smaller than rowsize!");
