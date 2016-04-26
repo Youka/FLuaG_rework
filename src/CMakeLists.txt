@@ -10,7 +10,6 @@ include(FindGLEW)
 include(FindPNG)
 include(${PROJECT_SOURCE_DIR}/cmake/FindLua.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/FindGLFW.cmake)
-include(${PROJECT_SOURCE_DIR}/cmake/LinkerFlags.cmake)
 find_package(Boost 1.54.0 COMPONENTS filesystem regex)
 if(NOT WIN32)
 	include(${PROJECT_SOURCE_DIR}/cmake/FindFontConfig.cmake)
@@ -93,7 +92,7 @@ message(STATUS "Additional compiler features: ${COMPILE_FEATURES}")
 # Set standard libraries link type (static vs dynamic)
 if(BUILD_STD_STATIC)
 	if(CMAKE_COMPILER_IS_GNUCC)
-		add_linker_flags(-static)
+		set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static")
 	else()	# MSVC
 		foreach(build_type
 			CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
