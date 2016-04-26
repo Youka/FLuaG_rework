@@ -20,6 +20,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <config.h>
 #include "../main/FLuaG.hpp"
 #include "../utils/textconv.hpp"
+#include "../utils/log.hpp"
 #include <cassert>
 
 namespace AVS{
@@ -28,11 +29,14 @@ namespace AVS{
 
 	// Filter finished
 	void AVSC_CC free_filter(AVS_FilterInfo* filter_info) noexcept{
+		LOG("Free Avisynth filter instance...");
 		delete static_cast<FLuaG::Script*>(filter_info->user_data);
+		LOG("Avisynth filter instance freed!");
 	}
 
 	// Frame filtering
 	AVS_VideoFrame* AVSC_CC get_frame(AVS_FilterInfo* filter_info, int n) noexcept{
+		LOG("Process frame in Avisynth filter...");
 		// Get current frame
 		AVS_VideoFrame* frame = avs_library->avs_get_frame(filter_info->child, n);
 		assert(avs_get_row_size(frame) == filter_info->vi.width * (avs_is_rgb32(&filter_info->vi) ? 4 : 3) && avs_get_height(frame) == filter_info->vi.height);
@@ -46,12 +50,14 @@ namespace AVS{
 			// Because the AVS C API error handling is broken
 			MessageBoxW(NULL, Utf8::to_utf16(e.what()).c_str(), L"FLuaG error", MB_OK | MB_ICONERROR);
 		}
+		LOG("Finished frame processing of Avisynth filter!");
 		// Pass frame further in processing chain
 		return frame;
 	}
 
 	// Filter call
 	AVS_Value AVSC_CC apply_filter(AVS_ScriptEnvironment* env, AVS_Value args, void*) noexcept{
+		LOG("Apply Avisynth filter function...");
 		// Extract clip
 		AVS_FilterInfo* filter_info;
 		std::unique_ptr<AVS_Clip, void(*)(AVS_Clip*)> clip(avs_library->avs_new_c_filter(env, &filter_info, avs_array_elt(args, 0), 1), [](AVS_Clip* clip){avs_library->avs_release_clip(clip);});
@@ -90,16 +96,19 @@ namespace AVS{
 		// Return filtered clip
 		AVS_Value out_val;
 		avs_library->avs_set_to_clip(&out_val, clip.get());
+		LOG("Avisynth filter function applied!");
 		return out_val;
 	}
 }
 
 // Avisynth plugin entry point
 AVSC_EXPORT const char* avisynth_c_plugin_init(AVS_ScriptEnvironment* env) noexcept{
+	LOG("Initialize Avisynth plugin...");
 	// Avisynth library available and valid version?
 	if((AVS::avs_library || (AVS::avs_library = avs_load_library())) && !AVS::avs_library->avs_check_version(env, AVISYNTH_INTERFACE_VERSION))
 		// Register function to Avisynth scripting environment
 		AVS::avs_library->avs_add_function(env, PROJECT_NAME, "cs[userdata]s", AVS::apply_filter, nullptr);
+	LOG("Avisynth plugin initialized!");
 	// Return plugin description
 	return PROJECT_DESCRIPTION;
 }

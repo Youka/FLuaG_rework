@@ -16,11 +16,13 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../lualibs/libs.h"
 #include "../utils/lua.h"
 #include "../utils/module.hpp"
+#include "../utils/log.hpp"
 
 #define LSTATE this->L.get()
 
 namespace FLuaG{
 	Script::Script(){
+		LOG("Default construct script...");
 		// Check Lua state allocation (unsafe C alloc)
 		if(!this->L)
 			throw std::bad_alloc();
@@ -62,39 +64,46 @@ namespace FLuaG{
 			}
 			lua_pop(LSTATE, 1);
 		}
+		LOG("Script default constructed!");
 	}
 
 	Script::Script(const std::string& filename) : Script(){
+		LOG("File construct script...");
 		this->LoadFile(filename);
+		LOG("Script constructed with file!");
 	}
 
 	Script::Script(const std::string& filename, const VideoHeader header, const std::string& userdata) : Script(){
+		LOG("File construct script with header & userdata...");
 		this->LoadFile(filename);
 		this->SetVideo(header);
 		this->SetUserdata(userdata);
+		LOG("Script constructed with file, header & userdata!");
 	}
 
 	Script::Script(Script&& other) noexcept : Script(){
+		LOG("Move construct script...");
 		*this = std::move(other);
+		LOG("Script move constructed!");
 	}
 
 	Script& Script::operator=(Script&& other) noexcept{
-		// Save old Lua state for swapping
-		lua_State* old_L = this->L.release();
-		// Receive
-		this->L.reset(other.L.release());
+		LOG("Move assign script...");
+		this->L.swap(other.L);
 		this->image_rowsize = other.image_rowsize;
+		other.image_rowsize = 0;
 		this->image_height = other.image_height;
-		this->userdata = std::move(other.userdata);
-		// (Send)
-		other.L.reset(old_L);
-		other.image_rowsize = other.image_height = 0;
-		other.userdata.clear();
-		// Return own reference
+		other.image_height = 0;
+		this->userdata.swap(other.userdata);
+#ifdef FLUAG_FORCE_SINGLE_THREAD
+		this->call_context.swap(other.call_context);
+#endif
+		LOG("Script move assigned!");
 		return *this;
 	}
 
 	void Script::SetVideo(const VideoHeader header) noexcept{
+		LOG("Set video informations to script...");
 		// Create table for video informations
 		lua_createtable(LSTATE, 0, 5);
 		// Fill table with VideoHeader content
@@ -108,13 +117,17 @@ namespace FLuaG{
 		// Save video informations for ProcessFrame function call
 		this->image_height = header.height;
 		this->image_rowsize = header.has_alpha ? header.width << 2 : (header.width << 1) + header.width;
+		LOG("Script got video informations set!");
 	}
 
 	void Script::SetUserdata(const std::string& userdata) noexcept{
+		LOG("Set userdata of script...");
 		this->userdata = userdata;
+		LOG("Script got userdata set!");
 	}
 
 	void Script::LoadFile(const std::string& filename){
+		LOG("Load file into script...");
 		// Load file and push as function
 		if(luaL_loadfile(LSTATE, filename.c_str())){
 			const std::string err(lua_tostring(LSTATE, -1));
@@ -141,9 +154,11 @@ namespace FLuaG{
 #else
 		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
 #endif
+		LOG("Script loaded file!");
 	}
 
 	void Script::LoadScript(const std::string& script){
+		LOG("Load string into script...");
 		// Load script and push as function
 		if(luaL_loadstring(LSTATE, script.c_str())){
 			const std::string err(lua_tostring(LSTATE, -1));
@@ -170,9 +185,11 @@ namespace FLuaG{
 #else
 		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
 #endif
+		LOG("Script loaded string!");
 	}
 
 	void Script::ProcessFrame(unsigned char* image_data, const int stride, const unsigned long ms){
+		LOG("Process frame by script...");
 		// Check for valid stride
 		if(static_cast<unsigned>(::abs(stride)) < this->image_rowsize)
 			throw exception("Image stride cannot be smaller than rowsize!");
@@ -202,5 +219,6 @@ namespace FLuaG{
 #else
 		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
 #endif
+		LOG("Script processed frame successfully!");
 	}
 }

@@ -17,6 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <config.h>
 #include "../main/FLuaG.hpp"
 #include "../utils/imageop.hpp"
+#include "../utils/log.hpp"
 #include <cassert>
 
 namespace VS{
@@ -29,12 +30,15 @@ namespace VS{
 
 	// Filter initialization
 	void VS_CC init_filter(VSMap*, VSMap*, void** inst_data, VSNode* node, VSCore*, const VSAPI* vsapi) noexcept{
+		LOG("Initialize Vapoursynth filter instance...");
 		// Set output clip informations
 		vsapi->setVideoInfo(static_cast<InstanceData*>(*inst_data)->vi, 1, node);
+		LOG("Vapoursynth filter instance initialized!");
 	}
 
 	// Frame filtering
 	const VSFrameRef* VS_CC get_frame(int n, int activationReason, void** inst_data, void**, VSFrameContext* frame_ctx, VSCore* core, const VSAPI* vsapi) noexcept{
+		LOG("Process frame in Vapoursynth filter...");
 		InstanceData* data = static_cast<InstanceData*>(*inst_data);
 		// Frame creation
 		if(activationReason == arInitial)
@@ -67,16 +71,20 @@ namespace VS{
 				vsapi->setFilterError(e.what(), frame_ctx);
 			}
 		}
+		LOG("Finished frame processing of Vapoursynth filter!");
 		return nullptr;
 	}
 
 	// Filter destruction
 	void VS_CC free_filter(void* inst_data, VSCore*, const VSAPI*) noexcept{
+		LOG("Free Vapoursynth filter instance...");
 		delete static_cast<InstanceData*>(inst_data);
+		LOG("Vapoursynth filter instance freed!");
 	}
 
 	// Filter creation
 	void VS_CC apply_filter(const VSMap* in, VSMap* out, void*, VSCore* core, const VSAPI* vsapi) noexcept{
+		LOG("Apply Vapoursynth filter function...");
 		// Allocate instance data storage & extract clip into it
 		std::unique_ptr<InstanceData> inst_data(new InstanceData{{vsapi->propGetNode(in, "clip", 0, nullptr), [vsapi](VSNodeRef* node){vsapi->freeNode(node);}}});
 		inst_data->vi = vsapi->getVideoInfo(inst_data->node.get());
@@ -113,13 +121,16 @@ namespace VS{
 		}catch(const FLuaG::exception& e){
 			vsapi->setError(out, e.what());
 		}
+		LOG("Vapoursynth filter function applied!");
 	}
 }
 
 // Vapoursynth plugin entry point
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin config_func, VSRegisterFunction reg_func, VSPlugin* plugin) noexcept{
+	LOG("Initialize Vapoursynth plugin...");
 	// Write filter information to Vapoursynth configuration (identifier, namespace, description, vs version, is read-only, plugin storage)
 	config_func("youka.graphics.fluag", "graphics", PROJECT_DESCRIPTION, VAPOURSYNTH_API_VERSION, 1, plugin);
 	// Register filter to Vapoursynth with configuration in plugin storage (filter name, arguments, filter creation function, userdata, plugin storage)
 	reg_func(PROJECT_NAME, "clip:clip;script:data;userdata:data:opt;", VS::apply_filter, nullptr, plugin);
+	LOG("Vapoursynth plugin initialized!");
 }
