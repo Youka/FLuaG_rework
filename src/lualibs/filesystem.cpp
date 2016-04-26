@@ -18,12 +18,12 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 using namespace boost;
 
-static int filesystem_absolute(lua_State* L){
+static int filesystem_absolute(lua_State* L) noexcept{
 	lua_pushstring(L, filesystem::absolute(luaL_checkstring(L, 1)).string().c_str());
 	return 1;
 }
 
-static int filesystem_canonical(lua_State* L){
+static int filesystem_canonical(lua_State* L) noexcept{
 	try{
 		lua_pushstring(L, filesystem::canonical(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
@@ -33,7 +33,7 @@ static int filesystem_canonical(lua_State* L){
 	return 0;
 }
 
-static int filesystem_copy(lua_State* L){
+static int filesystem_copy(lua_State* L) noexcept{
 	try{
 		filesystem::copy(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
 	}catch(const filesystem::filesystem_error& e){
@@ -42,7 +42,7 @@ static int filesystem_copy(lua_State* L){
 	return 0;
 }
 
-static int filesystem_mkdir(lua_State* L){
+static int filesystem_mkdir(lua_State* L) noexcept{
 	try{
 		lua_pushboolean(L, filesystem::create_directories(luaL_checkstring(L, 1)));
 		return 1;
@@ -52,7 +52,7 @@ static int filesystem_mkdir(lua_State* L){
 	return 0;
 }
 
-static int filesystem_link(lua_State* L){
+static int filesystem_link(lua_State* L) noexcept{
 	try{
 		filesystem::create_hard_link(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
 	}catch(const filesystem::filesystem_error& e){
@@ -61,7 +61,7 @@ static int filesystem_link(lua_State* L){
 	return 0;
 }
 
-static int filesystem_symlink(lua_State* L){
+static int filesystem_symlink(lua_State* L) noexcept{
 	try{
 		if(lua_gettop(L) > 1)
 			filesystem::create_symlink(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
@@ -75,7 +75,7 @@ static int filesystem_symlink(lua_State* L){
 	return 0;
 }
 
-static int filesystem_cd(lua_State* L){
+static int filesystem_cd(lua_State* L) noexcept{
 	try{
 		if(lua_gettop(L) > 0)
 			filesystem::current_path(luaL_checkstring(L, 1));
@@ -89,7 +89,7 @@ static int filesystem_cd(lua_State* L){
 	return 0;
 }
 
-static int filesystem_exists(lua_State* L){
+static int filesystem_exists(lua_State* L) noexcept{
 	try{
 		lua_pushboolean(L, filesystem::exists(luaL_checkstring(L, 1)));
 		return 1;
@@ -99,7 +99,7 @@ static int filesystem_exists(lua_State* L){
 	return 0;
 }
 
-static int filesystem_equal(lua_State* L){
+static int filesystem_equal(lua_State* L) noexcept{
 	try{
 		lua_pushboolean(L, filesystem::equivalent(luaL_checkstring(L, 1), luaL_checkstring(L, 2)));
 		return 1;
@@ -109,7 +109,7 @@ static int filesystem_equal(lua_State* L){
 	return 0;
 }
 
-static int filesystem_size(lua_State* L){
+static int filesystem_size(lua_State* L) noexcept{
 	try{
 		lua_pushinteger(L, filesystem::file_size(luaL_checkstring(L, 1)));
 		return 1;
@@ -119,7 +119,7 @@ static int filesystem_size(lua_State* L){
 	return 0;
 }
 
-static int filesystem_lastmod(lua_State* L){
+static int filesystem_lastmod(lua_State* L) noexcept{
 	try{
 		lua_pushinteger(L, filesystem::last_write_time(luaL_checkstring(L, 1)));
 		return 1;
@@ -129,7 +129,7 @@ static int filesystem_lastmod(lua_State* L){
 	return 0;
 }
 
-static int filesystem_perm(lua_State* L){
+static int filesystem_perm(lua_State* L) noexcept{
 	static const char* option_str[] = {"add", "remove", "owner_read", "owner_write", "owner_exe", "owner_all", "group_read", "group_write", "group_exe", "group_all", "others_read", "others_write", "others_exe", "others_all", nullptr};
 	using perms = filesystem::perms;
 	static const perms option_enum[] = {perms::add_perms, perms::remove_perms, perms::owner_read, perms::owner_write, perms::owner_exe, perms::owner_all, perms::group_read, perms::group_write, perms::group_exe, perms::group_all, perms::others_read, perms::others_write, perms::others_exe, perms::others_all};
@@ -154,7 +154,7 @@ static int filesystem_perm(lua_State* L){
 	return 0;
 }
 
-static int filesystem_remove(lua_State* L){
+static int filesystem_remove(lua_State* L) noexcept{
 	try{
 		if(luaL_optboolean(L, 2, false))
 			lua_pushinteger(L, filesystem::remove_all(luaL_checkstring(L, 1)));
@@ -167,7 +167,7 @@ static int filesystem_remove(lua_State* L){
 	return 0;
 }
 
-static int filesystem_rename(lua_State* L){
+static int filesystem_rename(lua_State* L) noexcept{
 	try{
 		filesystem::rename(luaL_checkstring(L, 1), luaL_checkstring(L, 2));
 	}catch(const filesystem::filesystem_error& e){
@@ -176,7 +176,7 @@ static int filesystem_rename(lua_State* L){
 	return 0;
 }
 
-static int filesystem_space(lua_State* L){
+static int filesystem_space(lua_State* L) noexcept{
 	try{
 		const filesystem::space_info sinfo = filesystem::space(luaL_checkstring(L, 1));
         lua_pushinteger(L, sinfo.capacity);
@@ -189,7 +189,7 @@ static int filesystem_space(lua_State* L){
 	return 0;
 }
 
-static int filesystem_type(lua_State* L){
+static int filesystem_type(lua_State* L) noexcept{
 	try{
 		static const char* types_str[] = {"status_error", "file_not_found", "regular_file", "directory_file", "symlink_file", "block_file", "character_file", "fifo_file", "socket_file", "type_unknown"};
 		using ftype = filesystem::file_type;
@@ -208,7 +208,7 @@ static int filesystem_type(lua_State* L){
 	return 0;
 }
 
-static int filesystem_sysabsolute(lua_State* L){
+static int filesystem_sysabsolute(lua_State* L) noexcept{
 	try{
 		lua_pushstring(L, filesystem::system_complete(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
@@ -218,7 +218,7 @@ static int filesystem_sysabsolute(lua_State* L){
 	return 0;
 }
 
-static int filesystem_tmpdir(lua_State* L){
+static int filesystem_tmpdir(lua_State* L) noexcept{
 	try{
 		lua_pushstring(L, filesystem::temp_directory_path().string().c_str());
 		return 1;
@@ -228,7 +228,7 @@ static int filesystem_tmpdir(lua_State* L){
 	return 0;
 }
 
-static int filesystem_unique(lua_State* L){
+static int filesystem_unique(lua_State* L) noexcept{
 	try{
 		lua_pushstring(L, filesystem::unique_path(luaL_checkstring(L, 1)).string().c_str());
 		return 1;
@@ -238,7 +238,7 @@ static int filesystem_unique(lua_State* L){
 	return 0;
 }
 
-static int filesystem_dir(lua_State* L){
+static int filesystem_dir(lua_State* L) noexcept{
 	try{
 		lua_newtable(L);
 		int i = 0;
@@ -252,7 +252,7 @@ static int filesystem_dir(lua_State* L){
 	return 0;
 }
 
-int luaopen_filesystem(lua_State* L){
+int luaopen_filesystem(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"absolute", filesystem_absolute},
 		{"canonical", filesystem_canonical},

@@ -20,7 +20,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <memory>
 #include <cassert>
 
-static int png_decode(std::istream& in, lua_State* L){
+static int png_decode(std::istream& in, lua_State* L) noexcept{
 	// Check PNG signature
 	static const unsigned PNG_SIG_BYTES = 8;
 	unsigned char png_sig[PNG_SIG_BYTES];
@@ -68,7 +68,7 @@ static int png_decode(std::istream& in, lua_State* L){
 	return 1;
 }
 
-static int png_encode(std::ostream& out, lua_State* L){
+static int png_encode(std::ostream& out, lua_State* L) noexcept{
 	// Get arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	lua_getfield(L, 1, "width");
@@ -115,19 +115,19 @@ static int png_encode(std::ostream& out, lua_State* L){
 }
 
 // General functions
-static int png_read(lua_State* L){
+static int png_read(lua_State* L) noexcept{
 	std::istringstream in(std::string(luaL_checkstring(L, 1), lua_rawlen(L, 1)));
 	return png_decode(in, L);
 }
 
-static int png_read_file(lua_State* L){
+static int png_read_file(lua_State* L) noexcept{
 	std::ifstream in(luaL_checkstring(L, 1), std::ios_base::binary);
 	if(!in)
 		return luaL_error(L, "Couldn't open input file!");
 	return png_decode(in, L);
 }
 
-static int png_write(lua_State* L){
+static int png_write(lua_State* L) noexcept{
 	std::ostringstream out;
 	png_encode(out, L);
 	const std::string out_str = out.str();
@@ -135,7 +135,7 @@ static int png_write(lua_State* L){
 	return 1;
 }
 
-static int png_write_file(lua_State* L){
+static int png_write_file(lua_State* L) noexcept{
 	std::ofstream out(luaL_checkstring(L, 1), std::ios_base::binary);
 	if(!out)
 		return luaL_error(L, "Couldn't open output file!");
@@ -144,12 +144,12 @@ static int png_write_file(lua_State* L){
 	return 0;
 }
 
-static int png_version(lua_State* L){
+static int png_version(lua_State* L) noexcept{
 	lua_pushstring(L, PNG_HEADER_VERSION_STRING);
 	return 1;
 }
 
-int luaopen_png(lua_State* L){
+int luaopen_png(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"read", png_read},
 		{"readfile", png_read_file},

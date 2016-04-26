@@ -17,7 +17,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <functional>
 #include <sstream>
 
-static int table_copy(lua_State* L){
+static int table_copy(lua_State* L) noexcept{
 	// Check main argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	// Get optional argument
@@ -51,7 +51,7 @@ static int table_copy(lua_State* L){
 	return 1;
 }
 
-static int table_tostring(lua_State* L){
+static int table_tostring(lua_State* L) noexcept{
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	// Remove unnecessary arguments
@@ -139,12 +139,12 @@ static int table_tostring(lua_State* L){
 	return 1;
 }
 
-static int table_allocate(lua_State* L){
+static int table_allocate(lua_State* L) noexcept{
 	lua_createtable(L, luaL_checkinteger(L, 1), luaL_checkinteger(L, 2));
 	return 1;
 }
 
-static int table_compare(lua_State* L){
+static int table_compare(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_checktype(L, 2, LUA_TTABLE);
@@ -179,7 +179,7 @@ static int table_compare(lua_State* L){
 	return 1;
 }
 
-static int table_count(lua_State* L){
+static int table_count(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
@@ -206,7 +206,7 @@ static int table_count(lua_State* L){
 	return 1;
 }
 
-static int table_find(lua_State* L){
+static int table_find(lua_State* L) noexcept{
 	// Get/check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
@@ -237,7 +237,7 @@ static int table_find(lua_State* L){
 	return 0;
 }
 
-static int table_fill(lua_State* L){
+static int table_fill(lua_State* L) noexcept{
 	// Get/check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
@@ -252,7 +252,7 @@ static int table_fill(lua_State* L){
 	return 0;
 }
 
-static int table_reverse(lua_State* L){
+static int table_reverse(lua_State* L) noexcept{
 	luaL_checktype(L, 1, LUA_TTABLE);
 	const size_t n = lua_rawlen(L, 1),
 		n2 = n >> 1;
@@ -263,7 +263,7 @@ static int table_reverse(lua_State* L){
 	return 0;
 }
 
-static int table_rotate(lua_State* L){
+static int table_rotate(lua_State* L) noexcept{
 	luaL_checktype(L, 1, LUA_TTABLE);
         int axis = luaL_checkinteger(L, 2);
 	const size_t n = lua_rawlen(L, 1);
@@ -279,7 +279,7 @@ static int table_rotate(lua_State* L){
 	return 0;
 }
 
-static int table_accumulate(lua_State* L){
+static int table_accumulate(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
@@ -297,7 +297,7 @@ static int table_accumulate(lua_State* L){
 	return 1;
 }
 
-static int table_insertn(lua_State* L){
+static int table_insertn(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	const int i = luaL_checkinteger(L, 2);
@@ -315,7 +315,7 @@ static int table_insertn(lua_State* L){
 	return 0;
 }
 
-static int table_removen(lua_State* L){
+static int table_removen(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	int i = luaL_checkinteger(L, 2);
@@ -335,7 +335,7 @@ static int table_removen(lua_State* L){
 	return 0;
 }
 
-static int table_move(lua_State* L){
+static int table_move(lua_State* L) noexcept{
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
 	int f = luaL_checkinteger(L, 2);
@@ -359,7 +359,7 @@ static int table_move(lua_State* L){
 	return 0;
 }
 
-int luaopen_tablex(lua_State* L){
+int luaopen_tablex(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"copy", table_copy},
 		{"tostring", table_tostring},

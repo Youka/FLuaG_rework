@@ -26,12 +26,12 @@ struct RegexArgs{
 };
 
 // Regex metatable methods
-static int regex_free(lua_State* L){
+static int regex_free(lua_State* L) noexcept{
 	delete *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	return 0;
 }
 
-static int regex_replace(lua_State* L){
+static int regex_replace(lua_State* L) noexcept{
 	const RegexArgs* args = *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	try{
 		lua_pushstring(L, boost::regex_replace(std::string(luaL_checkstring(L, 2)), args->expr, std::string(luaL_checkstring(L, 3)), args->flag).c_str());
@@ -41,7 +41,7 @@ static int regex_replace(lua_State* L){
 	return 1;
 }
 
-static int regex_match(lua_State* L){
+static int regex_match(lua_State* L) noexcept{
 	const RegexArgs* args = *static_cast<RegexArgs**>(luaL_checkudata(L, 1, LUA_REGEX));
 	const std::string str = luaL_checkstring(L, 2);
 	boost::sregex_iterator it(str.cbegin(), str.cend(), args->expr, args->flag), it_end;
@@ -61,7 +61,7 @@ static int regex_match(lua_State* L){
 }
 
 // Main functions
-static int regex_create(lua_State* L){
+static int regex_create(lua_State* L) noexcept{
 	// Get main argument
 	const char* expr = luaL_checkstring(L, 1);
 	// Get optional arguments
@@ -108,7 +108,7 @@ static int regex_create(lua_State* L){
 	return 1;
 }
 
-int luaopen_regex(lua_State* L){
+int luaopen_regex(lua_State* L)/* No exception specifier because of C declaration */{
 	lua_pushcfunction(L, regex_create);
 	return 1;
 }

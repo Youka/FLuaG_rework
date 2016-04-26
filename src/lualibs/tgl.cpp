@@ -45,12 +45,12 @@ static GLenum glGetError_s(){
 #define LUA_TGL_FBO "tgl_fbo"
 
 // Shader metatable methods
-static int tgl_shader_free(lua_State* L){
+static int tgl_shader_free(lua_State* L) noexcept{
 	glDeleteShader(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)));
 	return 0;
 }
 
-static int tgl_shader_create(lua_State* L){
+static int tgl_shader_create(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	static const char* option_str[] = {"vertex", "fragment", nullptr};
@@ -92,12 +92,12 @@ static int tgl_shader_create(lua_State* L){
 }
 
 // Program metatable methods
-static int tgl_program_free(lua_State* L){
+static int tgl_program_free(lua_State* L) noexcept{
 	glDeleteProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
 	return 0;
 }
 
-static int tgl_program_use(lua_State* L){
+static int tgl_program_use(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	glUseProgram(*static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM)));
 	if(glGetError_s())
@@ -105,7 +105,7 @@ static int tgl_program_use(lua_State* L){
 	return 0;
 }
 
-static int tgl_program_uniform(lua_State* L){
+static int tgl_program_uniform(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get main arguments
 	const GLuint program = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_PROGRAM));
@@ -207,7 +207,7 @@ static int tgl_program_uniform(lua_State* L){
 	return 0;
 }
 
-static int tgl_program_create(lua_State* L){
+static int tgl_program_create(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLuint vshader = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_SHADER)),
@@ -257,14 +257,14 @@ static int tgl_program_create(lua_State* L){
 }
 
 // VAO metatable methods
-static int tgl_vao_free(lua_State* L){
+static int tgl_vao_free(lua_State* L) noexcept{
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
 	glDeleteVertexArrays(1, &udata[1]);
 	glDeleteBuffers(1, &udata[0]);
 	return 0;
 }
 
-static int tgl_vao_draw(lua_State* L){
+static int tgl_vao_draw(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_VAO));
@@ -285,7 +285,7 @@ static int tgl_vao_draw(lua_State* L){
 	return 0;
 }
 
-static int tgl_vao_create(lua_State* L){
+static int tgl_vao_create(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Check arguments
 	luaL_checktype(L, 1, LUA_TTABLE);
@@ -370,7 +370,7 @@ static int tgl_vao_create(lua_State* L){
 }
 
 // Texture metatable methods
-static int tgl_texture_free(lua_State* L){
+static int tgl_texture_free(lua_State* L) noexcept{
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
 	glDeleteTextures(1, &udata[0]);
 	if(udata[1])
@@ -378,7 +378,7 @@ static int tgl_texture_free(lua_State* L){
 	return 0;
 }
 
-static int tgl_texture_param(lua_State* L){
+static int tgl_texture_param(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
@@ -419,7 +419,7 @@ static int tgl_texture_param(lua_State* L){
 	return 0;
 }
 
-static int tgl_texture_data(lua_State* L){
+static int tgl_texture_data(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
@@ -490,7 +490,7 @@ static int tgl_texture_data(lua_State* L){
 	return 3;
 }
 
-static int tgl_texture_bind(lua_State* L){
+static int tgl_texture_bind(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Set active texture
 	glActiveTexture(GL_TEXTURE0 + luaL_optinteger(L, 2, 0));
@@ -501,7 +501,7 @@ static int tgl_texture_bind(lua_State* L){
 	return 0;
 }
 
-static int tgl_texture_create(lua_State* L){
+static int tgl_texture_create(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLsizei width = luaL_checkinteger(L, 1),
@@ -557,20 +557,20 @@ static int tgl_texture_create(lua_State* L){
 }
 
 // Framebuffer metatable methods
-static int tgl_fbo_free(lua_State* L){
+static int tgl_fbo_free(lua_State* L) noexcept{
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
 	glDeleteFramebuffers(1, &udata[2]);
 	glDeleteRenderbuffers(2, &udata[0]);
 	return 0;
 }
 
-static int tgl_fbo_bind(lua_State *L){
+static int tgl_fbo_bind(lua_State *L) noexcept{
 	TGL_CONTEXT_CHECK
 	glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO))[2]);
 	return 0;
 }
 
-static int tgl_fbo_info(lua_State *L){
+static int tgl_fbo_info(lua_State *L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Temporary bind RBO and get data
 	glBindRenderbuffer(GL_RENDERBUFFER, *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO)));
@@ -585,7 +585,7 @@ static int tgl_fbo_info(lua_State *L){
 	return 3;
 }
 
-static int tgl_fbo_blit(lua_State *L){
+static int tgl_fbo_blit(lua_State *L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLuint* udata = static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_FBO));
@@ -620,7 +620,7 @@ static int tgl_fbo_blit(lua_State *L){
 	return 1;
 }
 
-static int tgl_fbo_create(lua_State* L){
+static int tgl_fbo_create(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const int width = luaL_checkinteger(L, 1),
@@ -680,7 +680,7 @@ static int tgl_fbo_create(lua_State* L){
 }
 
 // General functions
-static int tgl_clear(lua_State* L){
+static int tgl_clear(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get main argument
 	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
@@ -702,7 +702,7 @@ static int tgl_clear(lua_State* L){
 	return 0;
 }
 
-static int tgl_viewport(lua_State* L){
+static int tgl_viewport(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	glViewport(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
 	if(glGetError_s())
@@ -710,7 +710,7 @@ static int tgl_viewport(lua_State* L){
 	return 0;
 }
 
-static int tgl_size(lua_State* L){
+static int tgl_size(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	static const char* option_str[] = {"points", "lines", nullptr};
 	static const GLenum option_enum[] = {GL_POINTS, GL_LINES};
@@ -727,7 +727,7 @@ static int tgl_size(lua_State* L){
 	return 0;
 }
 
-static int tgl_mode(lua_State* L){
+static int tgl_mode(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	static const char* option_str[] = {"point", "line", "fill", nullptr};
 	static const GLenum option_enum[] = {GL_POINT, GL_LINE, GL_FILL};
@@ -735,7 +735,7 @@ static int tgl_mode(lua_State* L){
 	return 0;
 }
 
-static int tgl_scissor(lua_State* L){
+static int tgl_scissor(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	if(lua_gettop(L)){
 		glScissor(luaL_checkinteger(L, 1), luaL_checkinteger(L, 2), luaL_checkinteger(L, 3), luaL_checkinteger(L, 4));
@@ -747,7 +747,7 @@ static int tgl_scissor(lua_State* L){
 	return 0;
 }
 
-static int tgl_logic(lua_State* L){
+static int tgl_logic(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	if(lua_gettop(L)){
 		static const char* option_str[] = {"clear", "set", "copy", "copy inverted", "noop", "invert", "and", "nand", "or", "nor", "xor", "equiv", "and reverse", "and inverted", "or reverse", "or inverted", nullptr};
@@ -759,7 +759,7 @@ static int tgl_logic(lua_State* L){
 	return 0;
 }
 
-static int tgl_mask(lua_State* L){
+static int tgl_mask(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	static const char* option_str[] = {"color", "depth", "stencil", nullptr};
 	static const GLenum option_enum[] = {GL_COLOR, GL_DEPTH, GL_STENCIL};
@@ -777,7 +777,7 @@ static int tgl_mask(lua_State* L){
 	return 0;
 }
 
-static int tgl_depth(lua_State* L){
+static int tgl_depth(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	if(lua_gettop(L)){
 		static const char* option_str[] = {"never", "less", "equal", "less equal", "greater", "not equal", "greater equal", "always", nullptr};
@@ -789,7 +789,7 @@ static int tgl_depth(lua_State* L){
 	return 0;
 }
 
-static int tgl_stencil(lua_State* L){
+static int tgl_stencil(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	if(lua_gettop(L)){
 		// Check argument
@@ -848,7 +848,7 @@ static int tgl_stencil(lua_State* L){
 	return 0;
 }
 
-static int tgl_blend(lua_State* L){
+static int tgl_blend(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	if(lua_gettop(L)){
 		// Check argument
@@ -927,7 +927,7 @@ static int tgl_blend(lua_State* L){
 	return 0;
 }
 
-static int tgl_info(lua_State* L){
+static int tgl_info(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	static const char* option_str[] = {"version", "extensions", "error", nullptr};
 	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS, GL_ERROR_REGAL};
@@ -962,7 +962,7 @@ static std::mutex context_mutex;
 static unsigned context_count = 0;
 
 // Context metatable methods
-static int tgl_context_free(lua_State* L){
+static int tgl_context_free(lua_State* L) noexcept{
 	std::unique_lock<std::mutex> context_lock(context_mutex);
 	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	if(!--context_count)
@@ -970,7 +970,7 @@ static int tgl_context_free(lua_State* L){
 	return 0;
 }
 
-static int tgl_context_activate(lua_State* L){
+static int tgl_context_activate(lua_State* L) noexcept{
 	// Set current GL context to use
 	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr : *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
 	// Further context preparations
@@ -986,7 +986,7 @@ static int tgl_context_activate(lua_State* L){
 	return 0;
 }
 
-static int tgl_context_create(lua_State* L){
+static int tgl_context_create(lua_State* L) noexcept{
 	// Initialize GLFW with general properties
 	std::unique_lock<std::mutex> context_lock(context_mutex);
 	if(!context_count){
@@ -1041,7 +1041,7 @@ static int tgl_context_create(lua_State* L){
 }
 
 // TGL library load
-int luaopen_tgl(lua_State* L){
+int luaopen_tgl(lua_State* L)/* No exception specifier because of C declaration */{
 	lua_pushcfunction(L, tgl_context_create);
 	return 1;
 }

@@ -18,7 +18,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #define LUA_FONT "font"
 
-static int font_list(lua_State* L){
+static int font_list(lua_State* L) noexcept{
 	try{
 		const auto list = Font::list();
 		lua_createtable(L, list.size(), 0);
@@ -38,12 +38,12 @@ static int font_list(lua_State* L){
 	return 1;
 }
 
-static int font_free(lua_State* L){
+static int font_free(lua_State* L) noexcept{
 	delete *static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT));
 	return 0;
 }
 
-static int font_data(lua_State* L){
+static int font_data(lua_State* L) noexcept{
 	const Font::Font* font = *static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT));
 	lua_pushstring(L, font->get_family().c_str());
 	lua_pushnumber(L, font->get_size());
@@ -56,7 +56,7 @@ static int font_data(lua_State* L){
 	return 8;
 }
 
-static int font_metrics(lua_State* L){
+static int font_metrics(lua_State* L) noexcept{
 	const Font::Font::Metrics metrics = (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->metrics();
 	lua_pushnumber(L, metrics.height);
 	lua_pushnumber(L, metrics.ascent);
@@ -66,12 +66,12 @@ static int font_metrics(lua_State* L){
 	return 5;
 }
 
-static int font_text_width(lua_State* L){
+static int font_text_width(lua_State* L) noexcept{
 	lua_pushnumber(L, (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->text_width(luaL_checkstring(L, 2)));
 	return 1;
 }
 
-static int font_text_path(lua_State* L){
+static int font_text_path(lua_State* L) noexcept{
 	try{
 		const std::vector<Font::Font::PathSegment> segments = (*static_cast<Font::Font**>(luaL_checkudata(L, 1, LUA_FONT)))->text_path(luaL_checkstring(L, 2));
 		lua_createtable(L, segments.size() / 3, 0);	// Memory guess by expecting all segments are moves/lines
@@ -112,7 +112,7 @@ static int font_text_path(lua_State* L){
 	return 1;
 }
 
-static int font_create(lua_State* L){
+static int font_create(lua_State* L) noexcept{
 	try{
 		Font::Font font(luaL_checkstring(L, 1), luaL_optnumber(L, 2, 12),
 					luaL_optboolean(L, 3, false), luaL_optboolean(L, 4, false), luaL_optboolean(L, 5, false), luaL_optboolean(L, 6, false),
@@ -137,7 +137,7 @@ static int font_create(lua_State* L){
 	return 1;
 }
 
-int luaopen_font(lua_State* L){
+int luaopen_font(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"list", font_list},
 		{"create", font_create},

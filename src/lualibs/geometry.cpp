@@ -19,14 +19,14 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <memory>
 #include <cassert>
 
-static int geometry_stretch(lua_State* L){
+static int geometry_stretch(lua_State* L) noexcept{
 	const Geometry::Point2d v = Geometry::stretch({luaL_checknumber(L, 1), luaL_checknumber(L,2)}, luaL_checknumber(L, 3));
 	lua_pushnumber(L, v.x);
 	lua_pushnumber(L, v.y);
 	return 2;
 }
 
-static int geometry_line_intersect(lua_State* L){
+static int geometry_line_intersect(lua_State* L) noexcept{
 	try{
 		const Geometry::Point2d p = Geometry::line_intersect({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, {luaL_checknumber(L, 5), luaL_checknumber(L, 6)}, {luaL_checknumber(L, 7), luaL_checknumber(L, 8)});
 		lua_pushnumber(L, p.x);
@@ -38,22 +38,22 @@ static int geometry_line_intersect(lua_State* L){
 	return 0;
 }
 
-static int geometry_on_line(lua_State* L){
+static int geometry_on_line(lua_State* L) noexcept{
 	lua_pushboolean(L, Geometry::on_line({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, {luaL_checknumber(L, 5), luaL_checknumber(L, 6)}));
 	return 1;
 }
 
-static int geometry_in_triangle(lua_State* L){
+static int geometry_in_triangle(lua_State* L) noexcept{
 	lua_pushboolean(L, Geometry::in_triangle({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, {luaL_checknumber(L, 5), luaL_checknumber(L, 6)}, {luaL_checknumber(L, 7), luaL_checknumber(L, 8)}));
 	return 1;
 }
 
-static int geometry_direction(lua_State* L){
+static int geometry_direction(lua_State* L) noexcept{
 	lua_pushinteger(L, Math::sign(lua_gettop(L) > 4 ? Geometry::normal_z({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, {luaL_checknumber(L, 5), luaL_checknumber(L, 6)}) : Geometry::normal_z({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)})));
 	return 1;
 }
 
-static int geometry_bound(lua_State* L){
+static int geometry_bound(lua_State* L) noexcept{
 	luaL_checktype(L, 1, LUA_TTABLE);
 	const size_t n = lua_rawlen(L, 1) & ~0x1;	// Size as multiple of 2
 	if(n != 0){
@@ -82,7 +82,7 @@ static int geometry_bound(lua_State* L){
 	return 0;
 }
 
-static int geometry_arc_curve(lua_State* L){
+static int geometry_arc_curve(lua_State* L) noexcept{
 	const auto curves = Geometry::arc_to_curves({luaL_checknumber(L, 1), luaL_checknumber(L, 2)}, {luaL_checknumber(L, 3), luaL_checknumber(L, 4)}, luaL_checknumber(L, 5));
 	lua_createtable(L, curves.size() << 3, 0);
 	int i = 0;
@@ -93,7 +93,7 @@ static int geometry_arc_curve(lua_State* L){
 	return 1;
 }
 
-static int geometry_curve_flatten(lua_State* L){
+static int geometry_curve_flatten(lua_State* L) noexcept{
 	try{
 		const auto lines = Geometry::curve_flatten({{
 				{luaL_checknumber(L, 1), luaL_checknumber(L, 2)},
@@ -119,17 +119,17 @@ struct TessState{
 	std::vector<Geometry::Point2d> buffer;
 	std::vector<std::array<Geometry::Point2d,3>> triangles;
 };
-static void APIENTRY tess_begin_callback (const GLenum type, void* userdata){
+static void APIENTRY tess_begin_callback (const GLenum type, void* userdata) noexcept{
 	static_cast<TessState*>(userdata)->cur_type = type;
 }
-static void APIENTRY tess_vertex_callback(const void* vertex, void* userdata){
+static void APIENTRY tess_vertex_callback(const void* vertex, void* userdata) noexcept{
 	const auto& pvertex = *static_cast<const std::array<double,3>*>(vertex);
 	static_cast<TessState*>(userdata)->buffer.push_back({pvertex[0], pvertex[1]});
 }
-static void APIENTRY tess_combine_callback(const GLdouble coords[3], const void*[4], const GLfloat[4], void** out){
+static void APIENTRY tess_combine_callback(const GLdouble coords[3], const void*[4], const GLfloat[4], void** out) noexcept{
 	*out = new std::array<double,3>{coords[0], coords[1], coords[2]};	// Safe because std::array is just a wrapper around C array
 }
-static void APIENTRY tess_end_callback(void* userdata){
+static void APIENTRY tess_end_callback(void* userdata) noexcept{
 	TessState* state = static_cast<TessState*>(userdata);
 	switch(state->cur_type){
 		case GL_TRIANGLES:
@@ -147,10 +147,10 @@ static void APIENTRY tess_end_callback(void* userdata){
 	}
 	state->buffer.clear();
 }
-static void APIENTRY tess_error_callback(GLenum err, void* userdata){
+static void APIENTRY tess_error_callback(GLenum err, void* userdata) noexcept{
 	static_cast<TessState*>(userdata)->error = err;
 }
-static int geometry_tesselate(lua_State* L){
+static int geometry_tesselate(lua_State* L) noexcept{
 	// Check argument
 	luaL_checktype(L, 1, LUA_TTABLE);
 	// Get argument (table) as contours of 2d/fake-3d points
@@ -203,37 +203,37 @@ static int geometry_tesselate(lua_State* L){
 
 #define LUA_MATRIX "matrix"
 using Matrix = Math::Matrix4x4<double>;
-static void lua_pushmatrix(lua_State* L, const Matrix& matrix);
+static void lua_pushmatrix(lua_State* L, const Matrix& matrix) noexcept;
 
-static int geometry_matrix_free(lua_State* L){
+static int geometry_matrix_free(lua_State* L) noexcept{
 	delete *static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX));
 	return 0;
 }
 
-static int geometry_matrix_mul(lua_State* L){
+static int geometry_matrix_mul(lua_State* L) noexcept{
 	lua_pushmatrix(L, **static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)) * **static_cast<Matrix**>(luaL_checkudata(L, 2, LUA_MATRIX)));
 	return 1;
 }
 
-static int geometry_matrix_multiply(lua_State* L){
+static int geometry_matrix_multiply(lua_State* L) noexcept{
 	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->multiply(**static_cast<Matrix**>(luaL_checkudata(L, 2, LUA_MATRIX)));
 	lua_settop(L, 1);
 	return 1;
 }
 
-static int geometry_matrix_translate(lua_State* L){
+static int geometry_matrix_translate(lua_State* L) noexcept{
 	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->translate(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
 	lua_settop(L, 1);
 	return 1;
 }
 
-static int geometry_matrix_scale(lua_State* L){
+static int geometry_matrix_scale(lua_State* L) noexcept{
 	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->scale(luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_checknumber(L, 4));
 	lua_settop(L, 1);
 	return 1;
 }
 
-static int geometry_matrix_rotate(lua_State* L){
+static int geometry_matrix_rotate(lua_State* L) noexcept{
 	Matrix::Axis axis = Matrix::Axis::X;
 	static const char* option_str[] = {"x", "y", "z", nullptr};
 	switch(luaL_checkoption(L, 2, nullptr, option_str)){
@@ -246,18 +246,18 @@ static int geometry_matrix_rotate(lua_State* L){
 	return 1;
 }
 
-static int geometry_matrix_identity(lua_State* L){
+static int geometry_matrix_identity(lua_State* L) noexcept{
 	(*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->identity();
 	lua_settop(L, 1);
 	return 1;
 }
 
-static int geometry_matrix_invert(lua_State* L){
+static int geometry_matrix_invert(lua_State* L) noexcept{
 	lua_pushboolean(L, (*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->invert());
 	return 1;
 }
 
-static int geometry_matrix_transform(lua_State* L){
+static int geometry_matrix_transform(lua_State* L) noexcept{
 	const auto vec = (*static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX)))->transform({luaL_checknumber(L, 2), luaL_checknumber(L, 3), luaL_optnumber(L, 4, 0), luaL_optnumber(L, 5, 1)});
 	lua_pushnumber(L, vec[0]);
 	lua_pushnumber(L, vec[1]);
@@ -266,7 +266,7 @@ static int geometry_matrix_transform(lua_State* L){
 	return 4;
 }
 
-static int geometry_matrix_data(lua_State* L){
+static int geometry_matrix_data(lua_State* L) noexcept{
 	Matrix& matrix = **static_cast<Matrix**>(luaL_checkudata(L, 1, LUA_MATRIX));
 	if(lua_gettop(L) == 1){
 		lua_pushnumber(L, matrix[0]); lua_pushnumber(L, matrix[1]); lua_pushnumber(L, matrix[2]); lua_pushnumber(L, matrix[3]);
@@ -283,7 +283,7 @@ static int geometry_matrix_data(lua_State* L){
 	}
 }
 
-void lua_pushmatrix(lua_State* L, const Matrix& matrix){ // static definition on declaration
+void lua_pushmatrix(lua_State* L, const Matrix& matrix) noexcept{ // static definition on declaration
 	*static_cast<Matrix**>(lua_newuserdata(L, sizeof(Matrix*))) = new Matrix(matrix);
 	if(luaL_newmetatable(L, LUA_MATRIX)){
 		static const luaL_Reg l[] = {
@@ -305,7 +305,7 @@ void lua_pushmatrix(lua_State* L, const Matrix& matrix){ // static definition on
 	lua_setmetatable(L, -2);
 }
 
-static int geometry_matrix_create(lua_State* L){
+static int geometry_matrix_create(lua_State* L) noexcept{
 	switch(lua_gettop(L)){
 		case 0:
 			lua_pushmatrix(L, Matrix());
@@ -321,7 +321,7 @@ static int geometry_matrix_create(lua_State* L){
 	return 1;
 }
 
-int luaopen_geometry(lua_State* L){
+int luaopen_geometry(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"stretch", geometry_stretch},
 		{"lineintersect", geometry_line_intersect},

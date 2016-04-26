@@ -18,17 +18,17 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include <complex>
 #include <algorithm>
 
-static int math_trunc(lua_State* L){
+static int math_trunc(lua_State* L) noexcept{
 	lua_pushinteger(L, std::trunc(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_round(lua_State* L){
+static int math_round(lua_State* L) noexcept{
 	lua_pushinteger(L, std::round(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_trim(lua_State* L){
+static int math_trim(lua_State* L) noexcept{
 	const lua_Number x = luaL_checknumber(L, 1);
 	lua_Number a = luaL_checknumber(L, 2),
 		b = luaL_checknumber(L, 3);
@@ -37,49 +37,49 @@ static int math_trim(lua_State* L){
 	return 1;
 }
 
-static int math_sign(lua_State* L){
+static int math_sign(lua_State* L) noexcept{
 	lua_pushinteger(L, Math::sign(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_hypot(lua_State* L){
+static int math_hypot(lua_State* L) noexcept{
 	lua_pushnumber(L, std::hypot(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
 	return 1;
 }
 
-static int math_asinh(lua_State* L){
+static int math_asinh(lua_State* L) noexcept{
 	lua_pushnumber(L, std::asinh(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_acosh(lua_State* L){
+static int math_acosh(lua_State* L) noexcept{
 	lua_pushnumber(L, std::acosh(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_atanh(lua_State* L){
+static int math_atanh(lua_State* L) noexcept{
 	lua_pushnumber(L, std::atanh(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_erf(lua_State* L){
+static int math_erf(lua_State* L) noexcept{
 	lua_pushnumber(L, std::erf(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_tgamma(lua_State* L){
+static int math_tgamma(lua_State* L) noexcept{
 	lua_pushnumber(L, std::tgamma(luaL_checknumber(L, 1)));
 	return 1;
 }
 
-static int math_frexp(lua_State* L){
+static int math_frexp(lua_State* L) noexcept{
 	int exp;
 	lua_pushnumber(L, std::frexp(luaL_checknumber(L, 1), &exp));
 	lua_pushinteger(L, exp);
 	return 2;
 }
 
-static int math_classify(lua_State* L){
+static int math_classify(lua_State* L) noexcept{
 	switch(std::fpclassify(luaL_checknumber(L, 1))){
 		case FP_INFINITE: lua_pushstring(L, "inf"); break;
 		case FP_NAN: lua_pushstring(L, "nan"); break;
@@ -93,14 +93,14 @@ static int math_classify(lua_State* L){
 
 #define LUA_COMPLEX "complex"
 using complex = std::complex<double>;
-static void lua_pushcomplex(lua_State* L, const complex& c);
+static void lua_pushcomplex(lua_State* L, const complex& c) noexcept;
 
-static int math_complex_free(lua_State* L){
+static int math_complex_free(lua_State* L) noexcept{
 	delete *static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX));
 	return 0;
 }
 
-static int math_complex_access(lua_State* L){
+static int math_complex_access(lua_State* L) noexcept{
 	complex* x = *static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX));
 	if(lua_isnumber(L, 2) || lua_isnumber(L, 3)){
 		if(lua_isnumber(L, 2))
@@ -115,138 +115,138 @@ static int math_complex_access(lua_State* L){
 	return 0;
 }
 
-static int math_complex_tostring(lua_State* L){
+static int math_complex_tostring(lua_State* L) noexcept{
 	const complex* x = *static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX));
 	lua_pushfstring(L, "(%f,%f)", x->real(), x->imag());
 	return 1;
 }
 
-static int math_complex_add(lua_State* L){
+static int math_complex_add(lua_State* L) noexcept{
 	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) + **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
 	return 1;
 }
 
-static int math_complex_sub(lua_State* L){
+static int math_complex_sub(lua_State* L) noexcept{
 	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) - **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
 	return 1;
 }
 
-static int math_complex_mul(lua_State* L){
+static int math_complex_mul(lua_State* L) noexcept{
 	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) * **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
 	return 1;
 }
 
-static int math_complex_div(lua_State* L){
+static int math_complex_div(lua_State* L) noexcept{
 	lua_pushcomplex(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) / **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
 	return 1;
 }
 
-static int math_complex_equal(lua_State* L){
+static int math_complex_equal(lua_State* L) noexcept{
 	lua_pushboolean(L, **static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)) == **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX)));
 	return 1;
 }
 
-static int math_complex_pow(lua_State* L){
+static int math_complex_pow(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::pow(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX)), **static_cast<complex**>(luaL_checkudata(L, 2, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_abs(lua_State* L){
+static int math_complex_abs(lua_State* L) noexcept{
 	lua_pushnumber(L, std::abs(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_arg(lua_State* L){
+static int math_complex_arg(lua_State* L) noexcept{
 	lua_pushnumber(L, std::arg(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_norm(lua_State* L){
+static int math_complex_norm(lua_State* L) noexcept{
 	lua_pushnumber(L, std::norm(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_conj(lua_State* L){
+static int math_complex_conj(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::conj(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_exp(lua_State* L){
+static int math_complex_exp(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::exp(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_log(lua_State* L){
+static int math_complex_log(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::log(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_sqrt(lua_State* L){
+static int math_complex_sqrt(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::sqrt(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_sin(lua_State* L){
+static int math_complex_sin(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::sin(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_cos(lua_State* L){
+static int math_complex_cos(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::cos(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_tan(lua_State* L){
+static int math_complex_tan(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::tan(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_asin(lua_State* L){
+static int math_complex_asin(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::asin(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_acos(lua_State* L){
+static int math_complex_acos(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::acos(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_atan(lua_State* L){
+static int math_complex_atan(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::atan(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_sinh(lua_State* L){
+static int math_complex_sinh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::sinh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_cosh(lua_State* L){
+static int math_complex_cosh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::cosh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_tanh(lua_State* L){
+static int math_complex_tanh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::tanh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_asinh(lua_State* L){
+static int math_complex_asinh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::asinh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_acosh(lua_State* L){
+static int math_complex_acosh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::acosh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-static int math_complex_atanh(lua_State* L){
+static int math_complex_atanh(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::atanh(**static_cast<complex**>(luaL_checkudata(L, 1, LUA_COMPLEX))));
 	return 1;
 }
 
-void lua_pushcomplex(lua_State* L, const complex& c){ // static definition on declaration
+void lua_pushcomplex(lua_State* L, const complex& c) noexcept{ // static definition on declaration
 	*static_cast<complex**>(lua_newuserdata(L, sizeof(complex*))) = new complex(c);
 	if(luaL_newmetatable(L, LUA_COMPLEX)){
 		static const luaL_Reg l[] = {
@@ -286,17 +286,17 @@ void lua_pushcomplex(lua_State* L, const complex& c){ // static definition on de
 	lua_setmetatable(L, -2);
 }
 
-static int math_complex_create(lua_State* L){
+static int math_complex_create(lua_State* L) noexcept{
 	lua_pushcomplex(L, {luaL_optnumber(L, 1, 0), luaL_optnumber(L, 2, 0)});
 	return 1;
 }
 
-static int math_polar(lua_State* L){
+static int math_polar(lua_State* L) noexcept{
 	lua_pushcomplex(L, std::polar(luaL_checknumber(L, 1), luaL_optnumber(L, 2, 0)));
 	return 1;
 }
 
-static int math_gauss(lua_State* L){
+static int math_gauss(lua_State* L) noexcept{
 	const double x = luaL_checknumber(L, 1),
 		sigma = luaL_checknumber(L, 2);
 	constexpr static const double sqrtpi2 = std::sqrt(2 * M_PI);
@@ -304,12 +304,12 @@ static int math_gauss(lua_State* L){
 	return 1;
 }
 
-static int math_fac(lua_State* L){
+static int math_fac(lua_State* L) noexcept{
 	lua_pushinteger(L, Math::fac(luaL_checkinteger(L, 1)));
 	return 1;
 }
 
-static int math_bezier(lua_State* L){
+static int math_bezier(lua_State* L) noexcept{
 	const double pct = luaL_checknumber(L, 1),
 		pct_inv = 1 - pct;
 	const int top = lua_gettop(L);
@@ -329,7 +329,7 @@ static int math_bezier(lua_State* L){
 	return 1;
 }
 
-int luaopen_mathx(lua_State* L){
+int luaopen_mathx(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"trunc", math_trunc},
 		{"round", math_round},

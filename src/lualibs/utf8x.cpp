@@ -16,7 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../utils/lua.h"
 
 // Helpers
-static unsigned charsize(const unsigned char c){
+static unsigned charsize(const unsigned char c) noexcept{
 	if(c < 128)
 		return 1;
 	else if(c < 224)
@@ -26,7 +26,7 @@ static unsigned charsize(const unsigned char c){
 	return 4;
 }
 
-static bool checkchar(const unsigned char* c){
+static bool checkchar(const unsigned char* c) noexcept{
 	const unsigned cn = charsize(*c);
 	return *c != 0x0 && (*c <= 0x7f || (*c >= 0xc2 && *c <= 0xf4)) &&
 		(cn < 2 || (c[1] >= 0x80 && c[1] <= 0xbf)) &&
@@ -35,7 +35,7 @@ static bool checkchar(const unsigned char* c){
 }
 
 // General functions
-static int utf8_charrange(lua_State* L){
+static int utf8_charrange(lua_State* L) noexcept{
 	// Get arguments
 	size_t s_len;
 	const char* s = luaL_checklstring(L, 1, &s_len);
@@ -50,7 +50,7 @@ static int utf8_charrange(lua_State* L){
 	return 0;
 }
 
-static int utf8_chars(lua_State* L){
+static int utf8_chars(lua_State* L) noexcept{
 	luaL_checktype(L, 1, LUA_TSTRING);
 	lua_pushinteger(L, 0);
 	lua_pushcclosure(L, [](lua_State* L){
@@ -69,7 +69,7 @@ static int utf8_chars(lua_State* L){
 	return 1;
 }
 
-static int utf8_len(lua_State* L){
+static int utf8_len(lua_State* L) noexcept{
 	unsigned n = 0;
 	for(const char* s = luaL_checkstring(L, 1); *s != '\0'; s += charsize(*s), ++n)
 		if(!checkchar(reinterpret_cast<const unsigned char*>(s)))
@@ -78,7 +78,7 @@ static int utf8_len(lua_State* L){
 	return 1;
 }
 
-int luaopen_utf8x(lua_State* L){
+int luaopen_utf8x(lua_State* L)/* No exception specifier because of C declaration */{
 	static const luaL_Reg l[] = {
 		{"charrange", utf8_charrange},
 		{"chars", utf8_chars},
