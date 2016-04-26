@@ -23,9 +23,6 @@ CMakeFiles.txt	diff=cmake
 # Documentations
 *.md		text
 *.txt		text
-*.html		diff=html
-*.css		diff=css
-*.js		diff=js
 *.pc		diff=bash
 
 # Images

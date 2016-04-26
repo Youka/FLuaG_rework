@@ -4,6 +4,7 @@ message(STATUS "CMake 2.8+: ${CMAKE_VERSION}")
 
 # Set project header
 project(FLuaG)
+string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
 set(PROJECT_AUTHOR Youka)
 set(PROJECT_DESCRIPTION "Frameserver plugin for script based video editing.")
 set(PROJECT_VERSION_MAJOR 0)

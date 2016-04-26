@@ -7,4 +7,4 @@ Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
 
 Cflags: -I${includedir}
-Libs: -L${libdir} -lfluag
+Libs: -L${libdir} -l@PROJECT_NAME_LOWER@

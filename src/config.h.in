@@ -16,6 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #define STR(x) STR_BRIDGE(x)
 
 #define PROJECT_NAME "@PROJECT_NAME@"
+#define PROJECT_NAME_LOWER "@PROJECT_NAME_LOWER@"
 #define PROJECT_AUTHOR "@PROJECT_AUTHOR@"
 #define PROJECT_DESCRIPTION "@PROJECT_DESCRIPTION@"
 #define PROJECT_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
