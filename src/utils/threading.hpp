@@ -31,7 +31,7 @@ namespace Threading{
 			std::function<Ret()> host_func;
 		public:
 			// Ctor
-			Context_Base(const std::function<void()>& client_func) : std::thread(client_func){}
+			Context_Base(const std::function<void()>& client_func){std::thread::operator=(std::thread(client_func));}
 			// No copy
 			Context_Base(const Context_Base&) = delete;
 			Context_Base& operator=(const Context_Base&) = delete;
