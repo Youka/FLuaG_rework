@@ -14,24 +14,12 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 #include "libs.h"
 #include "../utils/lua.h"
-#define GLEW_STATIC
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <mutex>
+#include "../GL/glfw.hpp"
+#include "../GL/gl.h"
 #include <vector>
 #include <algorithm>
 #include <cassert>
-
-// OpenGL error check (safe; clears other errors on stack)
-static GLenum glGetError_s(){
-	// Get newest error
-	const GLenum error = glGetError();
-	// Clear remaining errors (with limit to prevent endless loop by context errors)
-	if(error != GL_NO_ERROR)
-		for(unsigned short i = 0; glGetError() != GL_NO_ERROR && i < std::numeric_limits<decltype(i)>::max(); ++i);
-	// Return error code
-	return error;
-}
 
 // OpenGL context check in Lua (to insert on function begin)
 #define TGL_CONTEXT_CHECK if(!glfwGetCurrentContext()) return luaL_error(L, "No context!");
@@ -930,7 +918,7 @@ static int tgl_blend(lua_State* L) noexcept{
 static int tgl_info(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	static const char* option_str[] = {"version", "extensions", "error", nullptr};
-	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS, GL_ERROR_REGAL};
+	static const GLenum option_enum[] = {GL_VERSION, GL_EXTENSIONS, GL_DEBUG_TYPE_ERROR};
 	switch(option_enum[luaL_checkoption(L, 1, nullptr, option_str)]){
 		case GL_VERSION:
 			lua_createtable(L, 0, 4);
@@ -949,63 +937,39 @@ static int tgl_info(lua_State* L) noexcept{
 				}
 			}
 			break;
-		case GL_ERROR_REGAL:
-			lua_pushstring(L, reinterpret_cast<const char*>(gluErrorString(glGetError())));
+		case GL_DEBUG_TYPE_ERROR:
+			lua_pushstring(L, reinterpret_cast<const char*>(glGetErrorString(glGetError())));
 			break;
 
 	}
 	return 1;
 }
 
-// GL context management variables
-static std::mutex context_mutex;
-static unsigned context_count = 0;
-
 // Context metatable methods
 static int tgl_context_free(lua_State* L) noexcept{
-	std::unique_lock<std::mutex> context_lock(context_mutex);
-	glfwDestroyWindow(*static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	if(!--context_count)
-		glfwTerminate();
+	delete *static_cast<GLFW::DummyContext**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT));
 	return 0;
 }
 
 static int tgl_context_activate(lua_State* L) noexcept{
 	// Set current GL context to use
-	glfwMakeContextCurrent(lua_isnoneornil(L, 1) ? nullptr : *static_cast<GLFWwindow**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)));
-	// Further context preparations
-	if(glfwGetCurrentContext()){
-		// Initialize GLEW
-		std::unique_lock<std::mutex> context_lock(context_mutex);
-		glewExperimental = GL_TRUE;
-		if(glewInit() != GLEW_OK)
-			return luaL_error(L, "Couldn't initialize GLEW!");
-		// Clear all errors caused by GLFW & GLEW initializations
-		glGetError_s();
-	}
+	if(lua_isnoneornil(L, 1))
+		glfwMakeContextCurrent(nullptr);
+	else
+		(*static_cast<GLFW::DummyContext**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)))->set();
+	// Load GL functions
+	if(glfwGetCurrentContext() && !glInit())
+		return luaL_error(L, "Couldn't load GL functions!");
 	return 0;
 }
 
 static int tgl_context_create(lua_State* L) noexcept{
-	// Initialize GLFW with general properties
-	std::unique_lock<std::mutex> context_lock(context_mutex);
-	if(!context_count){
-		if(glfwInit() != GL_TRUE)
-			return luaL_error(L, "Couldn't initialize GLFW!");
-		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-		glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-		glfwWindowHint(GLFW_DECORATED, GL_FALSE);
-		glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	// Initialize GLFW with general properties & create dummy context
+	try{
+		*static_cast<GLFW::DummyContext**>(lua_newuserdata(L, sizeof(GLFW::DummyContext*))) = new GLFW::DummyContext();
+	}catch(const std::domain_error&){
+		return luaL_error(L, "Couldn't create GLFW context!");
 	}
-	// Create GL context
-	GLFWwindow* window = glfwCreateWindow(1, 1, "tgl", nullptr, nullptr);
-	if(!window)
-		return luaL_error(L, "Couldn't create GL context!");
-	// Create userdata for GL context
-	*static_cast<GLFWwindow**>(lua_newuserdata(L, sizeof(GLFWwindow*))) = window;
 	// Fetch/create Lua tgl context metatable
 	if(luaL_newmetatable(L, LUA_TGL_CONTEXT)){
 		static const luaL_Reg l[] = {
@@ -1034,8 +998,6 @@ static int tgl_context_create(lua_State* L) noexcept{
 	}
 	// Bind metatable to userdata
 	lua_setmetatable(L, -2);
-	// Increment counter for finally created context
-	++context_count;
 	// Return the userdata to Lua
 	return 1;
 }
