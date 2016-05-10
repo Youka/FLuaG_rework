@@ -59,7 +59,7 @@ namespace FLuaG{
 			// Image data to Lua object
 			void lua_pushimage(std::weak_ptr<unsigned char> image_data, const int stride) const noexcept;
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-			std::unique_ptr<Threading::Context<int>> call_context = decltype(call_context)(new (typename decltype(call_context)::element_type)());
+			std::unique_ptr<Threading::Context<std::string>> call_context = decltype(call_context)(new (typename decltype(call_context)::element_type)());
 #endif
 		public:
 			// Ctor

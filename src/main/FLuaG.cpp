@@ -128,63 +128,71 @@ namespace FLuaG{
 
 	void Script::LoadFile(const std::string& filename){
 		LOG("Load file into script...");
-		// Load file and push as function
-		if(luaL_loadfile(LSTATE, filename.c_str())){
-			const std::string err(lua_tostring(LSTATE, -1));
-			lua_pop(LSTATE, 1);
-			throw exception(std::move(err));
-		}
-		// Push userdata string as function/file input
-		if(!this->userdata.empty())
-			lua_pushstring(LSTATE, this->userdata.c_str());
-		// Call function/file
-        const int err =
+		const std::string error =
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-			(*this->call_context)([this]() -> int{return lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0);});
-#else
-			lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0);
+		(*this->call_context)(
 #endif
-		if(err){
-			const std::string err(lua_tostring(LSTATE, -1));
-			lua_pop(LSTATE, 1);
-			throw exception(std::move(err));
+		[this,&filename]() -> std::string{
+			// Load file and push as function
+			if(luaL_loadfile(LSTATE, filename.c_str())){
+				const std::string error(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				return error;
+			}
+			// Push userdata string as function/file input
+			if(!this->userdata.empty())
+				lua_pushstring(LSTATE, this->userdata.c_str());
+			// Call function/file
+			if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+				const std::string error(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				return error;
+			}
+			lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+			return "";
 		}
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-		(*this->call_context)([this]() -> int{lua_gc(this->L.get(), LUA_GCCOLLECT, 0); return 0;});
+		);
 #else
-		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+		();
 #endif
+		if(!error.empty())
+			throw exception(std::move(error));
 		LOG("Script loaded file!");
 	}
 
 	void Script::LoadScript(const std::string& script){
 		LOG("Load string into script...");
-		// Load script and push as function
-		if(luaL_loadstring(LSTATE, script.c_str())){
-			const std::string err(lua_tostring(LSTATE, -1));
-			lua_pop(LSTATE, 1);
-			throw exception(std::move(err));
-		}
-		// Push userdata string as function/script input
-		if(!this->userdata.empty())
-			lua_pushstring(LSTATE, this->userdata.c_str());
-		// Call function/script
-        const int err =
+		const std::string error =
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-			(*this->call_context)([this]() -> int{return lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0);});
-#else
-			lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0);
+		(*this->call_context)(
 #endif
-		if(err){
-			const std::string err(lua_tostring(LSTATE, -1));
-			lua_pop(LSTATE, 1);
-			throw exception(std::move(err));
+		[this,&script]() -> std::string{
+			// Load file and push as function
+			if(luaL_loadstring(LSTATE, script.c_str())){
+				const std::string error(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				return error;
+			}
+			// Push userdata string as function/file input
+			if(!this->userdata.empty())
+				lua_pushstring(LSTATE, this->userdata.c_str());
+			// Call function/file
+			if(lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0)){
+				const std::string error(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				return error;
+			}
+			lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+			return "";
 		}
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-		(*this->call_context)([this]() -> int{lua_gc(this->L.get(), LUA_GCCOLLECT, 0); return 0;});
+		);
 #else
-		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+		();
 #endif
+		if(!error.empty())
+			throw exception(std::move(error));
 		LOG("Script loaded string!");
 	}
 
@@ -193,32 +201,37 @@ namespace FLuaG{
 		// Check for valid stride
 		if(static_cast<unsigned>(::abs(stride)) < this->image_rowsize)
 			throw exception("Image stride cannot be smaller than rowsize!");
-		// Look for function to call
-		lua_getglobal(LSTATE, "GetFrame");
-		if(!lua_isfunction(LSTATE, -1)){
-			lua_pop(LSTATE, 1);
-			throw exception("'GetFrame' function is missing");
-		}
-		// Push arguments and call function
-		const std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
-		this->lua_pushimage(image_data_shared, stride);
-		lua_pushinteger(LSTATE, ms);
-        const int err =
+		// Call in own context
+		const std::string error =
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-			(*this->call_context)([this]() -> int{return lua_pcall(LSTATE, 2, 0, 0);});
-#else
-			lua_pcall(LSTATE, this->userdata.empty() ? 0 : 1, 0, 0);
+		(*this->call_context)(
 #endif
-		if(err){
-			const std::string err(lua_tostring(LSTATE, -1));
-			lua_pop(LSTATE, 1);
-			throw exception(std::move(err));
+		[this,image_data,stride,ms]() -> std::string{
+			// Look for function to call
+			lua_getglobal(LSTATE, "GetFrame");
+			if(!lua_isfunction(LSTATE, -1)){
+				lua_pop(LSTATE, 1);
+				return "'GetFrame' function is missing";
+			}
+			// Push arguments and call function
+			const std::shared_ptr<unsigned char> image_data_shared(image_data, [](unsigned char*){});	// Equip pointer with a reference count without deleter (=no ownership)
+			this->lua_pushimage(image_data_shared, stride);
+			lua_pushinteger(LSTATE, ms);
+			if(lua_pcall(LSTATE, 2, 0, 0)){
+				const std::string error(lua_tostring(LSTATE, -1));
+				lua_pop(LSTATE, 1);
+				return error;
+			}
+			lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+			return "";
 		}
 #ifdef FLUAG_FORCE_SINGLE_THREAD
-		(*this->call_context)([this]() -> int{lua_gc(this->L.get(), LUA_GCCOLLECT, 0); return 0;});
+		);
 #else
-		lua_gc(this->L.get(), LUA_GCCOLLECT, 0);
+		();
 #endif
+		if(!error.empty())
+			throw exception(std::move(error));
 		LOG("Script processed frame successfully!");
 	}
 }
