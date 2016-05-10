@@ -15,44 +15,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #pragma once
 
 #include <string>
-#ifdef _WIN32
-	#include <libloaderapi.h>
-	#include "textconv.hpp"
-#else
-	#include <dlfcn.h>
-#endif
 
 namespace Module{
-#ifdef _WIN32	// Unix needs the following function exported for DL informations
-	static
-#endif
-	std::string dir() noexcept{
-		// Result buffer
-		std::string path;
-		// Get this DLL filename into the buffer
-		union{
-			std::string(*func)();
-			void* obj;
-		}cast_wrapper;
-		cast_wrapper.func = dir;	// Prevents "warning: ISO C++ forbids casting between pointer-to-function and pointer-to-object"
-#ifdef _WIN32
-		HMODULE module;
-		if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCWSTR>(cast_wrapper.obj), &module)){
-			wchar_t filenamew[MAX_PATH];
-			if(GetModuleFileNameW(module, filenamew, sizeof(filenamew)/sizeof(filenamew[0])))
-				path = Utf8::from_utf16(filenamew);
-		}
-#else
-		Dl_info dli;
-		if(dladdr(cast_wrapper.obj, &dli))
-			path = dli.dli_fname;
-#endif
-		// Shorten filename to directory
-		if(!path.empty()){
-			const std::string::size_type separator = path.find_last_of("\\/");
-			path.resize(separator != std::string::npos ? separator+1 : 0);
-		}
-		// Return directory or empty string on failure
-		return path;
-	}
+	std::string dir() noexcept;
 }
