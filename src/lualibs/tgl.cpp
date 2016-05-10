@@ -971,7 +971,8 @@ static int tgl_context_activate(lua_State* L) noexcept{
 static int tgl_context_create(lua_State* L) noexcept{
 	// Initialize GLFW with general properties & create dummy context
 	try{
-		*static_cast<GLFW::DummyContext**>(lua_newuserdata(L, sizeof(GLFW::DummyContext*))) = new GLFW::DummyContext();
+		GLFW::DummyContext ctx;
+		*static_cast<GLFW::DummyContext**>(lua_newuserdata(L, sizeof(GLFW::DummyContext*))) = new GLFW::DummyContext(std::move(ctx));
 	}catch(const std::domain_error&){
 		return luaL_error(L, "Couldn't create GLFW context!");
 	}
