@@ -16,6 +16,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 #include "../utils/lua.h"
 #include <GLFW/glfw3.h>
 #include "../GL/glfw.hpp"
+#include <mutex>
 #include "../GL/gl.h"
 #include <vector>
 #include <algorithm>
@@ -958,8 +959,12 @@ static int tgl_context_activate(lua_State* L) noexcept{
 	else
 		(*static_cast<GLFW::DummyContext**>(luaL_checkudata(L, 1, LUA_TGL_CONTEXT)))->set();
 	// Load GL functions
-	if(glfwGetCurrentContext() && !glInit())
-		return luaL_error(L, "Couldn't load GL functions!");
+	if(glfwGetCurrentContext()){
+		static std::mutex gl_init_mutex;
+		std::unique_lock<std::mutex> lock(gl_init_mutex);
+		if(!glInit())
+			return luaL_error(L, "Couldn't load GL functions!");
+	}
 	return 0;
 }
 
