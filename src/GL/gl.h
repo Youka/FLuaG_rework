@@ -90,7 +90,14 @@ extern PFNGLUNIFORM4IVPROC glUniform4iv;
 extern PFNGLUNIFORMMATRIX2FVPROC glUniformMatrix2fv;
 extern PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv;
 extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+/* Textures */
+#ifdef _WIN32
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
+#endif
 /* Blending */
+#ifdef _WIN32
+extern PFNGLBLENDCOLORPROC glBlendColor;
+#endif
 extern PFNGLBLENDEQUATIONSEPARATEPROC glBlendEquationSeparate;
 extern PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
 /* Debugging */

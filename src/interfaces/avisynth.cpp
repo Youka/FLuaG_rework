@@ -102,7 +102,7 @@ namespace AVS{
 }
 
 // Avisynth plugin entry point
-AVSC_EXPORT const char* avisynth_c_plugin_init(AVS_ScriptEnvironment* env) noexcept{
+AVSC_EXPORT const char* avisynth_c_plugin_init(AVS_ScriptEnvironment* env){
 	LOG("Initialize Avisynth plugin...");
 	// Avisynth library available and valid version?
 	if((AVS::avs_library || (AVS::avs_library = avs_load_library())) && !AVS::avs_library->avs_check_version(env, AVISYNTH_INTERFACE_VERSION))
