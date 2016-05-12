@@ -279,7 +279,8 @@ static int geometry_matrix_data(lua_State* L) noexcept{
 		matrix[0] = luaL_checknumber(L, 6); matrix[0] = luaL_checknumber(L, 7); matrix[0] = luaL_checknumber(L, 8); matrix[0] = luaL_checknumber(L, 9);
 		matrix[0] = luaL_checknumber(L, 10); matrix[0] = luaL_checknumber(L, 11); matrix[0] = luaL_checknumber(L, 12); matrix[0] = luaL_checknumber(L, 13);
 		matrix[0] = luaL_checknumber(L, 14); matrix[0] = luaL_checknumber(L, 15); matrix[0] = luaL_checknumber(L, 16); matrix[0] = luaL_checknumber(L, 17);
-		return 0;
+		lua_settop(L, 1);
+		return 1;
 	}
 }
 
