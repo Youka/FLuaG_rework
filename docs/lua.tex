@@ -12,17 +12,17 @@ TODO
 \subsubsection{Filesystem}
 \label{sec:filesystem}
 
-abs_path:string = absolute(path:string)
+abs\_path:string = absolute(path:string)
 
-can_path:string = canonical(path:string)
+can\_path:string = canonical(path:string)
 
 copy(from:string, to:string)
 
 success:bool = mkdir(dir:string)
 
-link(to:string, new_link:string)
+link(to:string, new\_link:string)
 
-symlink(to:string, new_link:string)
+symlink(to:string, new\_link:string)
 to:string = symlink(link:string)
 
 cd(path:string)
@@ -30,7 +30,7 @@ path:string = cd()
 
 found:bool = exists(path:string)
 
-are_equal:bool = equal(path1:string, path2:string)
+are\_equal:bool = equal(path1:string, path2:string)
 
 bytes:int = size(path:string)
 
@@ -41,17 +41,17 @@ p, ... = perm(path:string)
 
 num:bool|int = remove(path:string[, all:bool])
 
-rename(old_path:string, new_path:string)
+rename(old\_path:string, new\_path:string)
 
 capacity:int, free:int, available:int = space(path:string)
 
 t:string = type(path:string)
 
-abs_path:string = sysabsolute(path:string)
+abs\_path:string = sysabsolute(path:string)
 
 path:string = tmpdir()
 
-uni_path:string = unique(path:string)
+uni\_path:string = unique(path:string)
 
 list:table = dir(path:string)
 
@@ -60,11 +60,11 @@ TODO
 \subsubsection{Font}
 \label{sec:font}
 
-fonts_list:table = list()
+fonts\_list:table = list()
 
 font:userdata = create(family:string[, size:float][, bold:bool][, italic:bool][, underline:bool][, strikeout:bool][, spacing:float][, rtl:bool])
 family:string, size:float, bold:bool, italic:bool, underline:bool, strikeout:bool, spacing:float, rtl:bool = font:data()
-height:float, ascent:float, descent:float, internal_leading:float, external_leading:float = font:metrics()
+height:float, ascent:float, descent:float, internal\_leading:float, external\_leading:float = font:metrics()
 width:float = font:textwidth(text:string)
 path:table = font:textpath(text:string)
 
@@ -73,7 +73,7 @@ TODO
 \subsubsection{Geometry}
 \label{sec:geometry}
 
-new_x:float, new_y:float = stretch(x:float, y:float, len:float)
+new\_x:float, new\_y:float = stretch(x:float, y:float, len:float)
 
 [x:float, y:float] = lineintersect(l1p1x:float, l1p1y:float, l1p2x:float, l1p2y:float, l2p1x:float, l2p1y:float, l2p2x:float, l2p2y:float)
 
@@ -88,19 +88,19 @@ minx:float, miny:float, maxx:float, maxy:float = bound(points:table)
 
 curves:table = arccurve(px:float, py:float, cpx:float, cpy:float, angle:float)
 
-line_points:table = curveflatten(p0x:float, p0y:float, p1x:float, p1y:float, p2x:float, p2y:float, p3x:float, p3y:float[, tolerance:float])
+line\_points:table = curveflatten(p0x:float, p0y:float, p1x:float, p1y:float, p2x:float, p2y:float, p3x:float, p3y:float[, tolerance:float])
 
 triangles:table = tesselate(contours:table)
 
 mat:userdata = matrix([x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float])
-new_mat:userdata = mat:__mul(other_mat:userdata)
-mat:userdata = mat:multiply(other_mat:userdata)
+new\_mat:userdata = mat:\_\_mul(other\_mat:userdata)
+mat:userdata = mat:multiply(other\_mat:userdata)
 mat:userdata = mat:translate(x:float, y:float, z:float)
 mat:userdata = mat:scale(x:float, y:float, z:float)
 mat:userdata = mat:rotate(axis:string, angle:float)
 mat:userdata = mat:identity()
 success:bool = mat:invert()
-new_x:float, new_y:float, new_z:float, new_w:float = mat:transform(x:float, y:float[, z:float][, w:float])
+new\_x:float, new\_y:float, new\_z:float, new\_w:float = mat:transform(x:float, y:float[, z:float][, w:float])
 mat:userdata = mat:data(x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float)
 x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float = mat:data()
 
@@ -109,13 +109,13 @@ TODO
 \subsubsection{Math}
 \label{sec:math}
 
-truncated_x:int = trunc(x:float)
+truncated\_x:int = trunc(x:float)
 
-rounded_x:int = round(x:float)
+rounded\_x:int = round(x:float)
 
-trimmed_x:float = trim(x:float, limit1:float, limit2:float)
+trimmed\_x:float = trim(x:float, limit1:float, limit2:float)
 
-sign_num:float = sign(x:float)
+sign\_num:float = sign(x:float)
 
 c:float = hypot(a:float, b:float)
 
@@ -135,36 +135,36 @@ class:string = classify(num:float)
 
 cx:userdata = complex([r:float][i:float])
 cx:userdata = polar(magn:float[, phase:float])
-cx:__call([r:float][i:float])
-r:float, i:float = cx:__call()
-desc:string = cx:__tostring()
-new_cx:userdata = cx:__add(other_cx:userdata)
-new_cx:userdata = cx:__sub(other_cx:userdata)
-new_cx:userdata = cx:__mul(other_cx:userdata)
-new_cx:userdata = cx:__div(other_cx:userdata)
-new_cx:userdata = cx:__eq(other_cx:userdata)
-new_cx:userdata = cx:__pow(other_cx:userdata)
+cx:\_\_call([r:float][i:float])
+r:float, i:float = cx:\_\_call()
+desc:string = cx:\_\_tostring()
+new\_cx:userdata = cx:\_\_add(other\_cx:userdata)
+new\_cx:userdata = cx:\_\_sub(other\_cx:userdata)
+new\_cx:userdata = cx:\_\_mul(other\_cx:userdata)
+new\_cx:userdata = cx:\_\_div(other\_cx:userdata)
+new\_cx:userdata = cx:\_\_eq(other\_cx:userdata)
+new\_cx:userdata = cx:\_\_pow(other\_cx:userdata)
 magn:float = cx:abs()
 phase:float = cx:arg()
 sqrmagn:float = cx:norm()
-conjugate_cx:userdata = cx:conj()
-ebase_cx:userdata = cx:exp()
-natlog_cx:userdata = cx:log()
-sqrt_cx:userdata = cx:sqrt()
-sin_cx:userdata = cx:sin()
-cos_cx:userdata = cx:cos()
-tan_cx:userdata = cx:tan()
-asin_cx:userdata = cx:asin()
-acos_cx:userdata = cx:acos()
-atan_cx:userdata = cx:atan()
-sinh_cx:userdata = cx:sinh()
-cosh_cx:userdata = cx:cosh()
-tanh_cx:userdata = cx:tanh()
-asinh_cx:userdata = cx:asinh()
-acosh_cx:userdata = cx:acosh()
-atanh_cx:userdata = cx:atanh()
+conjugate\_cx:userdata = cx:conj()
+ebase\_cx:userdata = cx:exp()
+natlog\_cx:userdata = cx:log()
+sqrt\_cx:userdata = cx:sqrt()
+sin\_cx:userdata = cx:sin()
+cos\_cx:userdata = cx:cos()
+tan\_cx:userdata = cx:tan()
+asin\_cx:userdata = cx:asin()
+acos\_cx:userdata = cx:acos()
+atan\_cx:userdata = cx:atan()
+sinh\_cx:userdata = cx:sinh()
+cosh\_cx:userdata = cx:cosh()
+tanh\_cx:userdata = cx:tanh()
+asinh\_cx:userdata = cx:asinh()
+acosh\_cx:userdata = cx:acosh()
+atanh\_cx:userdata = cx:atanh()
 
-new_x:float = gauss(x:float, sigma:float)
+new\_x:float = gauss(x:float, sigma:float)
 
 x:float = fac(n:float)
 
@@ -175,21 +175,21 @@ TODO
 \subsubsection{PNG}
 \label{sec:png}
 
-img_data:table = read(data:string)
+img\_data:table = read(data:string)
 
-img_data:tablereadfile(path:string)
+img\_data:tablereadfile(path:string)
 
-data:string = write(img_data:table)
+data:string = write(img\_data:table)
 
-writefile(path:string, img_data:table)
+writefile(path:string, img\_data:table)
 
 TODO
 
 \subsubsection{Regex}
 \label{sec:regex}
 
-rx:userdata = __call(expr:string[, flags:table])
-new_data:string = rx:replace(data:string, format:string)
+rx:userdata = \_\_call(expr:string[, flags:table])
+new\_data:string = rx:replace(data:string, format:string)
 matches:table = rx:match(data:string)
 
 TODO
@@ -197,25 +197,25 @@ TODO
 \subsubsection{Table}
 \label{sec:table}
 
-new_tab:table = copy(tab:table[, depth:int])
+new\_tab:table = copy(tab:table[, depth:int])
 
 desc:string = tostring(tab:table)
 
-new_tab = alloc(arr:int, hash:int)
+new\_tab = alloc(arr:int, hash:int)
 
 equal:bool = compare(tab1:table, tab2:table[, comparator:function])
 
-n:int = count(tab:table, value:^nil)
+n:int = count(tab:table, value:\^nil)
 
-[pos:int] = find(tab:table, value:^nil)
+[pos:int] = find(tab:table, value:\^nil)
 
-fill(tab:table, value:^nil, n:int[, pos:int])
+fill(tab:table, value:\^nil, n:int[, pos:int])
 
 reverse(tab:table)
 
 rotate(tab:table, axis:int)
 
-result:any = accumulate(tab:table, init:^nil, processor:function)
+result:any = accumulate(tab:table, init:\^nil, processor:function)
 
 insertn(tab:table, pos:int, value:any, ...)
 
@@ -228,7 +228,7 @@ TODO
 \subsubsection{TGL}
 \label{sec:tgl}
 
-ctx:userdata = __call()
+ctx:userdata = \_\_call()
 
 
 
@@ -252,9 +252,9 @@ TODO
 
 iter:function = chars(data:string)
 
-char_num:int = len(data:string)
+char\_num:int = len(data:string)
 
-charpattern = "[\0-\x7F\xC2-\xF4][\x80-\xBF]*"
+charpattern = "[\textbackslash{}0-\textbackslash{}x7F\textbackslash{}xC2-\textbackslash{}xF4][\textbackslash{}x80-\textbackslash{}xBF]*"
 
 TODO
 

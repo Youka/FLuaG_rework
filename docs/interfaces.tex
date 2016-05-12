@@ -7,39 +7,39 @@
 \subsubsection{Avisynth}
 \label{sec:avisynth}
 
-clip = FLuaG(clip:clip, script:string, [userdata:string])
+clip:clip = FLuaG(clip:clip, script:string, [userdata:string])
 
 TODO
 
 \subsubsection{Vapoursynth}
 \label{sec:vapoursynth}
 
-clip = core.graphics.FLuaG(clip:clip,script:bytes[,userdata:bytes])
+clip:clip = core.graphics.FLuaG(clip:clip,script:bytes[,userdata:bytes])
 
 TODO
 
 \subsection{C API}
 \label{sec:c-api}
 
-typedef void* fluag_h;
+\verb|typedef void* fluag_h;|
 
-#define FLUAG_ERROR_LENGTH 256
+\verb|#define FLUAG_ERROR_LENGTH 256|
 
-FLUAG_EXPORT fluag_h fluag_create(void);
+\verb|FLUAG_EXPORT fluag_h fluag_create(void);|
 
-FLUAG_EXPORT int fluag_load_file(fluag_h F, const char* const filename, char* err);
+\verb|FLUAG_EXPORT int fluag_load_file(fluag_h F, const char* const filename, char* err);|
 
-FLUAG_EXPORT int fluag_load_script(fluag_h F, const char* const script, char* err);
+\verb|FLUAG_EXPORT int fluag_load_script(fluag_h F, const char* const script, char* err);|
 
-FLUAG_EXPORT void fluag_set_video(fluag_h F, const unsigned short width, const unsigned short height, const char has_alpha, const double fps, const unsigned long frames);
+\verb|FLUAG_EXPORT void fluag_set_video(fluag_h F, const unsigned short width, const unsigned short height, const char has_alpha, const double fps, const unsigned long frames);|
 
-FLUAG_EXPORT void fluag_set_userdata(fluag_h F, const char* const userdata);
+\verb|FLUAG_EXPORT void fluag_set_userdata(fluag_h F, const char* const userdata);|
 
-FLUAG_EXPORT int fluag_process_frame(fluag_h F, unsigned char* image_data, const unsigned stride, const unsigned long ms, char* err);
+\verb|FLUAG_EXPORT int fluag_process_frame(fluag_h F, unsigned char* image_data, const unsigned stride, const unsigned long ms, char* err);|
 
-FLUAG_EXPORT void fluag_destroy(fluag_h F);
+\verb|FLUAG_EXPORT void fluag_destroy(fluag_h F);|
 
-FLUAG_EXPORT const char* fluag_get_version(void);
+\verb|FLUAG_EXPORT const char* fluag_get_version(void);|
 
 TODO
 
