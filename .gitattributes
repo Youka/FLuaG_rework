@@ -24,6 +24,7 @@ CMakeFiles.txt	diff=cmake
 *.md		text
 *.txt		text
 *.pc		diff=bash
+*.tex		diff=tex
 
 # Images
 *.png		binary
