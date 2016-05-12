@@ -12,45 +12,249 @@ TODO
 \subsubsection{Filesystem}
 \label{sec:filesystem}
 
+abs_path:string = absolute(path:string)
+
+can_path:string = canonical(path:string)
+
+copy(from:string, to:string)
+
+success:bool = mkdir(dir:string)
+
+link(to:string, new_link:string)
+
+symlink(to:string, new_link:string)
+to:string = symlink(link:string)
+
+cd(path:string)
+path:string = cd()
+
+found:bool = exists(path:string)
+
+are_equal:bool = equal(path1:string, path2:string)
+
+bytes:int = size(path:string)
+
+time:int = lastmod(path:string)
+
+perm(path:string, p:string, ...)
+p, ... = perm(path:string)
+
+num:bool|int = remove(path:string[, all:bool])
+
+rename(old_path:string, new_path:string)
+
+capacity:int, free:int, available:int = space(path:string)
+
+t:string = type(path:string)
+
+abs_path:string = sysabsolute(path:string)
+
+path:string = tmpdir()
+
+uni_path:string = unique(path:string)
+
+list:table = dir(path:string)
+
 TODO
 
 \subsubsection{Font}
 \label{sec:font}
+
+fonts_list:table = list()
+
+font:userdata = create(family:string[, size:float][, bold:bool][, italic:bool][, underline:bool][, strikeout:bool][, spacing:float][, rtl:bool])
+family:string, size:float, bold:bool, italic:bool, underline:bool, strikeout:bool, spacing:float, rtl:bool = font:data()
+height:float, ascent:float, descent:float, internal_leading:float, external_leading:float = font:metrics()
+width:float = font:textwidth(text:string)
+path:table = font:textpath(text:string)
 
 TODO
 
 \subsubsection{Geometry}
 \label{sec:geometry}
 
+new_x:float, new_y:float = stretch(x:float, y:float, len:float)
+
+[x:float, y:float] = lineintersect(l1p1x:float, l1p1y:float, l1p2x:float, l1p2y:float, l2p1x:float, l2p1y:float, l2p2x:float, l2p2y:float)
+
+on:bool = online(px:float, py:float, lp1x:float, lp1y:float, lp2x:float, lp2y:float)
+
+inside:bool = intriangle(px:float, py:float, tp1x:float, tp1y:float, tp2x:float, tp2y:float, tp3x:float, tp3y:float)
+
+dir:int = direction(p1x:float, p1y:float, p2x:float, p2y:float, p3x:float, p3y:float)
+dir:int = direction(v1x:float, v1y:float, v2x:float, v2y:float)
+
+minx:float, miny:float, maxx:float, maxy:float = bound(points:table)
+
+curves:table = arccurve(px:float, py:float, cpx:float, cpy:float, angle:float)
+
+line_points:table = curveflatten(p0x:float, p0y:float, p1x:float, p1y:float, p2x:float, p2y:float, p3x:float, p3y:float[, tolerance:float])
+
+triangles:table = tesselate(contours:table)
+
+mat:userdata = matrix([x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float])
+new_mat:userdata = mat:__mul(other_mat:userdata)
+mat:userdata = mat:multiply(other_mat:userdata)
+mat:userdata = mat:translate(x:float, y:float, z:float)
+mat:userdata = mat:scale(x:float, y:float, z:float)
+mat:userdata = mat:rotate(axis:string, angle:float)
+mat:userdata = mat:identity()
+success:bool = mat:invert()
+new_x:float, new_y:float, new_z:float, new_w:float = mat:transform(x:float, y:float[, z:float][, w:float])
+mat:userdata = mat:data(x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float)
+x11:float, x12:float, x13:float, x14:float, x21:float, x22:float, x23:float, x24:float, x31:float, x32:float, x33:float, x34:float, x41:float, x42:float, x43:float, x44:float = mat:data()
+
 TODO
 
 \subsubsection{Math}
 \label{sec:math}
+
+truncated_x:int = trunc(x:float)
+
+rounded_x:int = round(x:float)
+
+trimmed_x:float = trim(x:float, limit1:float, limit2:float)
+
+sign_num:float = sign(x:float)
+
+c:float = hypot(a:float, b:float)
+
+x:float = asinh(angle:float)
+
+x:float = acosh(angle:float)
+
+x:float = atanh(angle:float)
+
+error:float = erf(x:float)
+
+gamma:float = tgamma(x:float)
+
+rest:float, exponent:int = frexp(x:float)
+
+class:string = classify(num:float)
+
+cx:userdata = complex([r:float][i:float])
+cx:userdata = polar(magn:float[, phase:float])
+cx:__call([r:float][i:float])
+r:float, i:float = cx:__call()
+desc:string = cx:__tostring()
+new_cx:userdata = cx:__add(other_cx:userdata)
+new_cx:userdata = cx:__sub(other_cx:userdata)
+new_cx:userdata = cx:__mul(other_cx:userdata)
+new_cx:userdata = cx:__div(other_cx:userdata)
+new_cx:userdata = cx:__eq(other_cx:userdata)
+new_cx:userdata = cx:__pow(other_cx:userdata)
+magn:float = cx:abs()
+phase:float = cx:arg()
+sqrmagn:float = cx:norm()
+conjugate_cx:userdata = cx:conj()
+ebase_cx:userdata = cx:exp()
+natlog_cx:userdata = cx:log()
+sqrt_cx:userdata = cx:sqrt()
+sin_cx:userdata = cx:sin()
+cos_cx:userdata = cx:cos()
+tan_cx:userdata = cx:tan()
+asin_cx:userdata = cx:asin()
+acos_cx:userdata = cx:acos()
+atan_cx:userdata = cx:atan()
+sinh_cx:userdata = cx:sinh()
+cosh_cx:userdata = cx:cosh()
+tanh_cx:userdata = cx:tanh()
+asinh_cx:userdata = cx:asinh()
+acosh_cx:userdata = cx:acosh()
+atanh_cx:userdata = cx:atanh()
+
+new_x:float = gauss(x:float, sigma:float)
+
+x:float = fac(n:float)
+
+x:float = bezier(t:float, i1, ...)
 
 TODO
 
 \subsubsection{PNG}
 \label{sec:png}
 
+img_data:table = read(data:string)
+
+img_data:tablereadfile(path:string)
+
+data:string = write(img_data:table)
+
+writefile(path:string, img_data:table)
+
 TODO
 
 \subsubsection{Regex}
 \label{sec:regex}
+
+rx:userdata = __call(expr:string[, flags:table])
+new_data:string = rx:replace(data:string, format:string)
+matches:table = rx:match(data:string)
 
 TODO
 
 \subsubsection{Table}
 \label{sec:table}
 
+new_tab:table = copy(tab:table[, depth:int])
+
+desc:string = tostring(tab:table)
+
+new_tab = alloc(arr:int, hash:int)
+
+equal:bool = compare(tab1:table, tab2:table[, comparator:function])
+
+n:int = count(tab:table, value:^nil)
+
+[pos:int] = find(tab:table, value:^nil)
+
+fill(tab:table, value:^nil, n:int[, pos:int])
+
+reverse(tab:table)
+
+rotate(tab:table, axis:int)
+
+result:any = accumulate(tab:table, init:^nil, processor:function)
+
+insertn(tab:table, pos:int, value:any, ...)
+
+removen(tab:table, pos:int, n:int)
+
+move(a1:table, f:int, e:int, t:int[, a2:table])
+
 TODO
 
 \subsubsection{TGL}
 \label{sec:tgl}
 
+ctx:userdata = __call()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TODO
 
 \subsubsection{UTF-8}
 \label{sec:utf8}
+
+[bytes:int] = charrange(data:string[, pos:int])
+
+iter:function = chars(data:string)
+
+char_num:int = len(data:string)
+
+charpattern = "[\0-\x7F\xC2-\xF4][\x80-\xBF]*"
 
 TODO
 

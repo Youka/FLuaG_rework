@@ -243,7 +243,7 @@ static int table_fill(lua_State* L) noexcept{
 	luaL_argcheck(L, !lua_isnoneornil(L, 2), 2, "none or nil not accepted");
 	int n = luaL_checkinteger(L, 3),
 		i = luaL_optinteger(L, 4, 1);
-        // Fill table range with value
+	// Fill table range with value
 	if(i >= 1 && n > 0)
 		for(n += i; i < n; ++i){
 			lua_pushvalue(L, 2);
