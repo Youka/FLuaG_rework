@@ -202,7 +202,7 @@ static int geometry_tesselate(lua_State* L) noexcept{
 }
 
 #define LUA_MATRIX "matrix"
-using Matrix = Math::Matrix4x4<double>;
+using Matrix = Geometry::Matrix4x4<double>;
 static void lua_pushmatrix(lua_State* L, const Matrix& matrix) noexcept;
 
 static int geometry_matrix_free(lua_State* L) noexcept{

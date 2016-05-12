@@ -49,7 +49,143 @@ namespace Math{
 	inline double bernstein(const int i, const int n, const double t) noexcept{
 		return bin_coeff(i, n) * std::pow(t, i) * std::pow(1-t, n-i);
 	}
+}
 
+namespace Geometry{
+	// 2D
+	struct Point2d{
+		double x, y;
+		Point2d operator+(const Point2d& other) const noexcept{return {this->x + other.x, this->y + other.y};}
+		Point2d operator-(const Point2d& other) const noexcept{return {this->x - other.x, this->y - other.y};}
+		Point2d operator*(const Point2d& other) const noexcept{return {this->x * other.x, this->y * other.y};}
+		Point2d operator/(const Point2d& other) const noexcept{return {this->x / other.x, this->y / other.y};}
+		Point2d operator-() const noexcept{return {-this->x, -this->y};}
+		bool operator==(const Point2d& other) const noexcept{return this->x == other.x && this->y == other.y;}
+		bool operator!=(const Point2d& other) const noexcept{return !(*this == other);}
+	};
+
+	inline double normal_z(const Point2d& v1, const Point2d& v2) noexcept{
+		return v1.x * v2.y - v1.y * v2.x;
+	}
+	inline double normal_z(const Point2d& p0, const Point2d& p1, const Point2d& p2) noexcept{
+		return normal_z(p1 - p0, p2 - p1);
+	}
+
+	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1) noexcept{
+		return std::abs(std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y) - std::hypot(l1.x-l0.x, l1.y-l0.y)) < POINT_ON_LINE_TOLERANCE;
+	}
+
+	inline Point2d line_intersect(const Point2d& l1p1, const Point2d& l1p2, const Point2d& l2p1, const Point2d& l2p2){
+		// Check direction
+		const Point2d l1 = l1p1 - l1p2,
+			l2 = l2p1 - l2p2;
+		const double det = normal_z(l1, l2);
+		if(det == 0)
+			throw std::out_of_range("Lines parallel!");
+		// Get intersection point
+		const double pre = normal_z(l1p1, l1p2),
+			post = normal_z(l2p1, l2p2);
+		const Point2d lx = (Point2d{pre,pre} * l2 - l1 * Point2d{post,post}) / Point2d{det,det};
+		// Check point is on lines
+		if(!(on_line(lx, l1p1, l1p2) && on_line(lx, l2p1, l2p2)))
+			throw std::length_error("Line intersection not on both lines!");
+		// Return intersection
+		return lx;
+	}
+
+	inline bool in_triangle(const Point2d& p, const Point2d& t1, const Point2d& t2, const Point2d& t3) noexcept{
+		const char t2t3p = Math::sign(normal_z(t2, t3, p));
+		return Math::sign(normal_z(t1, t2, p)) == t2t3p && t2t3p == Math::sign(normal_z(t3, t1, p));
+	}
+
+	inline Point2d stretch(const Point2d& v, const double new_length) noexcept{
+		double factor;
+		return v.x == 0 && v.y == 0 ? v : (factor = new_length / std::hypot(v.x, v.y), Point2d{factor,factor} * v);
+	}
+
+	inline Point2d rotate(const Point2d& v, const double angle) noexcept{
+		const double sin_angle = std::sin(angle),
+			cos_angle = std::cos(angle);
+		return {cos_angle * v.x - sin_angle * v.y, sin_angle * v.x + cos_angle * v.y};
+	}
+
+	inline std::vector<std::array<Point2d,4>> arc_to_curves(const Point2d& start, const Point2d& center, const double angle) noexcept{
+		// Output buffer
+		std::vector<std::array<Point2d,4>> curves;
+		// Anything to do?
+		if(angle != 0){
+			// Save constants
+			constexpr static const double kappa = 4 * (M_SQRT2 - 1) / 3;
+			const char direction = Math::sign(angle);
+			const double angle_abs = std::abs(angle);
+			// Go through 1/4 circle pieces
+			Point2d rel_start = start - center;
+			for(double angle_sum = 0; angle_sum < angle_abs; angle_sum += M_PI_2){	// 90° steps
+				// Arc size
+				const double current_angle = std::min(angle_abs - angle_sum, M_PI_2);
+				// Get arc end point
+				const Point2d rel_end = rotate(rel_start, direction * current_angle);
+				// Get arc start-to-end vector & scale for control points
+				Point2d rel_start_end = rel_end - rel_start;
+				rel_start_end = stretch(rel_start_end, std::sqrt((rel_start_end.x*rel_start_end.x + rel_start_end.y*rel_start_end.y) * 0.5) * kappa);
+				// Get arc control points
+				const Point2d rel_control1 = rel_start + rotate(rel_start_end, direction * current_angle * -0.5),
+					rel_control2 = rel_end + rotate(-rel_start_end, direction * current_angle * 0.5);
+				// Insert arc to output
+				curves.push_back({center + rel_start, center + rel_control1, center + rel_control2, center + rel_end});
+				// Prepare next arc
+				rel_start = rel_end;
+			}
+		}
+		// Return what was collected
+		return curves;
+	}
+
+	inline std::vector<Point2d> curve_flatten(const std::array<Point2d,4> points, const double tolerance) noexcept{
+		// Check valid arguments
+		if(tolerance <= 0)
+			throw std::out_of_range("Invalid tolerance!");
+		// Helper functions
+		auto curve_split = [](const std::array<Point2d,4>& points) -> std::array<Point2d,8>{
+			static const Point2d half{0.5, 0.5};
+			const Point2d p01 = (points[0] + points[1]) * half,
+				p12 = (points[1] + points[2]) * half,
+				p23 = (points[2] + points[3]) * half,
+				p012 = (p01 + p12) * half,
+				p123 = (p12 + p23) * half,
+				p0123 = (p012 + p123) * half;
+			return {points[0], p01, p012, p0123, p0123, p123, p23, points[3]};
+		};
+		auto curve_is_flat = [tolerance](const std::array<Point2d,4>& points){
+			std::array<Point2d,3> vecs{{
+				points[1] - points[0],
+				points[2] - points[1],
+				points[3] - points[2]
+			}};
+			const auto vecs_end = std::remove(vecs.begin(), vecs.end(), Point2d{0,0});
+			if(vecs.cbegin()+2 <= vecs_end)
+				for(auto it = vecs.cbegin()+1; it != vecs_end; ++it)
+					if(std::abs(normal_z(*(it-1), *it)) > tolerance)
+						return false;
+			return true;
+		};
+		std::function<void(const std::array<Point2d,4>&, std::vector<Point2d>&)> curve_to_lines;
+		curve_to_lines = [&curve_to_lines,&curve_split,&curve_is_flat](const std::array<Point2d,4>& points, std::vector<Point2d>& out){
+			if(curve_is_flat(points))
+				out.push_back(points.back());
+			else{
+				const auto& points2 = curve_split(points);
+				curve_to_lines({points2[0], points2[1], points2[2], points2[3]}, out);
+				curve_to_lines({points2[4], points2[5], points2[6], points2[7]}, out);
+			}
+		};
+		// Convert curve to lines
+		std::vector<Point2d> lines{points.front()};
+		curve_to_lines(points, lines);
+		return lines;
+	}
+
+	// 4D
 	template<typename T>
 	class Matrix4x4 : public std::array<T,16>{
 		public:
@@ -187,138 +323,4 @@ namespace Math{
 	};
 	using Matrix4x4f = Matrix4x4<float>;
 	using Matrix4x4d = Matrix4x4<double>;
-}
-
-namespace Geometry{
-	struct Point2d{
-		double x, y;
-		Point2d operator+(const Point2d& other) const noexcept{return {this->x + other.x, this->y + other.y};};
-		Point2d operator-(const Point2d& other) const noexcept{return {this->x - other.x, this->y - other.y};};
-		Point2d operator*(const Point2d& other) const noexcept{return {this->x * other.x, this->y * other.y};};
-		Point2d operator/(const Point2d& other) const noexcept{return {this->x / other.x, this->y / other.y};};
-		Point2d operator-() const noexcept{return {-this->x, -this->y};};
-		bool operator==(const Point2d& other) const noexcept{return this->x == other.x && this->y == other.y;};
-		bool operator!=(const Point2d& other) const noexcept{return !(*this == other);};
-	};
-
-	inline double normal_z(const Point2d& v1, const Point2d& v2) noexcept{
-		return v1.x * v2.y - v1.y * v2.x;
-	}
-	inline double normal_z(const Point2d& p0, const Point2d& p1, const Point2d& p2) noexcept{
-		return normal_z(p1 - p0, p2 - p1);
-	}
-
-	inline bool on_line(const Point2d& p, const Point2d& l0, const Point2d& l1) noexcept{
-		return std::abs(std::hypot(p.x-l0.x, p.y-l0.y) + std::hypot(p.x-l1.x, p.y-l1.y) - std::hypot(l1.x-l0.x, l1.y-l0.y)) < POINT_ON_LINE_TOLERANCE;
-	}
-
-	inline Point2d line_intersect(const Point2d& l1p1, const Point2d& l1p2, const Point2d& l2p1, const Point2d& l2p2){
-		// Check direction
-		const Point2d l1 = l1p1 - l1p2,
-			l2 = l2p1 - l2p2;
-		const double det = normal_z(l1, l2);
-		if(det == 0)
-			throw std::out_of_range("Lines parallel!");
-		// Get intersection point
-		const double pre = normal_z(l1p1, l1p2),
-			post = normal_z(l2p1, l2p2);
-		const Point2d lx = (Point2d{pre,pre} * l2 - l1 * Point2d{post,post}) / Point2d{det,det};
-		// Check point is on lines
-		if(!(on_line(lx, l1p1, l1p2) && on_line(lx, l2p1, l2p2)))
-			throw std::length_error("Line intersection not on both lines!");
-		// Return intersection
-		return lx;
-	}
-
-	inline bool in_triangle(const Point2d& p, const Point2d& t1, const Point2d& t2, const Point2d& t3) noexcept{
-		const char t2t3p = Math::sign(normal_z(t2, t3, p));
-		return Math::sign(normal_z(t1, t2, p)) == t2t3p && t2t3p == Math::sign(normal_z(t3, t1, p));
-	}
-
-	inline Point2d stretch(const Point2d& v, const double new_length) noexcept{
-		double factor;
-		return v.x == 0 && v.y == 0 ? v : (factor = new_length / std::hypot(v.x, v.y), Point2d{factor,factor} * v);
-	}
-
-	inline Point2d rotate(const Point2d& v, const double angle) noexcept{
-		const double sin_angle = std::sin(angle),
-			cos_angle = std::cos(angle);
-		return {cos_angle * v.x - sin_angle * v.y, sin_angle * v.x + cos_angle * v.y};
-	}
-
-	inline std::vector<std::array<Point2d,4>> arc_to_curves(const Point2d& start, const Point2d& center, const double angle) noexcept{
-		// Output buffer
-		std::vector<std::array<Point2d,4>> curves;
-		// Anything to do?
-		if(angle != 0){
-			// Save constants
-			constexpr static const double kappa = 4 * (M_SQRT2 - 1) / 3;
-			const char direction = Math::sign(angle);
-			const double angle_abs = std::abs(angle);
-			// Go through 1/4 circle pieces
-			Point2d rel_start = start - center;
-			for(double angle_sum = 0; angle_sum < angle_abs; angle_sum += M_PI_2){	// 90° steps
-				// Arc size
-				const double current_angle = std::min(angle_abs - angle_sum, M_PI_2);
-				// Get arc end point
-				const Point2d rel_end = rotate(rel_start, direction * current_angle);
-				// Get arc start-to-end vector & scale for control points
-				Point2d rel_start_end = rel_end - rel_start;
-				rel_start_end = stretch(rel_start_end, std::sqrt((rel_start_end.x*rel_start_end.x + rel_start_end.y*rel_start_end.y) * 0.5) * kappa);
-				// Get arc control points
-				const Point2d rel_control1 = rel_start + rotate(rel_start_end, direction * current_angle * -0.5),
-					rel_control2 = rel_end + rotate(-rel_start_end, direction * current_angle * 0.5);
-				// Insert arc to output
-				curves.push_back({center + rel_start, center + rel_control1, center + rel_control2, center + rel_end});
-				// Prepare next arc
-				rel_start = rel_end;
-			}
-		}
-		// Return what was collected
-		return curves;
-	}
-
-	inline std::vector<Point2d> curve_flatten(const std::array<Point2d,4> points, const double tolerance) noexcept{
-		// Check valid arguments
-		if(tolerance <= 0)
-			throw std::out_of_range("Invalid tolerance!");
-		// Helper functions
-		auto curve_split = [](const std::array<Point2d,4>& points) -> std::array<Point2d,8>{
-			static const Point2d half{0.5, 0.5};
-			const Point2d p01 = (points[0] + points[1]) * half,
-				p12 = (points[1] + points[2]) * half,
-				p23 = (points[2] + points[3]) * half,
-				p012 = (p01 + p12) * half,
-				p123 = (p12 + p23) * half,
-				p0123 = (p012 + p123) * half;
-			return {points[0], p01, p012, p0123, p0123, p123, p23, points[3]};
-		};
-		auto curve_is_flat = [tolerance](const std::array<Point2d,4>& points){
-			std::array<Point2d,3> vecs{{
-				points[1] - points[0],
-				points[2] - points[1],
-				points[3] - points[2]
-			}};
-			const auto vecs_end = std::remove(vecs.begin(), vecs.end(), Point2d{0,0});
-			if(vecs.cbegin()+2 <= vecs_end)
-				for(auto it = vecs.cbegin()+1; it != vecs_end; ++it)
-					if(std::abs(normal_z(*(it-1), *it)) > tolerance)
-						return false;
-			return true;
-		};
-		std::function<void(const std::array<Point2d,4>&, std::vector<Point2d>&)> curve_to_lines;
-		curve_to_lines = [&curve_to_lines,&curve_split,&curve_is_flat](const std::array<Point2d,4>& points, std::vector<Point2d>& out){
-			if(curve_is_flat(points))
-				out.push_back(points.back());
-			else{
-				const auto& points2 = curve_split(points);
-				curve_to_lines({points2[0], points2[1], points2[2], points2[3]}, out);
-				curve_to_lines({points2[4], points2[5], points2[6], points2[7]}, out);
-			}
-		};
-		// Convert curve to lines
-		std::vector<Point2d> lines{points.front()};
-		curve_to_lines(points, lines);
-		return lines;
-	}
 }
