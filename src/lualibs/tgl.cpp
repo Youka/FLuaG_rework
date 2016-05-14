@@ -371,14 +371,14 @@ static int tgl_texture_param(lua_State* L) noexcept{
 	TGL_CONTEXT_CHECK
 	// Get arguments
 	const GLuint tex = *static_cast<GLuint*>(luaL_checkudata(L, 1, LUA_TGL_TEXTURE));
-	const std::string param = luaL_checkstring(L, 2);
+	const std::string param = luaL_checkstring(L, 2),
+			value = luaL_checkstring(L, 3);
 	// Save old texture and bind texture for access
 	GLuint old_tex;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint*>(&old_tex));
 	glBindTexture(GL_TEXTURE_2D, tex);
 	// Set texture parameters
 	if(param == "filter"){
-		const std::string value = luaL_checkstring(L, 3);
 		if(value == "nearest"){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -388,7 +388,6 @@ static int tgl_texture_param(lua_State* L) noexcept{
 		}else
 			return luaL_error(L, "Invalid filter value!");
 	}else if(param == "wrap"){
-		const std::string value = luaL_checkstring(L, 3);
 		if(value == "clamp"){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
