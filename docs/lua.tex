@@ -230,18 +230,55 @@ TODO
 
 ctx:userdata = \_\_call()
 
+ctx:activate()
+ctx.activate()
 
+ctx.clear(buffer:string, ...)
 
+ctx.viewport(x:int, y:int, width:int, height:int)
 
+ctx.size(type:string, size:string)
 
+ctx.mode(mode:string)
 
+ctx.scissor(x:int, y:int, width:int, height:int)
+ctx.scissor()
 
+ctx.logic(op:string)
+ctx.logic()
 
+ctx.mask(...)
+ctx.mask()
 
+ctx.depth(func:string)
+ctx.depth()
 
+ctx.stencil(config:table)
+ctx.stencil()
 
+ctx.blend(config:table)
+ctx.blend()
 
+data:table|string = ctx.info(type:string)
 
+shader:userdata = ctx.createshader(type:string, source:string)
+
+program:userdata = ctx.createprogram(vshader:userdata, fshader:userdata)
+program:uniform(location:string, type:string, ...)
+program:use()
+
+vao:userdata = ctx.createvao(meta:table, data:table)
+vao:draw(mode:string, first:int, count:int)
+
+tex:userdata = ctx.createtexture(width:int, height:int, format:string[, data:string])
+tex:bind([target:int])
+tex:param(param:string, value:string)
+width:int, height:int, format:string[, data:string] = tex:data([request\_format:string])
+
+fbo:userdata = ctx.createfbo(width:int, height:int[, samples:int])
+fbo:bind()
+fbo:info(width:int, height:int, samples:int)
+tex:userdata = fbo:blit(tex:userdata)
 
 TODO
 
