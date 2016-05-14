@@ -51,15 +51,26 @@ namespace FLuaG{
 		}
 		lua_pop(LSTATE, 1);
 		// Extend Lua search paths
-		std::string path = Module::dir();
-		if(!path.empty()){
-			path.append("?.lua;");
+		const std::string module_dir = Module::dir();
+		const char* const home = getenv("FLUAG_HOME");
+		if(!module_dir.empty() || home){
+			// Has Lua the package module?
 			lua_getglobal(LSTATE, "package");
 			if(lua_istable(LSTATE, -1)){
+				// Paths storage
+				std::string path;
+				// Add original Lua package path
 				lua_getfield(LSTATE, -1, "path");
 				if(lua_isstring(LSTATE, -1))
-					path.append(lua_tostring(LSTATE, -1));
+					path = lua_tostring(LSTATE, -1);
 				lua_pop(LSTATE, 1);
+				// Add (C) module directory
+				if(!module_dir.empty())
+					path.insert(0, module_dir + "?.lua;");
+				// Add OS environment variable
+				if(home)
+					path.insert(0, std::string(home) + "/?.lua;");
+				// Set path to Lua package
 				lua_pushstring(LSTATE, path.c_str()); lua_setfield(LSTATE, -2, "path");
 			}
 			lua_pop(LSTATE, 1);
